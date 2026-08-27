@@ -1,3 +1,5 @@
+package entities;
+
 public class Producto {
     private int idProducto;
     private String nombre;
