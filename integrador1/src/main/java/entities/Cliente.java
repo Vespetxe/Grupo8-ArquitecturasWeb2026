@@ -1,3 +1,5 @@
+package entities;
+
 public class Cliente {
     private int idCliente;
     private String nombre;
