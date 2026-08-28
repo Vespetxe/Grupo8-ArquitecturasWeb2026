@@ -22,5 +22,3 @@ public interface Factura_ProductoDAO {
     void deleteAll();
 
 }
-
-}
