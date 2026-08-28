@@ -5,7 +5,9 @@ import entities.Factura;
 import entities.Factura_Producto;
 import entities.Producto;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -100,7 +102,7 @@ public class HelperMySQL {
             ps.setString(2, cliente.getNombre());
             ps.setString(3,cliente.getEmail());
             if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar");
+                throw new Exception("No se pudo insertar cliente");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -120,7 +122,7 @@ public class HelperMySQL {
             ps.setInt(1,factura.getIdFactura());
             ps.setInt(2, factura.getIdCliente());
             if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar");
+                throw new Exception("No se pudo insertar factura");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -139,7 +141,7 @@ public class HelperMySQL {
             ps.setString(2, producto.getNombre());
             ps.setFloat(3, producto.getValor());
             if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar");
+                throw new Exception("No se pudo insertar producto");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -151,7 +153,7 @@ public class HelperMySQL {
 
     private int insertFactura_Producto(Factura_Producto factura_producto, Connection conn) throws Exception {
 
-        String insert = "INSERT INTO Producto (idProducto, nombre, valor) VALUES (?, ?, ?)";
+        String insert = "INSERT INTO Factura_Producto (idFactura, idProducto, cantidad) VALUES (?, ?, ?)";
         PreparedStatement ps = null;
         try {
             ps = conn.prepareStatement(insert);
@@ -159,7 +161,7 @@ public class HelperMySQL {
             ps.setInt(2, factura_producto.getIdProducto());
             ps.setInt(3, factura_producto.getCantidad());
             if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar");
+                throw new Exception("No se pudo insertar factura_producto");
             }
         } catch (SQLException e) {
             e.printStackTrace();
