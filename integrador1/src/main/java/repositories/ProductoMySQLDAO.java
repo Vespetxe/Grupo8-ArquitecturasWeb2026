@@ -1,4 +1,4 @@
-package repository.mysql;
+package repositories;
 
 import dao.ProductoDAO;
 import entities.Producto;
@@ -9,10 +9,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-public class ProductoDAOMYSQL implements ProductoDAO {
+public class ProductoMySQLDAO implements ProductoDAO {
     private Connection conn;
 
-    public ProductoDAOMYSQL (Connection conn) {
+    public ProductoMySQLDAO(Connection conn) {
         this.conn = conn;
     }
 

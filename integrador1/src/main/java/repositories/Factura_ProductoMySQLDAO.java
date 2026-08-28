@@ -1,15 +1,16 @@
-package dao;
+package repositories;
 
+import dao.Factura_ProductoDAO;
 import entities.Factura_Producto;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MySqlFactura_ProductoDAO implements Factura_ProductoDAO {
+public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
     private final Connection cn;
 
-    public MySqlFactura_ProductoDAO(Connection cn) {
+    public Factura_ProductoMySQLDAO(Connection cn) {
         this.cn = cn;
         //crearTablaSiNoExiste();
     }

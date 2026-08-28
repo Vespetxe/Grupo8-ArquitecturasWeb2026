@@ -1,4 +1,4 @@
-package repository.mysql;
+package repositories;
 
 import dao.ClienteDAO;
 import entities.Cliente;
@@ -7,11 +7,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MySQLClienteDAO implements ClienteDAO {
+public class ClienteMySQLDAO implements ClienteDAO {
 
     private final Connection cn;
 
-    public MySQLClienteDAO(Connection cn){
+    public ClienteMySQLDAO(Connection cn){
         this.cn = cn;
     }
 

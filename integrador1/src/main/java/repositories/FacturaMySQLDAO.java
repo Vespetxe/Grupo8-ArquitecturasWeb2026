@@ -1,17 +1,16 @@
 package repositories;
 
 import dao.FacturaDAO;
-import entities.Cliente;
 import entities.Factura;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FacturaDAOMYSQL implements FacturaDAO {
+public class FacturaMySQLDAO implements FacturaDAO {
     private Connection conn;
 
-    public FacturaDAOMYSQL(Connection conn) {
+    public FacturaMySQLDAO(Connection conn) {
         this.conn = conn;
     }
 
