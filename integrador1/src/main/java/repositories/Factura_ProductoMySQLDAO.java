@@ -1,7 +1,10 @@
 package repositories;
 
 import dao.Factura_ProductoDAO;
+import dto.ProductoDTO;
+import entities.Factura;
 import entities.Factura_Producto;
+import entities.Producto;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -13,6 +16,34 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
     public Factura_ProductoMySQLDAO(Connection cn) {
         this.cn = cn;
         //crearTablaSiNoExiste();
+    }
+
+    public ProductoDTO getBestProducto() {
+        String query = "SELECT p.nombre, p.valor, SUM(fp.cantidad * p.valor) AS recaudacion FROM Factura_Producto fp" +
+                "JOIN Producto p ON p.idProducto = fp.idProducto" +
+                "GROUP BY p.idProducto, p.nombre" +
+                "ORDER BY recaudacion DESC";
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        ProductoDTO bestProduct = null;
+
+        try{
+            ps = cn.prepareStatement(query);
+            rs = ps.executeQuery();
+
+            //Verificar si hay resultados
+            if(rs.next()){
+                String nombre =  rs.getString("nombre");
+                float valor =  rs.getFloat("valor");
+                float recaudado  = rs.getFloat("recaudacion");
+
+                bestProduct = new ProductoDTO(nombre, valor, recaudado);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return bestProduct;
     }
 
     @Override
@@ -155,5 +186,6 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
         fp.setCantidad(rs.getInt("cantidad"));
         return fp;
     }
+
 
 }
