@@ -5,7 +5,9 @@ import entities.Factura;
 import entities.Factura_Producto;
 import entities.Producto;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 

@@ -18,7 +18,8 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
         //crearTablaSiNoExiste();
     }
 
-    public ProductoDTO getBestProducto() {
+    @Override
+    public ProductoDTO getBestProduct() {
         String query = "SELECT p.nombre, p.valor, SUM(fp.cantidad * p.valor) AS recaudacion FROM Factura_Producto fp" +
                 "JOIN Producto p ON p.idProducto = fp.idProducto" +
                 "GROUP BY p.idProducto, p.nombre" +

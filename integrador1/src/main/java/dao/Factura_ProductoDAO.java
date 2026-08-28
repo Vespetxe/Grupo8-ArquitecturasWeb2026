@@ -1,5 +1,6 @@
 package dao;
 
+import dto.ProductoDTO;
 import entities.Factura_Producto;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public interface Factura_ProductoDAO {
     void updateIdFactura(int oldIdFactura, int idProducto, int nuevoIdFactura);
     void updateIdProducto(int idFactura, int oldIdProducto, int nuevoIdProducto);
     void delete(int idFactura, int idProduct);
+    ProductoDTO getBestProduct();
 
     void deleteAll();
 
