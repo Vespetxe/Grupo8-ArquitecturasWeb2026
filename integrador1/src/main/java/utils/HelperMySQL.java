@@ -4,7 +4,13 @@ import entities.Cliente;
 import entities.Factura;
 import entities.Factura_Producto;
 import entities.Producto;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -91,6 +97,117 @@ public class HelperMySQL {
                 "CONSTRAINT FK_idProducto FOREIGN KEY (idProducto) REFERENCES Producto (idProducto))";
         this.conn.prepareStatement(tableFactura_Producto).execute();
         this.conn.commit();
+    }
+
+    private Iterable<CSVRecord> getData(String archive) throws IOException {
+        String path = "src\\main\\resources\\" + archive;
+        Reader in = new FileReader(path);
+        String[] header = {};
+        CSVParser csvParser = CSVFormat.EXCEL.withHeader(header).parse(in);
+
+        Iterable<CSVRecord> records = csvParser.getRecords();
+        return records;
+    }
+
+    public void populateDB() throws Exception {
+        System.out.println("Cargando clientes...");
+        try {
+            for (CSVRecord row : getData("clientes.csv")) {
+                if (row.size() >= 3) {
+                    String idClienteString = row.get(0);
+                    String nombre = row.get(1);
+                    String email = row.get(2);
+
+                    if (!idClienteString.isEmpty() && !nombre.isEmpty() && !email.isEmpty()) {
+                        try {
+                            int idCliente = Integer.parseInt(idClienteString);
+
+                            Cliente cliente = new Cliente(idCliente, nombre, email);
+                            insertCliente(cliente, conn);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error de formato en datos de cliente: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Cargando facturas...");
+        try {
+            for (CSVRecord row : getData("facturas.csv")) {
+                if (row.size() >= 2) {
+                    String idFacturaString = row.get(0);
+                    String idClienteString = row.get(1);
+
+                    if (!idFacturaString.isEmpty() && !idClienteString.isEmpty()) {
+                        try {
+                            int idFactura = Integer.parseInt(idFacturaString);
+                            int idCliente = Integer.parseInt(idClienteString);
+
+                            Factura factura = new Factura(idFactura, idCliente);
+                            insertFactura(factura, conn);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error de formato en datos de factura: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Cargando productos...");
+        try {
+            for (CSVRecord row : getData("productos.csv")) {
+                if (row.size() >= 3) {
+                    String idProductoString = row.get(0);
+                    String nombre = row.get(1);
+                    String valorString = row.get(2);
+
+                    if (!idProductoString.isEmpty() && !nombre.isEmpty() && !valorString.isEmpty()) {
+                        try {
+                            int idProducto = Integer.parseInt(idProductoString);
+                            float valor = Float.parseFloat(valorString);
+
+                            Producto producto = new Producto(idProducto, nombre, valor);
+                            insertProducto(producto, conn);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error de formato en datos de producto: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Cargando facturas-productos...");
+        try {
+            for (CSVRecord row : getData("facturas-productos.csv")) {
+                if (row.size() >= 3) {
+                    String idFacturaString = row.get(0);
+                    String idProductoString = row.get(1);
+                    String cantidadString = row.get(2);
+
+                    if (!idFacturaString.isEmpty() && !idProductoString.isEmpty() && !cantidadString.isEmpty()) {
+                        try {
+                            int idFactura = Integer.parseInt(idFacturaString);
+                            int idProducto = Integer.parseInt(idProductoString);
+                            int cantidad = Integer.parseInt(cantidadString);
+
+                            Factura_Producto factura_producto = new Factura_Producto(idFactura, idProducto, cantidad);
+                            insertFactura_Producto(factura_producto, conn);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error de formato en datos de factura-producto: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private int insertCliente (Cliente cliente, Connection conn) throws Exception{
