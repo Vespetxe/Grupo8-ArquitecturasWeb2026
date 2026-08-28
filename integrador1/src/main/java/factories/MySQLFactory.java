@@ -1,17 +1,26 @@
 package factories;
 
+import dao.ClienteDAO;
+import dao.FacturaDAO;
+import dao.Factura_ProductoDAO;
+import dao.ProductoDAO;
+import repositories.ClienteMySQLDAO;
+import repositories.FacturaMySQLDAO;
+import repositories.Factura_ProductoMySQLDAO;
+import repositories.ProductoMySQLDAO;
+
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class MySQLFactory extends AbstactFactory {
+public class MySQLFactory extends AbstractFactory {
     private static MySQLFactory instance = null;
 
     public static final String DRIVER = "com.mysql.cj.jdbc.Driver";
-    public static final String URL = "jdbc:mysql://localhost:3306/tp_integrador";
+    public static final String URL = "jdbc:mysql://localhost:3306/tp-integrador";
     public static final String USER = "root";
-    public static final String PASSWORD = "";
+    public static final String PASSWORD = "8790";
     public static Connection conn;
 
     private MySQLFactory() {
@@ -54,19 +63,19 @@ public class MySQLFactory extends AbstactFactory {
         }
     }
 
-    public int getClienteDAO() {
-        return 0;
+    public ClienteDAO getClienteDAO() {
+        return new ClienteMySQLDAO(createConnection());
     }
 
-    public int getProductoDAO() {
-        return 0;
+    public ProductoDAO getProductoDAO() {
+        return new ProductoMySQLDAO(createConnection());
     }
 
-    public int getFacturaDAO() {
-        return 0;
+    public FacturaDAO getFacturaDAO() {
+        return new FacturaMySQLDAO(createConnection());
     }
 
-    public int getFacturaProductoDAO() {
-        return 0;
+    public Factura_ProductoDAO getFacturaProductoDAO() {
+        return new Factura_ProductoMySQLDAO(createConnection());
     }
 }

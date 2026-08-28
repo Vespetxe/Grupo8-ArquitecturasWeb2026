@@ -21,11 +21,13 @@ public class HelperMySQL {
     private Connection conn = null;
 
     public HelperMySQL() { //Constructor
-        String driver = "com.mysql.cj.jdbc.Driver";
-        String uri = "jdbc:mysql://localhost:3306/demodao";
+        final String DRIVER = "com.mysql.cj.jdbc.Driver";
+        final String URL = "jdbc:mysql://localhost:3306/tp-integrador";
+        final String USER = "root";
+        final String PASSWORD = "8790";
 
         try {
-            Class.forName(driver).getDeclaredConstructor().newInstance();
+            Class.forName(DRIVER).getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                  | NoSuchMethodException | SecurityException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -33,7 +35,7 @@ public class HelperMySQL {
         }
 
         try {
-            conn = DriverManager.getConnection(uri, "root", "");
+            conn = DriverManager.getConnection(URL, USER, PASSWORD);
             conn.setAutoCommit(false);
         } catch (Exception e) {
             e.printStackTrace();
