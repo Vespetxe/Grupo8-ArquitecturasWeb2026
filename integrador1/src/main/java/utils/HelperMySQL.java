@@ -17,19 +17,23 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+
 public class HelperMySQL {
     private Connection conn = null;
 
     public HelperMySQL() { //Constructor
         final String DRIVER = "com.mysql.cj.jdbc.Driver";
-        final String URL = "jdbc:mysql://localhost:3306/tp-integrador";
+        final String URL = "jdbc:mysql://localhost:3306/integrador1?createDatabaseIfNotExist=true";
         final String USER = "root";
-        final String PASSWORD = "8790";
+        final String PASSWORD = "";
 
         try {
             Class.forName(DRIVER).getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                 | NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+            this.conn = DriverManager.getConnection(URL, USER, PASSWORD);
+            //this.conn = conn.setAutoCommit(false);
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
+                 InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException |
+                 SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }

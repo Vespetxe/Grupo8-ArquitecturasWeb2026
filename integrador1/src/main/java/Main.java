@@ -14,7 +14,7 @@ public class Main {
         helperMySQL.dropTables();
         helperMySQL.createTables();
         helperMySQL.populateDB();
-        helperMySQL.closeConnection();
+        //helperMySQL.closeConnection();
 
         AbstractFactory chosenFactory = AbstractFactory.getFactory(1);
 
