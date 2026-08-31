@@ -105,8 +105,8 @@ public class HelperMySQL {
         this.conn.commit();
     }
 
-    private Iterable<utils.CSVRecord> getData(String archive) throws IOException {
-        String path = "src\\main\\resources\\" + archive;
+    private Iterable<CSVRecord> getData(String archive) throws IOException {
+        String path = "src/main/resources/" + archive;
         Reader in = new FileReader(path);
         String[] header = {};
         CSVParser csvParser = CSVFormat.EXCEL.withHeader(header).parse(in);
