@@ -13,10 +13,10 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) throws Exception {
         HelperMySQL helperMySQL = new HelperMySQL();
+
         helperMySQL.dropTables();
         helperMySQL.createTables();
         helperMySQL.populateDB();
-        //helperMySQL.closeConnection();
 
         AbstractFactory chosenFactory = AbstractFactory.getFactory(1);
 
@@ -27,6 +27,8 @@ public class Main {
 
         List<ClienteDTO> clienteDTO = facturaProducto.getClientesByFacturacion();
         System.out.println("Listado de Clientes que mas recaudaron: " + clienteDTO);
+
+        helperMySQL.closeConnection();
 
     }
 }

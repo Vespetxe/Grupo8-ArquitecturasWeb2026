@@ -21,30 +21,34 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
 
     @Override
     public ProductoDTO getBestProduct() {
-        String query = "SELECT p.nombre, p.valor, SUM(fp.cantidad * p.valor) AS recaudacion FROM Factura_Producto fp" +
-                "JOIN Producto p ON p.idProducto = fp.idProducto" +
-                "GROUP BY p.idProducto, p.nombre" +
-                "ORDER BY recaudacion DESC";
+        String query =
+                "SELECT p.nombre, p.valor, SUM(fp.cantidad * p.valor) AS recaudacion " +
+                        "FROM Factura_Producto fp " +
+                        "JOIN Producto p ON p.idProducto = fp.idProducto " +
+                        "GROUP BY p.idProducto, p.nombre, p.valor " +
+                        "ORDER BY recaudacion DESC " +
+                        "LIMIT 1";
+
         PreparedStatement ps = null;
         ResultSet rs = null;
 
         ProductoDTO bestProduct = null;
 
-        try{
+        try {
             ps = cn.prepareStatement(query);
             rs = ps.executeQuery();
 
-            //Verificar si hay resultados
-            if(rs.next()){
-                String nombre =  rs.getString("nombre");
-                float valor =  rs.getFloat("valor");
-                float recaudado  = rs.getFloat("recaudacion");
+            if (rs.next()) {
+                String nombre = rs.getString("nombre");
+                float valor = rs.getFloat("valor");
+                float recaudado = rs.getFloat("recaudacion");
 
                 bestProduct = new ProductoDTO(nombre, valor, recaudado);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
         return bestProduct;
     }
 

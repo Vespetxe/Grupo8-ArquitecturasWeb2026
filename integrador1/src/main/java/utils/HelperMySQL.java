@@ -8,9 +8,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,12 +23,12 @@ public class HelperMySQL {
         final String DRIVER = "com.mysql.cj.jdbc.Driver";
         final String URL = "jdbc:mysql://localhost:3306/integrador1?createDatabaseIfNotExist=true";
         final String USER = "root";
-        final String PASSWORD = "";
+        final String PASSWORD = "root";
 
         try {
             Class.forName(DRIVER).getDeclaredConstructor().newInstance();
             this.conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            //this.conn = conn.setAutoCommit(false);
+            this.conn.setAutoCommit(false);
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
                  InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException |
                  SQLException e) {
@@ -38,12 +36,6 @@ public class HelperMySQL {
             System.exit(1);
         }
 
-        try {
-            conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            conn.setAutoCommit(false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
     public void closeConnection() {
         if (conn != null){
@@ -55,8 +47,9 @@ public class HelperMySQL {
         }
     }
     public void dropTables() throws SQLException {
-        String dropCliente = "DROP TABLE IF EXISTS Cliente";
-        this.conn.prepareStatement(dropCliente).execute();
+
+        String dropFactura_Producto = "DROP TABLE IF EXISTS Factura_Producto";
+        this.conn.prepareStatement(dropFactura_Producto).execute();
         this.conn.commit();
 
         String dropFactura = "DROP TABLE IF EXISTS Factura";
@@ -67,9 +60,11 @@ public class HelperMySQL {
         this.conn.prepareStatement(dropProducto).execute();
         this.conn.commit();
 
-        String dropFactura_Producto = "DROP TABLE IF EXISTS Factura_Producto";
-        this.conn.prepareStatement(dropFactura_Producto).execute();
+        String dropCliente = "DROP TABLE IF EXISTS Cliente";
+        this.conn.prepareStatement(dropCliente).execute();
         this.conn.commit();
+
+
     }
 
     public void createTables() throws SQLException {
@@ -105,19 +100,26 @@ public class HelperMySQL {
         this.conn.commit();
     }
 
-    private Iterable<utils.CSVRecord> getData(String archive) throws IOException {
-        String path = "src\\main\\resources\\" + archive;
-        Reader in = new FileReader(path);
-        String[] header = {};
-        CSVParser csvParser = CSVFormat.EXCEL.withHeader(header).parse(in);
+    private Iterable<CSVRecord> getData(String archive) throws IOException {
+        InputStream inputStream =
+                HelperMySQL.class.getClassLoader().getResourceAsStream(archive);
 
-        Iterable<CSVRecord> records = csvParser.getRecords();
-        return records;
+        if (inputStream == null) {
+            throw new FileNotFoundException("No se encontró el archivo: " + archive);
+        }
+
+        Reader in = new InputStreamReader(inputStream);
+
+        CSVParser csvParser = CSVFormat.DEFAULT
+                .withFirstRecordAsHeader()
+                .parse(in);
+
+        return csvParser.getRecords();
     }
 
     public void populateDB() throws Exception {
-        System.out.println("Cargando clientes...");
         try {
+            System.out.println("Cargando clientes...");
             for (CSVRecord row : getData("clientes.csv")) {
                 if (row.size() >= 3) {
                     String idClienteString = row.get(0);
@@ -125,47 +127,31 @@ public class HelperMySQL {
                     String email = row.get(2);
 
                     if (!idClienteString.isEmpty() && !nombre.isEmpty() && !email.isEmpty()) {
-                        try {
-                            int idCliente = Integer.parseInt(idClienteString);
+                        int idCliente = Integer.parseInt(idClienteString);
 
-                            Cliente cliente = new Cliente(idCliente, nombre, email);
-                            insertCliente(cliente, conn);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de cliente: " + e.getMessage());
-                        }
+                        Cliente cliente = new Cliente(idCliente, nombre, email);
+                        insertCliente(cliente, conn);
                     }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
-        System.out.println("Cargando facturas...");
-        try {
+            System.out.println("Cargando facturas...");
             for (CSVRecord row : getData("facturas.csv")) {
                 if (row.size() >= 2) {
                     String idFacturaString = row.get(0);
                     String idClienteString = row.get(1);
 
                     if (!idFacturaString.isEmpty() && !idClienteString.isEmpty()) {
-                        try {
-                            int idFactura = Integer.parseInt(idFacturaString);
-                            int idCliente = Integer.parseInt(idClienteString);
+                        int idFactura = Integer.parseInt(idFacturaString);
+                        int idCliente = Integer.parseInt(idClienteString);
 
-                            Factura factura = new Factura(idFactura, idCliente);
-                            insertFactura(factura, conn);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de factura: " + e.getMessage());
-                        }
+                        Factura factura = new Factura(idFactura, idCliente);
+                        insertFactura(factura, conn);
                     }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
-        System.out.println("Cargando productos...");
-        try {
+            System.out.println("Cargando productos...");
             for (CSVRecord row : getData("productos.csv")) {
                 if (row.size() >= 3) {
                     String idProductoString = row.get(0);
@@ -173,137 +159,89 @@ public class HelperMySQL {
                     String valorString = row.get(2);
 
                     if (!idProductoString.isEmpty() && !nombre.isEmpty() && !valorString.isEmpty()) {
-                        try {
-                            int idProducto = Integer.parseInt(idProductoString);
-                            float valor = Float.parseFloat(valorString);
+                        int idProducto = Integer.parseInt(idProductoString);
+                        float valor = Float.parseFloat(valorString);
 
-                            Producto producto = new Producto(idProducto, nombre, valor);
-                            insertProducto(producto, conn);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de producto: " + e.getMessage());
-                        }
+                        Producto producto = new Producto(idProducto, nombre, valor);
+                        insertProducto(producto, conn);
                     }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
-        System.out.println("Cargando facturas-productos...");
-        try {
+            System.out.println("Cargando facturas-productos...");
             for (CSVRecord row : getData("facturas-productos.csv")) {
                 if (row.size() >= 3) {
                     String idFacturaString = row.get(0);
                     String idProductoString = row.get(1);
                     String cantidadString = row.get(2);
 
-                    if (!idFacturaString.isEmpty() && !idProductoString.isEmpty() && !cantidadString.isEmpty()) {
-                        try {
-                            int idFactura = Integer.parseInt(idFacturaString);
-                            int idProducto = Integer.parseInt(idProductoString);
-                            int cantidad = Integer.parseInt(cantidadString);
+                    if (!idFacturaString.isEmpty() &&
+                            !idProductoString.isEmpty() &&
+                            !cantidadString.isEmpty()) {
 
-                            Factura_Producto factura_producto = new Factura_Producto(idFactura, idProducto, cantidad);
-                            insertFactura_Producto(factura_producto, conn);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de factura-producto: " + e.getMessage());
-                        }
+                        int idFactura = Integer.parseInt(idFacturaString);
+                        int idProducto = Integer.parseInt(idProductoString);
+                        int cantidad = Integer.parseInt(cantidadString);
+
+                        Factura_Producto facturaProducto =
+                                new Factura_Producto(idFactura, idProducto, cantidad);
+
+                        insertFactura_Producto(facturaProducto, conn);
                     }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+            conn.commit();
+            System.out.println("Base cargada correctamente.");
+
+        } catch (Exception e) {
+            conn.rollback();
+            throw e;
         }
     }
 
-    private int insertCliente (Cliente cliente, Connection conn) throws Exception{
-        String insert = "INSERT INTO Cliente (idCliente, nombre, email) VALUES (?, ?, ?)";
-        PreparedStatement ps = null;
-        try {
-            ps = conn.prepareStatement(insert);
-            ps.setInt(1,cliente.getIdCliente());
+    private void insertCliente(Cliente cliente, Connection conn) throws SQLException {
+        String sql = "INSERT INTO Cliente (idCliente, nombre, email) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, cliente.getIdCliente());
             ps.setString(2, cliente.getNombre());
-            ps.setString(3,cliente.getEmail());
-            if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar cliente");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closePsAndCommit(conn, ps);
+            ps.setString(3, cliente.getEmail());
+            ps.executeUpdate();
         }
-        return 0;
     }
 
+    private void insertFactura(Factura factura, Connection conn) throws SQLException {
+        String sql = "INSERT INTO Factura (idFactura, idCliente) VALUES (?, ?)";
 
-    private int insertFactura(Factura factura, Connection conn) throws Exception {
-
-        String insert = "INSERT INTO Factura (idFactura, idCliente) VALUES (?, ?)";
-        PreparedStatement ps = null;
-        try {
-            ps = conn.prepareStatement(insert);
-            ps.setInt(1,factura.getIdFactura());
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, factura.getIdFactura());
             ps.setInt(2, factura.getIdCliente());
-            if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar factura");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closePsAndCommit(conn, ps);
+            ps.executeUpdate();
         }
-        return 0;
     }
-    private int insertProducto(Producto producto, Connection conn) throws Exception {
 
-        String insert = "INSERT INTO Producto (idProducto, nombre, valor) VALUES (?, ?, ?)";
-        PreparedStatement ps = null;
-        try {
-            ps = conn.prepareStatement(insert);
-            ps.setInt(1,producto.getIdProducto());
+    private void insertProducto(Producto producto, Connection conn) throws SQLException {
+        String sql = "INSERT INTO Producto (idProducto, nombre, valor) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, producto.getIdProducto());
             ps.setString(2, producto.getNombre());
             ps.setFloat(3, producto.getValor());
-            if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar producto");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closePsAndCommit(conn, ps);
-        }
-        return 0;
-    }
-
-    private int insertFactura_Producto(Factura_Producto factura_producto, Connection conn) throws Exception {
-
-        String insert = "INSERT INTO Factura_Producto (idFactura, idProducto, cantidad) VALUES (?, ?, ?)";
-        PreparedStatement ps = null;
-        try {
-            ps = conn.prepareStatement(insert);
-            ps.setInt(1,factura_producto.getIdFactura());
-            ps.setInt(2, factura_producto.getIdProducto());
-            ps.setInt(3, factura_producto.getCantidad());
-            if (ps.executeUpdate() == 0) {
-                throw new Exception("No se pudo insertar factura_producto");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closePsAndCommit(conn, ps);
-        }
-        return 0;
-    }
-
-    private void closePsAndCommit(Connection conn, PreparedStatement ps) {
-        if (conn != null){
-            try {
-                ps.close();
-                conn.commit();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            ps.executeUpdate();
         }
     }
 
+    private void insertFactura_Producto(Factura_Producto fp, Connection conn) throws SQLException {
+        String sql =
+                "INSERT INTO Factura_Producto (idFactura, idProducto, cantidad) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, fp.getIdFactura());
+            ps.setInt(2, fp.getIdProducto());
+            ps.setInt(3, fp.getCantidad());
+            ps.executeUpdate();
+        }
+    }
 
 }
