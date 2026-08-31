@@ -1,6 +1,7 @@
 package repositories;
 
 import dao.Factura_ProductoDAO;
+import dto.ClienteDTO;
 import dto.ProductoDTO;
 import entities.Factura;
 import entities.Factura_Producto;
@@ -45,6 +46,43 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
             throw new RuntimeException(e);
         }
         return bestProduct;
+    }
+
+    @Override
+    public List<ClienteDTO> getClientesByFacturacion() {
+        String query =
+                "SELECT c.idCliente, c.nombre, c.email, " +
+                        "SUM(fp.cantidad * p.valor) AS facturado " +
+                        "FROM Cliente c " +
+                        "JOIN Factura f ON f.idCliente = c.idCliente " +
+                        "JOIN Factura_Producto fp ON fp.idFactura = f.idFactura " +
+                        "JOIN Producto p ON p.idProducto = fp.idProducto " +
+                        "GROUP BY c.idCliente, c.nombre, c.email " +
+                        "ORDER BY facturado DESC";
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        List<ClienteDTO> clientes = new ArrayList<>();
+
+        try{
+            ps = cn.prepareStatement(query);
+            rs = ps.executeQuery();
+
+            while(rs.next()){
+                int idCliente = rs.getInt("idCliente");
+                String nombre = rs.getString("nombre");
+                String email = rs.getString("email");
+                float facturado = rs.getFloat("facturado");
+
+                ClienteDTO cliente = new ClienteDTO(idCliente, nombre, email, facturado);
+                clientes.add(cliente);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return clientes;
     }
 
     @Override
@@ -187,6 +225,5 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
         fp.setCantidad(rs.getInt("cantidad"));
         return fp;
     }
-
 
 }

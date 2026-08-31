@@ -1,5 +1,6 @@
 package dao;
 
+import dto.ClienteDTO;
 import dto.ProductoDTO;
 import entities.Factura_Producto;
 
@@ -18,6 +19,7 @@ public interface Factura_ProductoDAO {
     void updateIdProducto(int idFactura, int oldIdProducto, int nuevoIdProducto);
     void delete(int idFactura, int idProduct);
     ProductoDTO getBestProduct();
+    List<ClienteDTO> getClientesByFacturacion();
 
     void deleteAll();
 

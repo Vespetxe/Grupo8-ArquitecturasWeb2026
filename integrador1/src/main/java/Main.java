@@ -1,4 +1,5 @@
 import dao.Factura_ProductoDAO;
+import dto.ClienteDTO;
 import dto.ProductoDTO;
 import entities.Factura_Producto;
 import entities.Producto;
@@ -7,6 +8,7 @@ import repositories.Factura_ProductoMySQLDAO;
 import utils.HelperMySQL;
 
 import java.sql.SQLException;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -22,6 +24,9 @@ public class Main {
 
         ProductoDTO productoDTO = facturaProducto.getBestProduct();
         System.out.println("Producto que mas recaudo: " + productoDTO);
+
+        List<ClienteDTO> clienteDTO = facturaProducto.getClientesByFacturacion();
+        System.out.println("Listado de Clientes que mas recaudaron: " + clienteDTO);
 
     }
 }
