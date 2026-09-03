@@ -62,7 +62,8 @@ public class Factura_ProductoMySQLDAO implements Factura_ProductoDAO {
                         "JOIN Factura_Producto fp ON fp.idFactura = f.idFactura " +
                         "JOIN Producto p ON p.idProducto = fp.idProducto " +
                         "GROUP BY c.idCliente, c.nombre, c.email " +
-                        "ORDER BY facturado DESC";
+                        "ORDER BY facturado DESC " +
+                        "LIMIT 3";
 
         PreparedStatement ps = null;
         ResultSet rs = null;
