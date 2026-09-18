@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 public class Estudiante {
 
     @Id
-    private int DNI;
+    private Integer DNI;
 
     @Column
     private String nombre;
@@ -17,7 +17,7 @@ public class Estudiante {
     private String apellido;
 
     @Column
-    private int edad;
+    private Integer edad;
 
     @Column
     private String genero;
@@ -26,15 +26,19 @@ public class Estudiante {
     private String ciudad;
 
     @Column(name="LU")
-    private int libreta_estudiantil;
+    private Integer libreta_estudiantil;
 
-    public Estudiante(int libreta_estudiantil, String ciudad, String genero, int edad, String apellido, String nombre, int DNI) {
-        this.libreta_estudiantil = libreta_estudiantil;
-        this.ciudad = ciudad;
-        this.genero = genero;
-        this.edad = edad;
-        this.apellido = apellido;
+    public Estudiante(Integer DNI, String nombre, String apellido, Integer edad, String genero, String ciudad, Integer libreta_estudiantil) {
+        this.DNI = DNI;
         this.nombre = nombre;
+        this.apellido = apellido;
+        this.edad = edad;
+        this.genero = genero;
+        this.ciudad = ciudad;
+        this.libreta_estudiantil = libreta_estudiantil;
+    }
+
+    public Estudiante(Integer DNI) {
         this.DNI = DNI;
     }
 
