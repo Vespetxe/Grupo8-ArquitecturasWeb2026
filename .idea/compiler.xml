@@ -9,5 +9,8 @@
         <module name="integrador2" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="integrador1" target="20" />
+    </bytecodeTargetLevel>
   </component>
 </project>
