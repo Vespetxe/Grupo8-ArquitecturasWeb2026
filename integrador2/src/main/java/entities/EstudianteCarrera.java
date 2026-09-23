@@ -1,97 +1,101 @@
 package entities;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.JoinColumn;
+import java.time.LocalDate;
+import java.time.Period;
+import jakarta.persistence.Transient;
 
 @Entity
 public class EstudianteCarrera {
 
-    @Id
-    private int id;
+    @EmbeddedId
+    private EstudianteCarreraPK id;
 
     @ManyToOne
-    private int dni_estudiante;
+    @MapsId("dni_estudiante")
+    @JoinColumn(name = "dni_estudiante")
+    private Estudiante estudiante;
 
     @ManyToOne
-    private int id_carrera;
+    @MapsId("id_carrera")
+    @JoinColumn(name = "id_carrera")
+    private Carrera carrera;
 
     @Column
-    private int inscripcion;
+    private LocalDate inscripcion;
 
     @Column
-    private int graduacion;
+    private LocalDate graduacion;
 
-    @Column
-    private int antiguedad;
-
-    public EstudianteCarrera(int antiguedad, int graduacion, int inscripcion, int id_carrera, int dni_estudiante, int id) {
-        this.antiguedad = antiguedad;
-        this.graduacion = graduacion;
+    public EstudianteCarrera(Estudiante estudiante, Carrera carrera, LocalDate inscripcion, LocalDate graduacion) {
+        this.estudiante = estudiante;
+        this.carrera = carrera;
         this.inscripcion = inscripcion;
-        this.id_carrera = id_carrera;
-        this.dni_estudiante = dni_estudiante;
-        this.id = id;
+        this.graduacion = graduacion;
+        this.id = new EstudianteCarreraPK(estudiante.getDNI(), carrera.getId_carrera());
     }
 
     public EstudianteCarrera() {
-
     }
 
-    public int getAntiguedad() {
-        return antiguedad;
+    public EstudianteCarreraPK getId() {
+        return id;
     }
 
-    public void setAntiguedad(int antiguedad) {
-        this.antiguedad = antiguedad;
+    public Estudiante getEstudiante() {
+        return estudiante;
     }
 
-    public int getGraduacion() {
-        return graduacion;
+    public void setEstudiante(Estudiante estudiante) {
+        this.estudiante = estudiante;
     }
 
-    public void setGraduacion(int graduacion) {
-        this.graduacion = graduacion;
+    public Carrera getCarrera() {
+        return carrera;
     }
 
-    public int getInscripcion() {
+    public void setCarrera(Carrera carrera) {
+        this.carrera = carrera;
+    }
+
+    public LocalDate getInscripcion() {
         return inscripcion;
     }
 
-    public void setInscripcion(int inscripcion) {
+    public void setInscripcion(LocalDate inscripcion) {
         this.inscripcion = inscripcion;
     }
 
-    public int getId_carrera() {
-        return id_carrera;
+    public LocalDate getGraduacion() {
+        return graduacion;
     }
 
-    public void setId_carrera(int id_carrera) {
-        this.id_carrera = id_carrera;
+    public void setGraduacion(LocalDate graduacion) {
+        this.graduacion = graduacion;
     }
 
-    public int getDni_estudiante() {
-        return dni_estudiante;
-    }
-
-    public void setDni_estudiante(int dni_estudiante) {
-        this.dni_estudiante = dni_estudiante;
-    }
-
-    public int getId() {
-        return id;
+    @Transient
+    public Period getAntiguedad() {
+        if (inscripcion == null) return null;
+        LocalDate fin = (graduacion != null) ? graduacion : LocalDate.now();
+        return Period.between(inscripcion, fin);
     }
 
     @Override
     public String toString() {
         return "EstudianteCarrera{" +
                 "id=" + id +
-                ", dni_estudiante=" + dni_estudiante +
-                ", id_carrera=" + id_carrera +
+                ", estudiante=" + estudiante +
+                ", carrera=" + carrera +
                 ", inscripcion=" + inscripcion +
                 ", graduacion=" + graduacion +
-                ", antiguedad=" + antiguedad +
+                ", antiguedad=" + getAntiguedad() +
                 '}';
     }
+
 }

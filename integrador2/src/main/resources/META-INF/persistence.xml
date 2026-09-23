@@ -4,13 +4,16 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
     <persistence-unit name="tp-integrador2">
+    <persistence-unit name="integrador2DB">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <properties>
             <!-- Propiedades de configuracion de JPA para MySQL / -->
             <property name="javax.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver" />
             <property name="javax.persistence.jdbc.url"    value="jdbc:mysql://localhost:3306/tp-integrador2?createDatabaseIfNotExist=true" />
+            <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3308/integrador2?createDatabaseIfNotExist=true" />
             <property name="javax.persistence.jdbc.user" value="root" />
             <property name="javax.persistence.jdbc.password" value="8790" />
+            <property name="javax.persistence.jdbc.password" value="123" />
 
             <!-- Propiedad para la generacion automatica del esquema de base de datos -->
             <property name="hibernate.hbm2ddl.auto" value="create-drop" />

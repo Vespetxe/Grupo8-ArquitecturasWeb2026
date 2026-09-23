@@ -10,6 +10,7 @@ public class JPAUtil {
 
     static {
         emf = Persistence.createEntityManagerFactory("tp-integrador2");
+        emf = Persistence.createEntityManagerFactory("integrador2DB");
     }
 
     public static EntityManager getEntityManager() {
