@@ -8,6 +8,7 @@ import jakarta.persistence.EntityManager;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
 public class EstudianteRepositoryImpl implements EstudianteRepository {
@@ -73,5 +74,25 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
 
         em.getTransaction().commit();
         em.close();
+    }
+
+    @Override
+    public List<Estudiante> findEstudiantesByCarreraAndCiudad(int idCarrera, String ciudad) {
+
+        EntityManager em = JPAUtil.getEntityManager();
+
+        List<Estudiante> estudiantes = em.createQuery(
+                "SELECT e FROM EstudianteCarrera ec " +
+                        "JOIN ec.estudiante e " +
+                        "JOIN ec.carrera c " +
+                        "WHERE c.id_carrera = :idCarrera AND e.ciudad = :ciudad",
+                Estudiante.class
+        )
+                .setParameter("idCarrera", idCarrera)
+                .setParameter("ciudad", ciudad)
+                .getResultList();
+
+        em.close();
+        return estudiantes;
     }
 }
