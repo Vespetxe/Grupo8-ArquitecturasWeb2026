@@ -1,15 +1,60 @@
 package repository;
 
+import com.opencsv.CSVReader;
 import dto.CarreraDTO;
 import entities.Carrera;
 import factory.JPAUtil;
 import jakarta.persistence.EntityManager;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CarreraRepositoryImpl implements CarreraRepository {
+    @Override
+    public void populateTable(String nombreArchivo) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        try {
+            InputStream input = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream(nombreArchivo);
+
+            if (input == null) {
+                throw new FileNotFoundException(
+                        "No se encontró el recurso: " + nombreArchivo
+                );
+            }
+
+            try (CSVReader reader = new CSVReader(new InputStreamReader(input))) {
+
+                String[] linea;
+                reader.readNext();
+
+                em.getTransaction().begin();
+
+                while ((linea = reader.readNext()) != null) {
+                    Carrera  carrera = new Carrera();
+
+                    carrera.setId_carrera(Integer.parseInt(linea[0]));
+                    carrera.setNombre_carrera(linea[1]);
+                    carrera.setDuracion_carrera(Integer.parseInt(linea[2]));
+
+                    em.persist(carrera);
+                }
+
+                em.getTransaction().commit();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+    }
 
     @Override
     public List<CarreraDTO> findCarrerasConMasIncriptos() {

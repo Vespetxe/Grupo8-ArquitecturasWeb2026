@@ -25,4 +25,11 @@ public class CarreraDTO {
     public int getCantidad_inscriptos() {
         return cantidad_inscriptos;
     }
+
+    @Override
+    public String toString() {
+        return  "idCarrera: " + idCarrera +
+                ", nombre_carrera: '" + nombre_carrera + '\'' +
+                ", cantidad_inscriptos: " + cantidad_inscriptos;
+    }
 }

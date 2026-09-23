@@ -40,6 +40,10 @@ public class Carrera {
         this.nombre_carrera = nombre_carrera;
     }
 
+    public void setId_carrera(int id_carrera) {
+        this.id_carrera = id_carrera;
+    }
+
     public int getId_carrera() {
         return id_carrera;
     }
