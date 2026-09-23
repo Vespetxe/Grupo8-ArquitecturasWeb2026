@@ -12,11 +12,6 @@ import java.util.List;
 public class CarreraRepositoryImpl implements CarreraRepository {
 
     @Override
-    public void insertCarrera(int id_carrera, String nombre_carrera, int duracion_carrera) {
-        //TODO:
-    }
-
-    @Override
     public List<CarreraDTO> findCarrerasConMasIncriptos() {
         EntityManager em = JPAUtil.getEntityManager();
         List<CarreraDTO> carreras = new ArrayList<>();
