@@ -66,7 +66,7 @@ public class CarreraRepositoryImpl implements CarreraRepository {
                    "FROM Carrera c " +
                    "INNER JOIN EstudianteCarrera ec ON c.id_carrera = ec.id_carrera " +
                    "GROUP BY c.id_carrera, c.nombre_carrera " +
-                   "ORDER BY cantidad_inscriptos DESC;",  CarreraDTO.class).getResultList();
+                   "ORDER BY cantidad_inscriptos DESC",  CarreraDTO.class).getResultList();
         }catch (Exception e){
             System.out.println("Error al ejecutar la consulta: " + e.getMessage());
         }
