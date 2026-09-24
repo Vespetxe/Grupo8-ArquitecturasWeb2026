@@ -12,6 +12,8 @@ public interface EstudianteRepository {
 
     List<Estudiante> obtenerEstudiantesOrdenados();
 
+    public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(int idCarrera, String ciudad);
+
     Estudiante obtenerEstudiantePorDNI (Integer dni);
 
     Estudiante obtenerEstudiantePorLU (Integer libreta_estudiantil);
