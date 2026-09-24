@@ -7,9 +7,9 @@ public class Main {
         CarreraRepositoryImpl carreraRepository = new CarreraRepositoryImpl();
         EstudianteRepositoryImpl estudianteRepository = new EstudianteRepositoryImpl();
 
-        carreraRepository.populateTable("carreras.csv");
+        carreraRepository.insertarDesdeCSV("carreras.csv");
 
-        for(CarreraDTO carrera : carreraRepository.findCarrerasConMasIncriptos()) {
+        for(CarreraDTO carrera : carreraRepository.obtenerCarrerasConMasIncriptos()) {
             System.out.println(carrera.toString());
         }
     }

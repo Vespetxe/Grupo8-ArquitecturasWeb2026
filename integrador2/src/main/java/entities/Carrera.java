@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 public class Carrera {
 
     @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
     private int id_carrera;
 
     @Column(name="carrera")

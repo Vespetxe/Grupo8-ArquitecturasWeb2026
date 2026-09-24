@@ -8,7 +8,13 @@ public interface EstudianteRepository {
 
     void insertarDesdeCSV(String rutaArchivo);
 
-    void saveEstudiante(Estudiante estudiante);
+    void guardarEstudiante(Estudiante estudiante);
 
-    List<Estudiante> obtenerTodosOrdenados();
+    List<Estudiante> obtenerEstudiantesOrdenados();
+
+    Estudiante obtenerEstudiantePorDNI (Integer dni);
+
+    Estudiante obtenerEstudiantePorLU (Integer libreta_estudiantil);
+
+    List<Estudiante> obtenerEstudiantesPorGenero(String genero);
 }

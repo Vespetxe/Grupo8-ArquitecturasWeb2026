@@ -62,7 +62,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
     }
 
     @Override
-    public void saveEstudiante(Estudiante estudiante) {
+    public void guardarEstudiante(Estudiante estudiante) {
         EntityManager em = JPAUtil.getEntityManager();
         em.getTransaction().begin();
 
@@ -77,7 +77,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
     }
 
     @Override
-    public List<Estudiante> obtenerTodosOrdenados() {
+    public List<Estudiante> obtenerEstudiantesOrdenados() {
         EntityManager em = JPAUtil.getEntityManager();
 
         try {
@@ -91,5 +91,41 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         } finally {
             em.close();
         }
+    }
+
+    @Override
+    public Estudiante obtenerEstudiantePorDNI (Integer dni) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        Estudiante estudiante = em.createQuery(
+                "SELECT e FROM Estudiante e WHERE e.DNI = :dni",
+                Estudiante.class).setParameter("dni", dni).getSingleResult();
+
+        em.close();
+        return estudiante;
+    }
+
+    @Override
+    public Estudiante obtenerEstudiantePorLU (Integer libreta_estudiantil) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        Estudiante estudiante = em.createQuery(
+                "SELECT e FROM Estudiante e WHERE e.libreta_estudiantil = :libreta_estudiantil",
+                Estudiante.class).setParameter("libreta_estudiantil", libreta_estudiantil).getSingleResult();
+
+        em.close();
+        return estudiante;
+    }
+
+    @Override
+    public List<Estudiante> obtenerEstudiantesPorGenero(String genero) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        List<Estudiante> estudiantes = em.createQuery(
+                "SELECT e FROM Estudiante e WHERE e.genero = :genero",
+                Estudiante.class).setParameter("genero", genero).getResultList();
+
+        em.close();
+        return estudiantes;
     }
 }

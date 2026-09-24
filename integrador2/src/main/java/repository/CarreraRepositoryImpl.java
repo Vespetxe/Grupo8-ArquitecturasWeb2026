@@ -3,6 +3,7 @@ package repository;
 import com.opencsv.CSVReader;
 import dto.CarreraDTO;
 import entities.Carrera;
+import entities.Estudiante;
 import factory.JPAUtil;
 import jakarta.persistence.EntityManager;
 
@@ -15,7 +16,7 @@ import java.util.List;
 
 public class CarreraRepositoryImpl implements CarreraRepository {
     @Override
-    public void populateTable(String nombreArchivo) {
+    public void insertarDesdeCSV(String nombreArchivo) {
         EntityManager em = JPAUtil.getEntityManager();
 
         try {
@@ -57,7 +58,7 @@ public class CarreraRepositoryImpl implements CarreraRepository {
     }
 
     @Override
-    public List<CarreraDTO> findCarrerasConMasIncriptos() {
+    public List<CarreraDTO> obtenerCarrerasConMasIncriptos() {
         EntityManager em = JPAUtil.getEntityManager();
         List<CarreraDTO> carreras = new ArrayList<>();
 
@@ -71,5 +72,17 @@ public class CarreraRepositoryImpl implements CarreraRepository {
             System.out.println("Error al ejecutar la consulta: " + e.getMessage());
         }
         return carreras;
+    }
+
+    @Override
+    public Carrera obtenerCarreraPorId (Integer id_carrera) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        Carrera carrera = em.createQuery(
+                "SELECT c FROM Carrera c WHERE c.id_carrera = :id_carrera",
+                Carrera.class).setParameter("id_carrera", id_carrera).getSingleResult();
+
+        em.close();
+        return carrera;
     }
 }
