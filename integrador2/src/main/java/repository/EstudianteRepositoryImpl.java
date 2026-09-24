@@ -61,6 +61,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         }
     }
 
+    // Resolucion ejercicio G
     @Override
     public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(int idCarrera, String ciudad) {
 
@@ -81,6 +82,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         return estudiantes;
     }
 
+    // Resolucion ejercicio A
     @Override
     public void guardarEstudiante(Estudiante estudiante) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -96,6 +98,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         em.close();
     }
 
+    // Resolucion ejercicio C
     @Override
     public List<Estudiante> obtenerEstudiantesOrdenados() {
         EntityManager em = JPAUtil.getEntityManager();
@@ -113,18 +116,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         }
     }
 
-    @Override
-    public Estudiante obtenerEstudiantePorDNI (Integer dni) {
-        EntityManager em = JPAUtil.getEntityManager();
-
-        Estudiante estudiante = em.createQuery(
-                "SELECT e FROM Estudiante e WHERE e.DNI = :dni",
-                Estudiante.class).setParameter("dni", dni).getSingleResult();
-
-        em.close();
-        return estudiante;
-    }
-
+    // Resolucion ejercicio D
     @Override
     public Estudiante obtenerEstudiantePorLU (Integer libreta_estudiantil) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -137,6 +129,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         return estudiante;
     }
 
+    // Resolucion ejercicio E
     @Override
     public List<Estudiante> obtenerEstudiantesPorGenero(String genero) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -147,5 +140,17 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
 
         em.close();
         return estudiantes;
+    }
+
+    @Override
+    public Estudiante obtenerEstudiantePorDNI (Integer dni) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        Estudiante estudiante = em.createQuery(
+                "SELECT e FROM Estudiante e WHERE e.DNI = :dni",
+                Estudiante.class).setParameter("dni", dni).getSingleResult();
+
+        em.close();
+        return estudiante;
     }
 }
