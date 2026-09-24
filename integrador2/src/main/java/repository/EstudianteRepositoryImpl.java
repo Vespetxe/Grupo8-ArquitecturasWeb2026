@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import entities.Estudiante;
 import factory.JPAUtil;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -73,5 +74,22 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
 
         em.getTransaction().commit();
         em.close();
+    }
+
+    @Override
+    public List<Estudiante> obtenerTodosOrdenados() {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        try {
+            TypedQuery<Estudiante> query = em.createQuery(
+                    "SELECT e FROM Estudiante e ORDER BY e.apellido, e.nombre",
+                    Estudiante.class
+            );
+
+            return query.getResultList();
+
+        } finally {
+            em.close();
+        }
     }
 }
