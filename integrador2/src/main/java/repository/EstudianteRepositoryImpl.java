@@ -4,11 +4,11 @@ import com.opencsv.CSVReader;
 import entities.Estudiante;
 import factory.JPAUtil;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
 
 public class EstudianteRepositoryImpl implements EstudianteRepository {
@@ -94,5 +94,22 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
 
         em.close();
         return estudiantes;
+    }
+
+    @Override
+    public List<Estudiante> obtenerTodosOrdenados() {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        try {
+            TypedQuery<Estudiante> query = em.createQuery(
+                    "SELECT e FROM Estudiante e ORDER BY e.apellido, e.nombre",
+                    Estudiante.class
+            );
+
+            return query.getResultList();
+
+        } finally {
+            em.close();
+        }
     }
 }

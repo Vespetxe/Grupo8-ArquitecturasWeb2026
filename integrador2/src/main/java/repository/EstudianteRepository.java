@@ -11,4 +11,6 @@ public interface EstudianteRepository {
     void saveEstudiante(Estudiante estudiante);
 
     List<Estudiante> findEstudiantesByCarreraAndCiudad(int idCarrera, String ciudad);
+
+    List<Estudiante> obtenerTodosOrdenados();
 }
