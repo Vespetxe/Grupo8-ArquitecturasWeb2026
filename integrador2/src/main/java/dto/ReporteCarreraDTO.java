@@ -56,7 +56,7 @@ public class ReporteCarreraDTO {
     @Override
     public String toString() {
         return "ReporteCarreraDTO{" +
-                "carrera=" + carrera +
+                "carrera=" + carrera.getNombre_carrera() +
                 ", anio=" + anio +
                 ", estudiantesInscriptos=" + estudiantesInscriptos +
                 ", estudiantesGraduados=" + estudiantesGraduados +

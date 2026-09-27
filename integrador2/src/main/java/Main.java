@@ -1,5 +1,7 @@
 import dto.CarreraDTO;
+import dto.ReporteCarreraDTO;
 import entities.Estudiante;
+import entities.EstudianteCarrera;
 import repository.CarreraRepositoryImpl;
 import repository.EstudianteCarreraRepositoryImpl;
 import repository.EstudianteRepositoryImpl;
@@ -30,7 +32,10 @@ public class Main {
         System.out.println("Ejercicio 2.B:");
         System.out.println("\n");
 
-
+        estudianteCarreraRepository.matricularEstudiante(54896347, 1);
+        for (EstudianteCarrera ec : estudianteCarreraRepository.obtenerEstudianteCarreraPorEstudiante(54896347)) {
+            System.out.println(ec);
+        }
 
         System.out.println("\n");
         System.out.println("|||||||||||||||||||||||||||||||||||||||");
@@ -99,5 +104,8 @@ public class Main {
         System.out.println("Ejercicio 3:");
         System.out.println("\n");
 
+        for (ReporteCarreraDTO rc : estudianteCarreraRepository.getReporteCarreras()) {
+            System.out.println(rc);
+        }
     }
 }
