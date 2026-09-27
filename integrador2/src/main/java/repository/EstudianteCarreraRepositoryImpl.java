@@ -1,6 +1,7 @@
 package repository;
 
 import com.opencsv.CSVReader;
+import dto.ReporteCarreraDTO;
 import entities.Carrera;
 import entities.Estudiante;
 import entities.EstudianteCarrera;
@@ -11,6 +12,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraRepository {
 
@@ -86,4 +89,73 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
             em.close();
         }
     }
+
+    @Override
+    public List<ReporteCarreraDTO> getReporteCarreras() {
+
+        EntityManager em = JPAUtil.getEntityManager();
+
+        List<ReporteCarreraDTO> reporte = new ArrayList<>();
+
+        LocalDate fechaInicio = em
+                .createQuery(
+                        "SELECT MIN(ec.inscripcion) FROM EstudianteCarrera ec",
+                        LocalDate.class
+                )
+                .getSingleResult();
+
+        int anioInicio = fechaInicio.getYear();
+        int anioFin = LocalDate.now().getYear();
+
+        List<Carrera> carreras = em.createQuery(
+                "SELECT c FROM Carrera c ORDER BY c.nombre_carrera",
+                Carrera.class
+        ).getResultList();
+
+        for(Carrera carrera : carreras) {
+
+            for(int anio = anioInicio; anio <= anioFin; anio++) {
+
+                List<Estudiante> inscriptos = em.createQuery(
+                                "SELECT ec.estudiante " +
+                                        "FROM EstudianteCarrera ec " +
+                                        "WHERE ec.carrera = :carrera " +
+                                        "AND YEAR(ec.inscripcion) = :anio",
+                                Estudiante.class
+                        )
+                        .setParameter("carrera", carrera)
+                        .setParameter("anio", anio)
+                        .getResultList();
+
+
+                List<Estudiante> graduados = em.createQuery(
+                                "SELECT ec.estudiante " +
+                                        "FROM EstudianteCarrera ec " +
+                                        "WHERE ec.carrera = :carrera " +
+                                        "AND YEAR(ec.graduacion) = :anio",
+                                Estudiante.class
+                        )
+                        .setParameter("carrera", carrera)
+                        .setParameter("anio", anio)
+                        .getResultList();
+
+
+                ReporteCarreraDTO dto =
+                        new ReporteCarreraDTO(
+                                carrera,
+                                anio,
+                                inscriptos,
+                                graduados
+                        );
+
+                reporte.add(dto);
+
+            }
+        }
+
+        em.close();
+
+        return reporte;
+    }
+
 }
