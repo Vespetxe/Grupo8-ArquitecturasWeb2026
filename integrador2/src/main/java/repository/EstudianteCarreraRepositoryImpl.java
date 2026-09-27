@@ -25,8 +25,7 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
 
             if (input == null) {
                 throw new FileNotFoundException(
-                        "No se encontró el recurso: " + nombreArchivo
-                );
+                        "No se encontró el recurso: " + nombreArchivo);
             }
 
             try (CSVReader reader = new CSVReader(new InputStreamReader(input))) {
@@ -43,13 +42,43 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
                     CarreraRepositoryImpl cr = new CarreraRepositoryImpl();
                     Carrera carrera = cr.obtenerCarreraPorId(Integer.parseInt(linea[1]));
 
-                    EstudianteCarrera estudianteCarrera = new EstudianteCarrera(estudiante, carrera, LocalDate.parse(linea[2]), LocalDate.parse(linea[3]));
+                    EstudianteCarrera estudianteCarrera = new EstudianteCarrera(estudiante, carrera,
+                            LocalDate.parse(linea[2]), LocalDate.parse(linea[3]));
 
                     em.persist(estudianteCarrera);
                 }
 
                 em.getTransaction().commit();
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public void matricularEstudiante(String dni, int idCarrera) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        try {
+            em.getTransaction().begin();
+
+            Estudiante estudiante = em.find(Estudiante.class, dni);
+
+            Carrera carrera = em.find(Carrera.class, idCarrera);
+
+            EstudianteCarrera estudianteCarrera = new EstudianteCarrera();
+
+            estudianteCarrera.setEstudiante(estudiante);
+            estudianteCarrera.setCarrera(carrera);
+
+            estudianteCarrera.setInscripcion(LocalDate.now());
+
+            em.persist(estudianteCarrera);
+
+            em.getTransaction().commit();
 
         } catch (Exception e) {
             e.printStackTrace();
