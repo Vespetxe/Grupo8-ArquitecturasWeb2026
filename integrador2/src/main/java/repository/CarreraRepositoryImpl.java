@@ -36,9 +36,8 @@ public class CarreraRepositoryImpl implements CarreraRepository {
                 em.getTransaction().begin();
 
                 while ((linea = reader.readNext()) != null) {
-                    Carrera  carrera = new Carrera();
+                    Carrera carrera = new Carrera(Integer.parseInt(linea[0]));
 
-                    carrera.setId_carrera(Integer.parseInt(linea[0]));
                     carrera.setNombre_carrera(linea[1]);
                     carrera.setDuracion_carrera(Integer.parseInt(linea[2]));
 
@@ -62,11 +61,13 @@ public class CarreraRepositoryImpl implements CarreraRepository {
         List<CarreraDTO> carreras = new ArrayList<>();
 
         try{
-           carreras = em.createQuery("SELECT c.id_carrera, c.nombre_carrera, COUNT(ec.dni_estudiante) AS cantidad_inscriptos " +
-                   "FROM Carrera c " +
-                   "INNER JOIN EstudianteCarrera ec ON c.id_carrera = ec.id_carrera " +
-                   "GROUP BY c.id_carrera, c.nombre_carrera " +
-                   "ORDER BY cantidad_inscriptos DESC",  CarreraDTO.class).getResultList();
+            carreras = em.createQuery(
+                    "SELECT new dto.CarreraDTO(c.id_carrera, c.nombre_carrera, COUNT(ec.estudiante.DNI)) " +
+                            "FROM EstudianteCarrera ec JOIN ec.carrera c " +
+                            "WHERE ec.carrera.id_carrera = c.id_carrera " +
+                            "GROUP BY c.id_carrera, c.nombre_carrera " +
+                            "ORDER BY COUNT(ec.estudiante.DNI) DESC",
+                    CarreraDTO.class).getResultList();
         }catch (Exception e){
             System.out.println("Error al ejecutar la consulta: " + e.getMessage());
         }

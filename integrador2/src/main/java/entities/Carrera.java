@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 public class Carrera {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
     private int id_carrera;
 
     @Column(name="carrera")
@@ -19,6 +18,10 @@ public class Carrera {
         this.id_carrera = id_carrera;
         this.nombre_carrera = nombre_carrera;
         this.duracion_carrera = duracion_carrera;
+    }
+
+    public Carrera(int id_carrera) {
+        this.id_carrera = id_carrera;
     }
 
     public Carrera() {
@@ -39,10 +42,6 @@ public class Carrera {
 
     public void setNombre_carrera(String nombre_carrera) {
         this.nombre_carrera = nombre_carrera;
-    }
-
-    public void setId_carrera(int id_carrera) {
-        this.id_carrera = id_carrera;
     }
 
     public int getId_carrera() {
