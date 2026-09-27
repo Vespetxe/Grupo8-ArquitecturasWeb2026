@@ -3,14 +3,12 @@ package repository;
 import com.opencsv.CSVReader;
 import dto.CarreraDTO;
 import entities.Carrera;
-import entities.Estudiante;
 import factory.JPAUtil;
 import jakarta.persistence.EntityManager;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
