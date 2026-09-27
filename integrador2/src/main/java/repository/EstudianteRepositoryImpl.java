@@ -128,10 +128,12 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         EntityManager em = JPAUtil.getEntityManager();
 
         List<Estudiante> estudiantes = em.createQuery(
-                        "SELECT e FROM EstudianteCarrera ec " +
-                                "JOIN ec.estudiante e " +
+                        "SELECT ec.estudiante " +
+                                "FROM EstudianteCarrera ec " +
                                 "JOIN ec.carrera c " +
-                                "WHERE c.id_carrera = :idCarrera AND e.ciudad = :ciudad",
+                                "JOIN ec.estudiante e " +
+                                "WHERE (ec.carrera.id_carrera = c.id_carrera AND ec.estudiante.DNI = e.DNI)" +
+                                "AND c.id_carrera = :idCarrera AND e.ciudad = :ciudad",
                         Estudiante.class
                 )
                 .setParameter("idCarrera", idCarrera)

@@ -17,7 +17,7 @@ public class Main {
         System.out.println("Ejercicio 2.A:");
         System.out.println("\n");
 
-        Estudiante estudiante2A = new Estudiante(54896347, "Brad", "Musk", 34, "Male", "Samagaltay", 58942);
+        Estudiante estudiante2A = new Estudiante(54896347, "Brad", "Wybrew", 34, "Male", "Samagaltay", 58942);
         estudianteRepository.guardarEstudiante(estudiante2A);
         Estudiante estudiante2A_2 = estudianteRepository.obtenerEstudiantePorDNI(54896347);
         System.out.println(estudiante2A_2);
@@ -87,7 +87,7 @@ public class Main {
         System.out.println("Ejercicio 2.G:");
         System.out.println("\n");
 
-        for (Estudiante e : estudianteRepository.obtenerEstudiantesByCarreraAndCiudad(1, "Albarraque")) {
+        for (Estudiante e : estudianteRepository.obtenerEstudiantesByCarreraAndCiudad(12, "Rym")) {
             System.out.println(e);
         }
 

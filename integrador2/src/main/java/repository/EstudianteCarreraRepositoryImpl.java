@@ -40,10 +40,8 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
 
                 while ((linea = reader.readNext()) != null) {
 
-                    EstudianteRepositoryImpl er = new EstudianteRepositoryImpl();
-                    Estudiante estudiante = er.obtenerEstudiantePorDNI(Integer.parseInt(linea[0]));
-                    CarreraRepositoryImpl cr = new CarreraRepositoryImpl();
-                    Carrera carrera = cr.obtenerCarreraPorId(Integer.parseInt(linea[1]));
+                    Estudiante estudiante = em.find(Estudiante.class, Integer.parseInt(linea[0]));
+                    Carrera carrera = em.find(Carrera.class, Integer.parseInt(linea[1]));
 
                     EstudianteCarrera estudianteCarrera = new EstudianteCarrera(estudiante, carrera,
                             LocalDate.parse(linea[2]), LocalDate.parse(linea[3]));
