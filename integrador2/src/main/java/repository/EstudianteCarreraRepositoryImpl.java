@@ -61,6 +61,7 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
         }
     }
 
+    //Resolucion Ejercicio 2 Inciso B
     @Override
     public void matricularEstudiante(String dni, int idCarrera) {
         EntityManager em = JPAUtil.getEntityManager();
@@ -90,6 +91,7 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
         }
     }
 
+    //Resolucion Ejercicio 3
     @Override
     public List<ReporteCarreraDTO> getReporteCarreras() {
 

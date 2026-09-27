@@ -55,7 +55,7 @@ public class CarreraRepositoryImpl implements CarreraRepository {
         }
     }
 
-    // Resolucion ejercicio F
+    // Resolucion Ejercicio 2 Inciso F
     @Override
     public List<CarreraDTO> obtenerCarrerasConMasIncriptos() {
         EntityManager em = JPAUtil.getEntityManager();
@@ -72,6 +72,7 @@ public class CarreraRepositoryImpl implements CarreraRepository {
         }
         return carreras;
     }
+
 
     @Override
     public Carrera obtenerCarreraPorId (Integer id_carrera) {

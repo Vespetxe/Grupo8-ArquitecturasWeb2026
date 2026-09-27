@@ -61,7 +61,67 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         }
     }
 
-    // Resolucion ejercicio G
+    // Resolucion Ejercicio 2 Inciso A
+    @Override
+    public void guardarEstudiante(Estudiante estudiante) {
+        EntityManager em = JPAUtil.getEntityManager();
+        em.getTransaction().begin();
+
+        if (em.find(Estudiante.class, estudiante.getDNI()) == null) {
+            em.persist(estudiante);
+        } else {
+            em.merge(estudiante);
+        }
+
+        em.getTransaction().commit();
+        em.close();
+    }
+
+    // Resolucion Ejercicio 2 Inciso C
+    @Override
+    public List<Estudiante> obtenerEstudiantesOrdenados() {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        try {
+            TypedQuery<Estudiante> query = em.createQuery(
+                    "SELECT e FROM Estudiante e ORDER BY e.apellido, e.nombre",
+                    Estudiante.class
+            );
+
+            return query.getResultList();
+
+        } finally {
+            em.close();
+        }
+    }
+
+    // Resolucion Ejercicio 2 Inciso D
+    @Override
+    public Estudiante obtenerEstudiantePorLU (Integer libreta_estudiantil) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        Estudiante estudiante = em.createQuery(
+                "SELECT e FROM Estudiante e WHERE e.libreta_estudiantil = :libreta_estudiantil",
+                Estudiante.class).setParameter("libreta_estudiantil", libreta_estudiantil).getSingleResult();
+
+        em.close();
+        return estudiante;
+    }
+
+    // Resolucion Ejercicio 2 Inciso E
+    @Override
+    public List<Estudiante> obtenerEstudiantesPorGenero(String genero) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        List<Estudiante> estudiantes = em.createQuery(
+                "SELECT e FROM Estudiante e WHERE e.genero = :genero",
+                Estudiante.class).setParameter("genero", genero).getResultList();
+
+        em.close();
+        return estudiantes;
+    }
+
+    // Resolucion Ejercicio 2 Inciso G
     @Override
     public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(int idCarrera, String ciudad) {
 
@@ -82,65 +142,6 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
         return estudiantes;
     }
 
-    // Resolucion ejercicio A
-    @Override
-    public void guardarEstudiante(Estudiante estudiante) {
-        EntityManager em = JPAUtil.getEntityManager();
-        em.getTransaction().begin();
-
-        if (em.find(Estudiante.class, estudiante.getDNI()) == null) {
-            em.persist(estudiante);
-        } else {
-            em.merge(estudiante);
-        }
-
-        em.getTransaction().commit();
-        em.close();
-    }
-
-    // Resolucion ejercicio C
-    @Override
-    public List<Estudiante> obtenerEstudiantesOrdenados() {
-        EntityManager em = JPAUtil.getEntityManager();
-
-        try {
-            TypedQuery<Estudiante> query = em.createQuery(
-                    "SELECT e FROM Estudiante e ORDER BY e.apellido, e.nombre",
-                    Estudiante.class
-            );
-
-            return query.getResultList();
-
-        } finally {
-            em.close();
-        }
-    }
-
-    // Resolucion ejercicio D
-    @Override
-    public Estudiante obtenerEstudiantePorLU (Integer libreta_estudiantil) {
-        EntityManager em = JPAUtil.getEntityManager();
-
-        Estudiante estudiante = em.createQuery(
-                "SELECT e FROM Estudiante e WHERE e.libreta_estudiantil = :libreta_estudiantil",
-                Estudiante.class).setParameter("libreta_estudiantil", libreta_estudiantil).getSingleResult();
-
-        em.close();
-        return estudiante;
-    }
-
-    // Resolucion ejercicio E
-    @Override
-    public List<Estudiante> obtenerEstudiantesPorGenero(String genero) {
-        EntityManager em = JPAUtil.getEntityManager();
-
-        List<Estudiante> estudiantes = em.createQuery(
-                "SELECT e FROM Estudiante e WHERE e.genero = :genero",
-                Estudiante.class).setParameter("genero", genero).getResultList();
-
-        em.close();
-        return estudiantes;
-    }
 
     @Override
     public Estudiante obtenerEstudiantePorDNI (Integer dni) {
