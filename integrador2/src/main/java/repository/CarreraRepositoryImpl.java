@@ -75,6 +75,7 @@ public class CarreraRepositoryImpl implements CarreraRepository {
     }
 
 
+    //Metodo Auxiliar para probar el main
     @Override
     public Carrera obtenerCarreraPorId (Integer id_carrera) {
         EntityManager em = JPAUtil.getEntityManager();

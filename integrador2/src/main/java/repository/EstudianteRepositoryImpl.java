@@ -145,6 +145,7 @@ public class EstudianteRepositoryImpl implements EstudianteRepository {
     }
 
 
+    //Metodo Auxiliar para probar el main
     @Override
     public Estudiante obtenerEstudiantePorDNI (Integer dni) {
         EntityManager em = JPAUtil.getEntityManager();

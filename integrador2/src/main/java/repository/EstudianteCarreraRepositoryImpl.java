@@ -84,18 +84,6 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
         }
     }
 
-    @Override
-    public List<EstudianteCarrera> obtenerEstudianteCarreraPorEstudiante(Integer dni) {
-        EntityManager em = JPAUtil.getEntityManager();
-
-        List<EstudianteCarrera> estudianteCarrera = em.createQuery(
-                "SELECT ec FROM EstudianteCarrera ec WHERE ec.estudiante.DNI = :dni",
-                EstudianteCarrera.class).setParameter("dni", dni).getResultList();
-
-        em.close();
-        return estudianteCarrera;
-    }
-
     //Resolucion Ejercicio 3
     @Override
     public List<ReporteCarreraDTO> getReporteCarreras() {
@@ -104,22 +92,24 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
 
         List<ReporteCarreraDTO> reporte = new ArrayList<>();
 
-        LocalDate fechaInicio = em
-                .createQuery(
-                        "SELECT MIN(ec.inscripcion) FROM EstudianteCarrera ec",
-                        LocalDate.class
-                )
-                .getSingleResult();
-
-        int anioInicio = fechaInicio.getYear();
-        int anioFin = LocalDate.now().getYear();
-
         List<Carrera> carreras = em.createQuery(
                 "SELECT c FROM Carrera c ORDER BY c.nombre_carrera",
                 Carrera.class
         ).getResultList();
 
         for(Carrera carrera : carreras) {
+
+            // Calculamos la fecha de Inicio para cada carrera
+            LocalDate fechaInicio = em
+                    .createQuery(
+                            "SELECT MIN(ec.inscripcion) FROM EstudianteCarrera ec WHERE ec.carrera = :carrera",
+                            LocalDate.class
+                    )
+                    .setParameter("carrera", carrera)
+                    .getSingleResult();
+
+            int anioInicio = fechaInicio.getYear();
+            int anioFin = LocalDate.now().getYear();
 
             for(int anio = anioInicio; anio <= anioFin; anio++) {
 
@@ -163,6 +153,20 @@ public class EstudianteCarreraRepositoryImpl implements EstudianteCarreraReposit
         em.close();
 
         return reporte;
+    }
+
+
+    //Metodo Auxiliar para probar el main
+    @Override
+    public List<EstudianteCarrera> obtenerEstudianteCarreraPorEstudiante(Integer dni) {
+        EntityManager em = JPAUtil.getEntityManager();
+
+        List<EstudianteCarrera> estudianteCarrera = em.createQuery(
+                "SELECT ec FROM EstudianteCarrera ec WHERE ec.estudiante.DNI = :dni",
+                EstudianteCarrera.class).setParameter("dni", dni).getResultList();
+
+        em.close();
+        return estudianteCarrera;
     }
 
 }
