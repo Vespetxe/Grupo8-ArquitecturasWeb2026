@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,5 +79,18 @@ public class EstudianteService implements BaseService<Estudiante>{
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
+    }
+
+    @Transactional
+    public List<Estudiante> obtenerEstudiantesPorGenero(String genero) throws Exception {
+        List<Estudiante> estudiantes = new ArrayList<>();
+
+        try {
+            estudiantes = estudianteRepository.obtenerEstudiantesPorGenero(genero);
+        }
+        catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+        return estudiantes;
     }
 }

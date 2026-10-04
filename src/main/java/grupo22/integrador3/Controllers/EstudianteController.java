@@ -67,4 +67,13 @@ public class EstudianteController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
         }
     }
+
+    @GetMapping("/{genero}")
+    public ResponseEntity<?> getByGenero(@PathVariable String genero) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(estudianteService.obtenerEstudiantesPorGenero(genero));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
+        }
+    }
 }
