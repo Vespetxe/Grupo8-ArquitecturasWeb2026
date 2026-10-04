@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 public class Carrera {
 
     @Id
-    private int id_carrera;
+    private Long id_carrera;
 
     @Column(name="carrera")
     private String nombre_carrera;
@@ -15,13 +15,13 @@ public class Carrera {
     @Column(name="duracion")
     private int duracion_carrera;
 
-    public Carrera(int id_carrera, String nombre_carrera, int duracion_carrera) {
+    public Carrera(Long id_carrera, String nombre_carrera, int duracion_carrera) {
         this.id_carrera = id_carrera;
         this.nombre_carrera = nombre_carrera;
         this.duracion_carrera = duracion_carrera;
     }
 
-    public Carrera(int id_carrera) {
+    public Carrera(Long id_carrera) {
         this.id_carrera = id_carrera;
     }
 
@@ -45,7 +45,7 @@ public class Carrera {
         this.nombre_carrera = nombre_carrera;
     }
 
-    public int getId_carrera() {
+    public Long getId_carrera() {
         return id_carrera;
     }
 

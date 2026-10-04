@@ -6,12 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface EstudianteCarreraRepository extends JpaRepository<EstudianteCarrera, Integer> {
-    void insertarDesdeCSV(String rutaArchivo);
+public interface EstudianteCarreraRepository extends JpaRepository<EstudianteCarrera, Long> {
 
-    void matricularEstudiante(Integer DNI, Integer idCarrera);
+    void matricularEstudiante(Long DNI, Long idCarrera);
 
-    public List<EstudianteCarrera> obtenerEstudianteCarreraPorEstudiante(Integer dni);
+    public List<EstudianteCarrera> obtenerEstudianteCarreraPorEstudiante(Long dni);
 
     List<ReporteCarreraDTO> getReporteCarreras();
 }
