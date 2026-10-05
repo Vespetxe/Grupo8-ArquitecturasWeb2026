@@ -1,40 +1,73 @@
 package grupo22.integrador3.Services;
 
 import grupo22.integrador3.Entitites.Carrera;
+import grupo22.integrador3.Entitites.Estudiante;
+import grupo22.integrador3.Repositories.CarreraRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service("CarreraService")
-public class CarreraService implements BaseService<Carrera>{
+public class CarreraService implements BaseService<Carrera, Long>{
+
+    @Autowired
+    private CarreraRepository carreraRepository;
 
     @Override
+    @Transactional
     public List<Carrera> findAll() throws Exception {
-        //TODO:
-        return List.of();
+        return carreraRepository.findAll();
     }
 
     @Override
+    @Transactional
     public Carrera findById(Long id) throws Exception {
-        //TODO:
-        return null;
+        try {
+            Optional<Carrera> carrera = carreraRepository.findById(id);
+            return carrera.get();
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
     }
 
     @Override
+    @Transactional
     public Carrera save(Carrera entity) throws Exception {
-        //TODO:
-        return null;
+        try {
+            return carreraRepository.save(entity);
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
     }
 
     @Override
+    @Transactional
     public Carrera update(Long id, Carrera entity) throws Exception {
-        //TODO:
-        return null;
+        try {
+            Optional<Carrera> carreraOpcional = carreraRepository.findById(id);
+            Carrera carrera = carreraOpcional.get();
+            carrera = carreraRepository.save(carrera);
+            return carrera;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
     }
 
     @Override
+    @Transactional
     public boolean delete(Long id) throws Exception {
-        //TODO:
-        return false;
+        try {
+            if (carreraRepository.existsById(id)) {
+                carreraRepository.deleteById(id);
+                return true;
+            } else {
+                throw new Exception();
+            }
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
     }
 }

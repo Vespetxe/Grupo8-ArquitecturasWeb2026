@@ -2,7 +2,7 @@ package grupo22.integrador3.Services;
 
 import java.util.List;
 
-public interface BaseService<E>{
+public interface BaseService<E, ID>{
 
     /**
      * Servicio encargado de retornar un listado completo de una entidad.
@@ -19,7 +19,7 @@ public interface BaseService<E>{
      * @return Entidad coincidente con id.
      * @throws Exception e
      */
-    public E findById(Long id)throws Exception;
+    public E findById(ID id)throws Exception;
 
     /**
      * Servicio encargado de persistir una entidad ingresada por parámetro.
@@ -36,7 +36,7 @@ public interface BaseService<E>{
      * @return Retorna la entidad actualizada.
      * @throws Exception e
      */
-    public E update(Long id, E entity)throws Exception;
+    public E update(ID id, E entity)throws Exception;
 
     /**
      * Servicio encargado de eliminar una entidad correspondiente al id ingresado por parámetro.
@@ -44,5 +44,5 @@ public interface BaseService<E>{
      * @return True en caso de eliminación exitosa, caso contrario false.
      * @throws Exception e
      */
-    public boolean delete(Long id)throws Exception;
+    public boolean delete(ID id)throws Exception;
 }

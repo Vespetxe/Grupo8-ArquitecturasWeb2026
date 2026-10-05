@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service("EstudianteService")
-public class EstudianteService implements BaseService<Estudiante>{
+public class EstudianteService implements BaseService<Estudiante, Long>{
 
     @Autowired
     private EstudianteRepository estudianteRepository;
