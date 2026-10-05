@@ -9,6 +9,7 @@ import grupo22.integrador3.Services.EstudianteService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 
@@ -20,13 +21,18 @@ import java.time.LocalDate;
 @Component
 public class EstudianteCarreraCSVLoader {
     final EstudianteCarreraRepository estudianteCarreraRepository;
+    final EstudianteService estudianteService;
+    final CarreraService carreraService;
 
-    public EstudianteCarreraCSVLoader(EstudianteCarreraRepository estudianteCarreraRepository) {
+    @Autowired
+    public EstudianteCarreraCSVLoader(EstudianteCarreraRepository estudianteCarreraRepository, EstudianteService estudianteService, CarreraService carreraService) {
         this.estudianteCarreraRepository = estudianteCarreraRepository;
+        this.estudianteService = estudianteService;
+        this.carreraService = carreraService;
     }
 
-    public void load(EstudianteService es, CarreraService cs) throws IOException {
-        File csv = ResourceUtils.getFile("src/main/java/grupo22/integrador3/CSV/carreras.csv");
+    public void load() throws IOException {
+        File csv = ResourceUtils.getFile("src/main/java/grupo22/integrador3/CSV/estudianteCarrera.csv");
 
         try(FileReader fileReader = new FileReader(csv);
             CSVParser csvParser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(fileReader)){
@@ -36,8 +42,8 @@ public class EstudianteCarreraCSVLoader {
                 Carrera carrera = null;
 
                 try{
-                    estudiante = es.findById(Long.parseLong(csvRecord.get("id_estudiante")));
-                    carrera = cs.findById(Long.parseLong(csvRecord.get("id_carrera")));
+                    estudiante = estudianteService.findById(Long.parseLong(csvRecord.get("id_estudiante")));
+                    carrera = carreraService.findById(Long.parseLong(csvRecord.get("id_carrera")));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

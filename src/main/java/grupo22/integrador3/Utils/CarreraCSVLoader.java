@@ -6,6 +6,7 @@ import grupo22.integrador3.Repositories.CarreraRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 
@@ -17,6 +18,7 @@ import java.io.IOException;
 public class CarreraCSVLoader {
     private final CarreraRepository carreraRepository;
 
+    @Autowired
     public CarreraCSVLoader(CarreraRepository carreraRepository) {
         this.carreraRepository = carreraRepository;
     }

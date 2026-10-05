@@ -17,9 +17,5 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     @Query("SELECT e FROM Estudiante e WHERE e.libreta_estudiantil = :libreta_estudiantil")
     public Optional<Estudiante> obtenerEstudiantePorLU(Integer libreta_estudiantil);
-
-    List<Estudiante> obtenerEstudiantesOrdenados();
-
-    public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(Long idCarrera, String ciudad);
 }
 

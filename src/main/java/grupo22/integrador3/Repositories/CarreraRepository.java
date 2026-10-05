@@ -11,7 +11,5 @@ import java.util.List;
 
 @Repository("CarreraRepository")
 public interface CarreraRepository extends JpaRepository<Carrera, Long> {
-    List<CarreraDTO> obtenerCarrerasConMasIncriptos();
 
-    void insertarDesdeCSV(String archivo);
 }
