@@ -12,9 +12,11 @@ import java.util.Optional;
 @Repository("EstudianteRepository")
 public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
+    //Ejercicio 2 Inciso E
     @Query("SELECT e FROM Estudiante e WHERE e.genero = :genero")
     public List<Estudiante> obtenerEstudiantesPorGenero(String genero);
 
+    //Ejercicio 2 Inciso D
     @Query("SELECT e FROM Estudiante e WHERE e.libreta_estudiantil = :libreta_estudiantil")
     public Optional<Estudiante> obtenerEstudiantePorLU(Integer libreta_estudiantil);
 

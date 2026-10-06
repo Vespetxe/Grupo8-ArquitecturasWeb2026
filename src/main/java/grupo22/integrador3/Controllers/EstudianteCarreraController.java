@@ -1,5 +1,6 @@
 package grupo22.integrador3.Controllers;
 
+import grupo22.integrador3.DTO.CarreraInscriptosDTO;
 import grupo22.integrador3.DTO.ReporteCarreraDTO;
 import grupo22.integrador3.Entitites.EstudianteCarrera;
 import grupo22.integrador3.Entitites.EstudianteCarreraPK;
@@ -37,6 +38,7 @@ public class EstudianteCarreraController {
         }
     }
 
+    //Ejercicio 2 Inciso B
     @PostMapping("")
     public ResponseEntity<?> save(@RequestBody EstudianteCarrera estudianteCarrera) {
         try {
@@ -68,7 +70,21 @@ public class EstudianteCarreraController {
 
     // Ejercicio 2 Inciso H
     @GetMapping("/reporte")
-    public List<ReporteCarreraDTO> getReporteCarreras() {
-        return estudianteCarreraService.getReporteCarreras();
+    public ResponseEntity<?> getReporteCarreras() {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(estudianteCarreraService.getReporteCarreras());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
+        }
+    }
+
+    //Ejercicio 2 Insiso F
+    @GetMapping("/inscriptos")
+    public ResponseEntity<?> getInscriptos(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(estudianteCarreraService.getInscriptosPorCarrera());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
+        }
     }
 }

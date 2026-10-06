@@ -87,6 +87,7 @@ public class EstudianteCarreraService implements BaseService<EstudianteCarrera, 
         }
     }
 
+    //Ejercicio 2 Inciso B
     @Override
     @Transactional
     public EstudianteCarrera save(EstudianteCarrera entity) throws Exception {
@@ -125,8 +126,9 @@ public class EstudianteCarreraService implements BaseService<EstudianteCarrera, 
         }
     }
 
+    //Ejercicio 2 Inciso F
     @Transactional
-    public List<CarreraInscriptosDTO> obtenerEstudiantesPorGenero(String genero) throws Exception {
+    public List<CarreraInscriptosDTO> getInscriptosPorCarrera() throws Exception {
         List<CarreraInscriptosDTO> carreras = new ArrayList<>();
 
         try {

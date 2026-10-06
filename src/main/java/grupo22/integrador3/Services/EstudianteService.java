@@ -43,6 +43,7 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
         }
     }
 
+    //Ejercicio 2 Inciso A
     @Override
     @Transactional
     public Estudiante save(Estudiante entity) throws Exception {
@@ -81,6 +82,7 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
         }
     }
 
+    //Ejercicio 2 Inciso D
     @Transactional
     public Estudiante obtenerEstudiantePorLU(Integer libreta_universitaria) throws Exception {
         try {
@@ -91,6 +93,7 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
         }
     }
 
+    //Ejercicio 2 Inciso E
     @Transactional
     public List<Estudiante> obtenerEstudiantesPorGenero(String genero) throws Exception {
         List<Estudiante> estudiantes = new ArrayList<>();

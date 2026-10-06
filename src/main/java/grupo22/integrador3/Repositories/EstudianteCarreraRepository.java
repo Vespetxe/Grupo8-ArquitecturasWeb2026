@@ -18,7 +18,7 @@ import java.util.List;
 @Repository("EstudianteCarreraRepository")
 public interface EstudianteCarreraRepository extends JpaRepository<EstudianteCarrera, EstudianteCarreraPK> {
 
-
+    //Ejercicio 2 Inciso F
     @Query("SELECT new grupo22.integrador3.DTO.CarreraInscriptosDTO(c.id_carrera, c.nombre_carrera, COUNT(ec)) " +
             "FROM EstudianteCarrera ec " +
             "JOIN ec.carrera c " +

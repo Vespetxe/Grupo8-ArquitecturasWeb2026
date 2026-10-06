@@ -33,6 +33,7 @@ public class EstudianteController {
         }
     }
 
+    //Ejercicio 2 Inciso A
     @PostMapping("")
     public ResponseEntity<?> save(@RequestBody Estudiante estudiante) {
         try {
@@ -60,6 +61,7 @@ public class EstudianteController {
         }
     }
 
+    //Ejercicio 2 Inciso D
     @GetMapping("/{lu}")
     public ResponseEntity<?> getByLU(@PathVariable Integer lu) {
         try {
@@ -69,6 +71,7 @@ public class EstudianteController {
         }
     }
 
+    //Ejercicio 2 Inciso E
     @GetMapping("/{genero}")
     public ResponseEntity<?> getByGenero(@PathVariable String genero) {
         try {
