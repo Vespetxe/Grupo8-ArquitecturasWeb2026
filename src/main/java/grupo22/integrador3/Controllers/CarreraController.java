@@ -2,6 +2,7 @@ package grupo22.integrador3.Controllers;
 
 import grupo22.integrador3.Entitites.Carrera;
 import grupo22.integrador3.Services.CarreraService;
+import grupo22.integrador3.Services.EstudianteCarreraService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,16 @@ public class CarreraController {
             return ResponseEntity.status(HttpStatus.OK).body(carreraService.delete(id));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. no se pudo eliminar intente nuevamente.\"}");
+        }
+    }
+
+    //Ejercicio 2 Insiso F
+    @GetMapping("/inscriptos")
+    public ResponseEntity<?> getInscriptos(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(carreraService.getInscriptosPorCarrera());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
         }
     }
 }

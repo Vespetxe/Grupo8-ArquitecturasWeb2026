@@ -1,5 +1,6 @@
 package grupo22.integrador3.Services;
 
+import grupo22.integrador3.DTO.CarreraInscriptosDTO;
 import grupo22.integrador3.Entitites.Carrera;
 import grupo22.integrador3.Entitites.Estudiante;
 import grupo22.integrador3.Repositories.CarreraRepository;
@@ -7,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,5 +71,19 @@ public class CarreraService implements BaseService<Carrera, Long>{
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
+    }
+
+    //Ejercicio 2 Inciso F
+    @Transactional
+    public List<CarreraInscriptosDTO> getInscriptosPorCarrera() throws Exception {
+        List<CarreraInscriptosDTO> carreras = new ArrayList<>();
+
+        try {
+            carreras = carreraRepository.obtenerInscriptosPorCarrera();
+        }
+        catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+        return carreras;
     }
 }

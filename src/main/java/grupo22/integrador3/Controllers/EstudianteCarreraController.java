@@ -78,13 +78,5 @@ public class EstudianteCarreraController {
         }
     }
 
-    //Ejercicio 2 Insiso F
-    @GetMapping("/inscriptos")
-    public ResponseEntity<?> getInscriptos(){
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(estudianteCarreraService.getInscriptosPorCarrera());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
-        }
-    }
+
 }

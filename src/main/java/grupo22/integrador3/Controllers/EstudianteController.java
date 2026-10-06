@@ -62,7 +62,7 @@ public class EstudianteController {
     }
 
     //Ejercicio 2 Inciso D
-    @GetMapping("/{lu}")
+    @GetMapping("/lu/{lu}")
     public ResponseEntity<?> getByLU(@PathVariable Integer lu) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(estudianteService.obtenerEstudiantePorLU(lu));
@@ -72,7 +72,7 @@ public class EstudianteController {
     }
 
     //Ejercicio 2 Inciso E
-    @GetMapping("/{genero}")
+    @GetMapping("/genero/{genero}")
     public ResponseEntity<?> getByGenero(@PathVariable String genero) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(estudianteService.obtenerEstudiantesPorGenero(genero));

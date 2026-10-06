@@ -125,18 +125,4 @@ public class EstudianteCarreraService implements BaseService<EstudianteCarrera, 
             throw new Exception(e.getMessage());
         }
     }
-
-    //Ejercicio 2 Inciso F
-    @Transactional
-    public List<CarreraInscriptosDTO> getInscriptosPorCarrera() throws Exception {
-        List<CarreraInscriptosDTO> carreras = new ArrayList<>();
-
-        try {
-            carreras = estudianteCarreraRepository.obtenerInscriptosPorCarrera();
-        }
-        catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-        return carreras;
-    }
 }
