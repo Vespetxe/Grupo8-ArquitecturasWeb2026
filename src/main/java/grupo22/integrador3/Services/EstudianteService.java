@@ -16,6 +16,16 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
     @Autowired
     private EstudianteRepository estudianteRepository;
 
+    // Ejercicio 2 Inciso G
+    public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(
+            int idCarrera,
+            String ciudad) {
+
+        return estudianteRepository
+                .obtenerEstudiantesByCarreraAndCiudad(idCarrera, ciudad);
+    }
+
+
     @Override
     @Transactional
     public List<Estudiante> findAll() throws Exception {

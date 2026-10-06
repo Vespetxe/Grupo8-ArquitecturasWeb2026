@@ -1,4 +1,36 @@
 package grupo22.integrador3.DTO;
 
 public class CarreraDTO {
+
+    int idCarrera;
+    String nombre_carrera;
+    long cantidad_inscriptos;
+
+    public CarreraDTO() {
+    }
+
+    public CarreraDTO(int idCarrera, String nombre_carrera, long cantidad_inscriptos) {
+        this.idCarrera = idCarrera;
+        this.nombre_carrera = nombre_carrera;
+        this.cantidad_inscriptos = cantidad_inscriptos;
+    }
+
+    public int getIdCarrera() {
+        return idCarrera;
+    }
+
+    public String getNombre_carrera() {
+        return nombre_carrera;
+    }
+
+    public long getCantidad_inscriptos() {
+        return cantidad_inscriptos;
+    }
+
+    @Override
+    public String toString() {
+        return "idCarrera: " + idCarrera +
+                ", nombre_carrera: '" + nombre_carrera + '\'' +
+                ", cantidad_inscriptos: " + cantidad_inscriptos;
+    }
 }

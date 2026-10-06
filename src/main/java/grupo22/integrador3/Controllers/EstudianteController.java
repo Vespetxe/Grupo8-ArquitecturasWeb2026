@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/estudiantes")
@@ -75,5 +76,17 @@ public class EstudianteController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente más tarde.\"}");
         }
+    }
+
+    // Ejercicio 2 Inciso G
+    @GetMapping("/carrera/{idCarrera}/ciudad/{ciudad}")
+    public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(
+            @PathVariable int idCarrera,
+            @PathVariable String ciudad) throws Exception {
+
+        return estudianteService.obtenerEstudiantesByCarreraAndCiudad(
+                idCarrera,
+                ciudad
+        );
     }
 }

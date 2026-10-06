@@ -1,5 +1,6 @@
 package grupo22.integrador3.Controllers;
 
+import grupo22.integrador3.DTO.ReporteCarreraDTO;
 import grupo22.integrador3.Entitites.EstudianteCarrera;
 import grupo22.integrador3.Entitites.EstudianteCarreraPK;
 import grupo22.integrador3.Services.EstudianteCarreraService;
@@ -7,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
 
 @RestController
-@RequestMapping("/estudiantesCarreras")
+@RequestMapping("/estudiante-carrera")
 public class EstudianteCarreraController {
 
     @Autowired
@@ -61,5 +64,11 @@ public class EstudianteCarreraController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. no se pudo eliminar intente nuevamente.\"}");
         }
+    }
+
+    // Ejercicio 2 Inciso H
+    @GetMapping("/reporte")
+    public List<ReporteCarreraDTO> getReporteCarreras() {
+        return estudianteCarreraService.getReporteCarreras();
     }
 }
