@@ -59,8 +59,9 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
     public Estudiante update(Long id, Estudiante entity) throws Exception {
         try {
             Optional<Estudiante> estudianteOpcional = estudianteRepository.findById(id);
+            // Verifica que la carrera exista
             Estudiante estudiante = estudianteOpcional.get();
-            estudiante = estudianteRepository.save(estudiante);
+            estudiante = estudianteRepository.save(entity);
             return estudiante;
         } catch (Exception e) {
             throw new Exception(e.getMessage());

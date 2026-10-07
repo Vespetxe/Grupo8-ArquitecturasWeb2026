@@ -103,8 +103,9 @@ public class EstudianteCarreraService implements BaseService<EstudianteCarrera, 
     public EstudianteCarrera update(EstudianteCarreraPK id, EstudianteCarrera entity) throws Exception {
         try {
             Optional<EstudianteCarrera> estudianteCarreraOpcional = estudianteCarreraRepository.findById(id);
+            // Verifica que la carrera exista
             EstudianteCarrera estudianteCarrera = estudianteCarreraOpcional.get();
-            estudianteCarrera = estudianteCarreraRepository.save(estudianteCarrera);
+            estudianteCarrera = estudianteCarreraRepository.save(entity);
             return estudianteCarrera;
         } catch (Exception e) {
             throw new Exception(e.getMessage());

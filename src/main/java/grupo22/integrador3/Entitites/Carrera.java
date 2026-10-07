@@ -13,9 +13,9 @@ public class Carrera {
     private String nombre_carrera;
 
     @Column(name="duracion")
-    private int duracion_carrera;
+    private Integer duracion_carrera;
 
-    public Carrera(Long id_carrera, String nombre_carrera, int duracion_carrera) {
+    public Carrera(Long id_carrera, String nombre_carrera, Integer duracion_carrera) {
         this.id_carrera = id_carrera;
         this.nombre_carrera = nombre_carrera;
         this.duracion_carrera = duracion_carrera;
@@ -29,11 +29,11 @@ public class Carrera {
 
     }
 
-    public int getDuracion_carrera() {
+    public Integer getDuracion_carrera() {
         return duracion_carrera;
     }
 
-    public void setDuracion_carrera(int duracion_carrera) {
+    public void setDuracion_carrera(Integer duracion_carrera) {
         this.duracion_carrera = duracion_carrera;
     }
 

@@ -46,11 +46,11 @@ public class Estudiante {
 
     }
 
-    public int getLibreta_estudiantil() {
+    public Integer getLibreta_estudiantil() {
         return libreta_estudiantil;
     }
 
-    public void setLibreta_estudiantil(int libreta_estudiantil) {
+    public void setLibreta_estudiantil(Integer libreta_estudiantil) {
         this.libreta_estudiantil = libreta_estudiantil;
     }
 
@@ -70,11 +70,11 @@ public class Estudiante {
         this.genero = genero;
     }
 
-    public int getEdad() {
+    public Integer getEdad() {
         return edad;
     }
 
-    public void setEdad(int edad) {
+    public void setEdad(Integer edad) {
         this.edad = edad;
     }
 

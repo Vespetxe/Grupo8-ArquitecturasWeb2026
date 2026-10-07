@@ -50,8 +50,9 @@ public class CarreraService implements BaseService<Carrera, Long>{
     public Carrera update(Long id, Carrera entity) throws Exception {
         try {
             Optional<Carrera> carreraOpcional = carreraRepository.findById(id);
+            // Verifica que la carrera exista
             Carrera carrera = carreraOpcional.get();
-            carrera = carreraRepository.save(carrera);
+            carrera = carreraRepository.save(entity);
             return carrera;
         } catch (Exception e) {
             throw new Exception(e.getMessage());
