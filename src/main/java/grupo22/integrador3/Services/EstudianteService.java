@@ -5,6 +5,7 @@ import grupo22.integrador3.Repositories.EstudianteRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,27 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
             } else {
                 throw new Exception();
             }
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    //Ejercicio 2 Inciso C
+    @Transactional
+    public List<Estudiante> obtenerTodosOrdenados(String campo, String direccion) throws Exception {
+        List<String> camposPermitidos = List.of(
+                "DNI", "nombre", "apellido", "edad", "genero", "ciudad", "libreta_estudiantil");
+
+        if (!camposPermitidos.contains(campo)) {
+            campo = "apellido";
+        }
+
+        Sort sort = "desc".equalsIgnoreCase(direccion)
+                ? Sort.by(campo).descending()
+                : Sort.by(campo).ascending();
+
+        try {
+            return estudianteRepository.findAll(sort);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
