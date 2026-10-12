@@ -38,16 +38,6 @@ public class EstudianteCarreraController {
         }
     }
 
-    //Ejercicio 2 Inciso B
-    @PostMapping("")
-    public ResponseEntity<?> save(@RequestBody EstudianteCarrera estudianteCarrera) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(estudianteCarreraService.save(estudianteCarrera));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. No se pudo ingresar, revise los campos e intente nuevamente.\"}");
-        }
-    }
-
     @PutMapping("/{dni}/{id_carrera}")
     public ResponseEntity<?> update(@PathVariable Long dni, @PathVariable Long id_carrera, @RequestBody EstudianteCarrera estudianteCarrera) {
         try {
@@ -65,6 +55,16 @@ public class EstudianteCarreraController {
             return ResponseEntity.status(HttpStatus.OK).body(estudianteCarreraService.delete(id));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. no se pudo eliminar intente nuevamente.\"}");
+        }
+    }
+
+    //Ejercicio 2 Inciso B
+    @PostMapping("")
+    public ResponseEntity<?> save(@RequestBody EstudianteCarrera estudianteCarrera) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(estudianteCarreraService.save(estudianteCarrera));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. No se pudo ingresar, revise los campos e intente nuevamente.\"}");
         }
     }
 

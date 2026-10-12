@@ -17,16 +17,6 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
     @Autowired
     private EstudianteRepository estudianteRepository;
 
-    // Ejercicio 2 Inciso G
-    public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(
-            int idCarrera,
-            String ciudad) {
-
-        return estudianteRepository
-                .obtenerEstudiantesByCarreraAndCiudad(idCarrera, ciudad);
-    }
-
-
     @Override
     @Transactional
     public List<Estudiante> findAll() throws Exception {
@@ -39,17 +29,6 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
         try {
             Optional<Estudiante> estudiante = estudianteRepository.findById(id);
             return estudiante.get();
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-    }
-
-    //Ejercicio 2 Inciso A
-    @Override
-    @Transactional
-    public Estudiante save(Estudiante entity) throws Exception {
-        try {
-            return estudianteRepository.save(entity);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -79,6 +58,17 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
             } else {
                 throw new Exception();
             }
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    //Ejercicio 2 Inciso A
+    @Override
+    @Transactional
+    public Estudiante save(Estudiante entity) throws Exception {
+        try {
+            return estudianteRepository.save(entity);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -128,5 +118,14 @@ public class EstudianteService implements BaseService<Estudiante, Long>{
             throw new Exception(e.getMessage());
         }
         return estudiantes;
+    }
+
+    // Ejercicio 2 Inciso G
+    public List<Estudiante> obtenerEstudiantesByCarreraAndCiudad(
+            int idCarrera,
+            String ciudad) {
+
+        return estudianteRepository
+                .obtenerEstudiantesByCarreraAndCiudad(idCarrera, ciudad);
     }
 }

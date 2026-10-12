@@ -33,16 +33,6 @@ public class EstudianteController {
         }
     }
 
-    //Ejercicio 2 Inciso A
-    @PostMapping("")
-    public ResponseEntity<?> save(@RequestBody Estudiante estudiante) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(estudianteService.save(estudiante));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. No se pudo ingresar, revise los campos e intente nuevamente.\"}");
-        }
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Estudiante estudiante) {
         try {
@@ -61,7 +51,17 @@ public class EstudianteController {
         }
     }
 
-        //Ejercicio 2 Inciso C
+    //Ejercicio 2 Inciso A
+    @PostMapping("")
+    public ResponseEntity<?> save(@RequestBody Estudiante estudiante) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(estudianteService.save(estudiante));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. No se pudo ingresar, revise los campos e intente nuevamente.\"}");
+        }
+    }
+
+    //Ejercicio 2 Inciso C
     @GetMapping("/ordenados")
     public ResponseEntity<?> getAllOrdenados(
             @RequestParam(defaultValue = "apellido") String campo,

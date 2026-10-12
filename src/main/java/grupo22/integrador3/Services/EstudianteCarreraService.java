@@ -26,6 +26,63 @@ public class EstudianteCarreraService implements BaseService<EstudianteCarrera, 
     @Autowired
     private CarreraRepository carreraRepository;
 
+    @Override
+    @Transactional
+    public List<EstudianteCarrera> findAll() throws Exception {
+        return estudianteCarreraRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public EstudianteCarrera findById(EstudianteCarreraPK id) throws Exception {
+        try {
+            Optional<EstudianteCarrera> estudianteCarrera = estudianteCarreraRepository.findById(id);
+            return estudianteCarrera.get();
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public EstudianteCarrera update(EstudianteCarreraPK id, EstudianteCarrera entity) throws Exception {
+        try {
+            Optional<EstudianteCarrera> estudianteCarreraOpcional = estudianteCarreraRepository.findById(id);
+            // Verifica que la carrera exista
+            EstudianteCarrera estudianteCarrera = estudianteCarreraOpcional.get();
+            estudianteCarrera = estudianteCarreraRepository.save(entity);
+            return estudianteCarrera;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean delete(EstudianteCarreraPK id) throws Exception {
+        try {
+            if (estudianteCarreraRepository.existsById(id)) {
+                estudianteCarreraRepository.deleteById(id);
+                return true;
+            } else {
+                throw new Exception();
+            }
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    //Ejercicio 2 Inciso B
+    @Override
+    @Transactional
+    public EstudianteCarrera save(EstudianteCarrera entity) throws Exception {
+        try {
+            return estudianteCarreraRepository.save(entity);
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
     // Ejercicio 2 Inciso H
     public List<ReporteCarreraDTO> getReporteCarreras() {
 
@@ -68,62 +125,5 @@ public class EstudianteCarreraService implements BaseService<EstudianteCarrera, 
         }
 
         return reporte;
-    }
-
-    @Override
-    @Transactional
-    public List<EstudianteCarrera> findAll() throws Exception {
-        return estudianteCarreraRepository.findAll();
-    }
-
-    @Override
-    @Transactional
-    public EstudianteCarrera findById(EstudianteCarreraPK id) throws Exception {
-        try {
-            Optional<EstudianteCarrera> estudianteCarrera = estudianteCarreraRepository.findById(id);
-            return estudianteCarrera.get();
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-    }
-
-    //Ejercicio 2 Inciso B
-    @Override
-    @Transactional
-    public EstudianteCarrera save(EstudianteCarrera entity) throws Exception {
-        try {
-            return estudianteCarreraRepository.save(entity);
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-    }
-
-    @Override
-    @Transactional
-    public EstudianteCarrera update(EstudianteCarreraPK id, EstudianteCarrera entity) throws Exception {
-        try {
-            Optional<EstudianteCarrera> estudianteCarreraOpcional = estudianteCarreraRepository.findById(id);
-            // Verifica que la carrera exista
-            EstudianteCarrera estudianteCarrera = estudianteCarreraOpcional.get();
-            estudianteCarrera = estudianteCarreraRepository.save(entity);
-            return estudianteCarrera;
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-    }
-
-    @Override
-    @Transactional
-    public boolean delete(EstudianteCarreraPK id) throws Exception {
-        try {
-            if (estudianteCarreraRepository.existsById(id)) {
-                estudianteCarreraRepository.deleteById(id);
-                return true;
-            } else {
-                throw new Exception();
-            }
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
     }
 }
