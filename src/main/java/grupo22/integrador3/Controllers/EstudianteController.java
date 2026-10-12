@@ -61,6 +61,20 @@ public class EstudianteController {
         }
     }
 
+        //Ejercicio 2 Inciso C
+    @GetMapping("/ordenados")
+    public ResponseEntity<?> getAllOrdenados(
+            @RequestParam(defaultValue = "apellido") String campo,
+            @RequestParam(defaultValue = "asc") String direccion) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(estudianteService.obtenerTodosOrdenados(campo, direccion));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\":\"Error. Por favor intente más tarde.\"}");
+        }
+    }
+
     //Ejercicio 2 Inciso D
     @GetMapping("/lu/{lu}")
     public ResponseEntity<?> getByLU(@PathVariable Integer lu) {
