@@ -3,6 +3,7 @@ name: ticketya-e2-infra
 services:
   mysql:
     image: mysql:8.4.8
+    stop_grace_period: 60s
     environment:
       MYSQL_ROOT_PASSWORD: ${TY_E2_MYSQL_ROOT_PASSWORD:?Definir TY_E2_MYSQL_ROOT_PASSWORD}
       MYSQL_ROOT_HOST: localhost
@@ -37,6 +38,8 @@ services:
 
   inventario:
     image: ticketya-e2-inventario:dev
+    build:
+      context: ./TicketYa/inventarioReserva_service
     pull_policy: never
     environment:
       SERVER_PORT: "8082"
@@ -53,6 +56,8 @@ services:
 
   entradas:
     image: ticketya-e2-entradas:dev
+    build:
+      context: ./TicketYa/entradas_service
     pull_policy: never
     environment:
       SERVER_PORT: "8083"
@@ -70,6 +75,8 @@ services:
 
   compras:
     image: ticketya-e2-compras:dev
+    build:
+      context: ./TicketYa/comprapago_service
     pull_policy: never
     environment:
       SERVER_PORT: "8084"
@@ -89,6 +96,8 @@ services:
 
   eventos:
     image: ticketya-e2-eventos:dev
+    build:
+      context: ./TicketYa/EventoCatalogo_Service
     pull_policy: never
     environment:
       SERVER_PORT: "8081"
@@ -108,6 +117,8 @@ services:
 
   gateway:
     image: ticketya-e2-gateway:dev
+    build:
+      context: ./TicketYa/api-gateway
     pull_policy: never
     environment:
       SERVER_PORT: "8080"

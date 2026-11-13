@@ -1,4 +1,6 @@
-# TicketYa — Entrega 1
+# TicketYa
+
+Para el entorno Docker de Entrega 2, la construccion desde un clon limpio y la regresion en bases separadas, consultar [Docker y regresion E2](docs/entrega2/docker-regresion.md). La guia local siguiente conserva el procedimiento de Entrega 1; sus runners no deben apuntarse al volumen persistente de E2.
 
 Plataforma de eventos, inventario y reservas, compras y pagos simulados, y emisión de entradas. Cuatro microservicios independientes se integran por REST detrás de un API Gateway. Este README describe la versión integrada del código fuente; reconstruirla evita utilizar JAR anteriores.
 
