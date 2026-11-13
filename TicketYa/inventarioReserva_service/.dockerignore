@@ -1,0 +1,21 @@
+# Allow only the Maven project definition and production sources.
+**
+!pom.xml
+!src/
+!src/main/
+!src/main/**
+
+# Exclude local configuration, secrets and temporary files under src/main.
+**/.env
+**/.env.*
+**/application-local.*
+**/application-dev.*
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+**/*.jks
+**/*.log
+**/*.bak
+**/*.tmp
+**/*~

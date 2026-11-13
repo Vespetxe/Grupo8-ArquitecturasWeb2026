@@ -1,0 +1,138 @@
+name: ticketya-e2-infra
+
+services:
+  mysql:
+    image: mysql:8.4.8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TY_E2_MYSQL_ROOT_PASSWORD:?Definir TY_E2_MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: localhost
+      TY_E2_EVENTOS_DB_PASSWORD: ${TY_E2_EVENTOS_DB_PASSWORD:?Definir TY_E2_EVENTOS_DB_PASSWORD}
+      TY_E2_INVENTARIO_DB_PASSWORD: ${TY_E2_INVENTARIO_DB_PASSWORD:?Definir TY_E2_INVENTARIO_DB_PASSWORD}
+      TY_E2_ENTRADAS_DB_PASSWORD: ${TY_E2_ENTRADAS_DB_PASSWORD:?Definir TY_E2_ENTRADAS_DB_PASSWORD}
+      TY_E2_COMPRAS_DB_PASSWORD: ${TY_E2_COMPRAS_DB_PASSWORD:?Definir TY_E2_COMPRAS_DB_PASSWORD}
+    volumes:
+      - type: volume
+        source: mysql_data
+        target: /var/lib/mysql
+      - type: bind
+        source: ./docker/mysql/01-create-schemas.sql
+        target: /docker-entrypoint-initdb.d/01-create-schemas.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./docker/mysql/02-create-users.sh
+        target: /docker-entrypoint-initdb.d/02-create-users.sh
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "bash", "/docker-entrypoint-initdb.d/02-create-users.sh", "--healthcheck"]
+      interval: 10s
+      timeout: 20s
+      retries: 6
+      start_period: 90s
+
+  inventario:
+    image: ticketya-e2-inventario:dev
+    pull_policy: never
+    environment:
+      SERVER_PORT: "8082"
+      SPRING_PROFILES_ACTIVE: integracion
+      DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_inventario?allowPublicKeyRetrieval=true&useSSL=false"
+      DB_USERNAME: ty_inventario
+      DB_PASSWORD: ${TY_E2_INVENTARIO_DB_PASSWORD:?Definir TY_E2_INVENTARIO_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend
+
+  entradas:
+    image: ticketya-e2-entradas:dev
+    pull_policy: never
+    environment:
+      SERVER_PORT: "8083"
+      SPRING_PROFILES_ACTIVE: integracion
+      DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_entradas?allowPublicKeyRetrieval=true&useSSL=false"
+      DB_USERNAME: ty_entradas
+      DB_PASSWORD: ${TY_E2_ENTRADAS_DB_PASSWORD:?Definir TY_E2_ENTRADAS_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      COMPRAS_BASE_URL: http://compras:8084
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend
+
+  compras:
+    image: ticketya-e2-compras:dev
+    pull_policy: never
+    environment:
+      SERVER_PORT: "8084"
+      SPRING_PROFILES_ACTIVE: integracion
+      DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_compras?allowPublicKeyRetrieval=true&useSSL=false"
+      DB_USERNAME: ty_compras
+      DB_PASSWORD: ${TY_E2_COMPRAS_DB_PASSWORD:?Definir TY_E2_COMPRAS_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EVENTOS_BASE_URL: http://eventos:8081
+      INVENTARIO_BASE_URL: http://inventario:8082
+      ENTRADAS_BASE_URL: http://entradas:8083
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend
+
+  eventos:
+    image: ticketya-e2-eventos:dev
+    pull_policy: never
+    environment:
+      SERVER_PORT: "8081"
+      SPRING_PROFILES_ACTIVE: integracion
+      DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_eventos?allowPublicKeyRetrieval=true&useSSL=false"
+      DB_USERNAME: ty_eventos
+      DB_PASSWORD: ${TY_E2_EVENTOS_DB_PASSWORD:?Definir TY_E2_EVENTOS_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      INVENTARIO_BASE_URL: http://inventario:8082
+      COMPRAS_BASE_URL: http://compras:8084
+      ENTRADAS_BASE_URL: http://entradas:8083
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend
+
+  gateway:
+    image: ticketya-e2-gateway:dev
+    pull_policy: never
+    environment:
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: integracion
+      EVENTOS_BASE_URL: http://eventos:8081
+      INVENTARIO_BASE_URL: http://inventario:8082
+      ENTRADAS_BASE_URL: http://entradas:8083
+      COMPRAS_BASE_URL: http://compras:8084
+    ports:
+      - "127.0.0.1:38080:8080"
+    depends_on:
+      eventos:
+        condition: service_started
+      inventario:
+        condition: service_started
+      entradas:
+        condition: service_started
+      compras:
+        condition: service_started
+    networks:
+      - backend
+
+volumes:
+  mysql_data:
+
+networks:
+  backend:
+    driver: bridge
