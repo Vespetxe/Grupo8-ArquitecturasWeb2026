@@ -10,6 +10,13 @@
 **/.env
 **/.env.*
 !**/.env.example
+# External identity signing material must never enter Git.
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
+**/identity-provision*.properties
 # Material local de preparacion: se conserva en disco, fuera del entregable.
 /docs/entrega1/cierre-astra.md
 /docs/entrega1/preparacion-git.md

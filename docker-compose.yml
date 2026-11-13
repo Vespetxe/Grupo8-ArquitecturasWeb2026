@@ -115,6 +115,39 @@ services:
     networks:
       - backend
 
+  # Opt-in only: existing MySQL needs a separately authorized additive migration.
+  # Do not activate this profile until its schema, credential and external keys exist.
+  identidad:
+    profiles: [identidad]
+    image: ticketya-e2-identidad:dev
+    build:
+      context: ./TicketYa/identidad_service
+    pull_policy: never
+    environment:
+      SERVER_PORT: "8085"
+      SPRING_PROFILES_ACTIVE: integracion
+      DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_identidad?allowPublicKeyRetrieval=true&useSSL=false"
+      DB_USERNAME: ty_identidad
+      DB_PASSWORD: ${TY_E2_IDENTIDAD_DB_PASSWORD:-}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      IDENTITY_JWT_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
+      IDENTITY_JWT_AUDIENCES: ticketya-identidad,ticketya-gateway,ticketya-eventos,ticketya-inventario,ticketya-entradas,ticketya-compras
+      IDENTITY_JWT_PRIVATE_KEY: /run/identity-keys/private.pem
+      IDENTITY_JWT_PUBLIC_KEY: /run/identity-keys/public.pem
+      IDENTITY_JWT_KEY_ID: ${IDENTITY_JWT_KEY_ID:-identity-key-1}
+    volumes:
+      - type: bind
+        source: ${IDENTITY_KEYS_DIR:-../ticketya-identity-keys}
+        target: /run/identity-keys
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend
+
   gateway:
     image: ticketya-e2-gateway:dev
     build:
