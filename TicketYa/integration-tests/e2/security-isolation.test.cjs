@@ -23,7 +23,8 @@ test('technical OAuth manager implementation is identical except caller and dest
    .replace(/service:(eventos|compras|entradas)/g,'service:CALLER').replace(/for\(String target:List\.of\([^)]*\)\)/,'for(String target:TARGETS)')
    .replace(/\.clientId\("(eventos|compras|entradas)-to-"\+target\)/,'.clientId("CALLER-to-"+target)')
    .replace(/requestedScopes\("(eventos|compras|entradas)",target\)/,'requestedScopes("CALLER",target)')
-   .replaceAll(pkg.replaceAll('/','.')+'.observability.CorrelationInterceptor','OBSERVABILITY.CorrelationInterceptor');
+   .replaceAll(pkg.replaceAll('/','.')+'.observability.','OBSERVABILITY.')
+   .replaceAll(pkg.replaceAll('/','.')+'.timing.','TIMING.');
   if(expected)assert.equal(text,expected);else expected=text;
  }
 });

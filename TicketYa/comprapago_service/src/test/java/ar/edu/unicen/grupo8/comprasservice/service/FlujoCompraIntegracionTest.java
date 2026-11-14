@@ -63,6 +63,88 @@ class FlujoCompraIntegracionTest {
     }
     private void sinTransaccion() { assertFalse(TransactionSynchronizationManager.isActualTransactionActive(), "No mantener transacciones locales durante llamadas externas"); }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value=ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family.class,names={"RESERVATION_CONFIRM","TICKETS_ISSUE"})
+    void criticalWriteNotDispatchedRetainsPaidStageAndRecoversSameIdentity(ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family family){
+        var env=new org.springframework.mock.env.MockEnvironment().withProperty("ticketya.resilience.read.window","2").withProperty("ticketya.resilience.read.minimum","2");
+        var gate=new ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard(env,family);
+        for(int i=0;i<2;i++)assertThrows(org.springframework.web.client.RestClientException.class,()->gate.execute(()->{throw new org.springframework.web.client.ResourceAccessException("controlled unavailable");}));
+        verifyCriticalAdmissionAndRecovery(family,gate,"CIRCUIT_OPEN",()->((io.github.resilience4j.circuitbreaker.CircuitBreaker)org.springframework.test.util.ReflectionTestUtils.getField(gate,"circuit")).transitionToClosedState());
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value=ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family.class,names={"RESERVATION_CONFIRM","TICKETS_ISSUE"})
+    void saturatedCriticalWriteDoesNotCompensateAndRecoversSamePayment(ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family family){
+        var env=new org.springframework.mock.env.MockEnvironment().withProperty("ticketya.resilience.read.concurrent","1");
+        var gate=new ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard(env,family);
+        var bulk=(io.github.resilience4j.bulkhead.Bulkhead)org.springframework.test.util.ReflectionTestUtils.getField(gate,"bulkhead");assertTrue(bulk.tryAcquirePermission());
+        try{verifyCriticalAdmissionAndRecovery(family,gate,"BULKHEAD_FULL",bulk::onComplete);}finally{if(bulk.getMetrics().getAvailableConcurrentCalls()==0)bulk.onComplete();}
+    }
+    private void verifyCriticalAdmissionAndRecovery(ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family family,ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard gate,String category,Runnable recover){
+        Compra c=crear();var effects=new java.util.concurrent.atomic.AtomicInteger();var blocked=new java.util.concurrent.atomic.AtomicReference<ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Unavailable>();
+        org.mockito.stubbing.Answer<Object> call=i->{try{gate.execute(()->null);}catch(ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Unavailable e){blocked.set(e);throw e;}effects.incrementAndGet();return i.callRealMethod();};
+        boolean confirmation=family==ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family.RESERVATION_CONFIRM;
+        if(confirmation)doAnswer(call).when(reservas).confirmarReserva(30L);else doAnswer(call).when(entradas).solicitarEntradas(any(),any(),any(),anyList());
+        Pago pago=pagos.procesarPago(c.getId(),"critical-"+family,MedioPago.TARJETA_DEBITO);
+        assertEquals(category,blocked.get().category());assertFalse(blocked.get().dispatched());assertEquals(0,effects.get());
+        assertEquals(EstadoPago.APROBADO,pago.getEstado());assertEquals(EstadoCompra.PROCESANDO,consultar(c).getEstado());
+        assertEquals(confirmation?EtapaCompra.CONFIRMACION:EtapaCompra.EMISION,consultar(c).getEtapa());
+        assertEquals(0,reintegros.count());verify(pasarela,never()).reintegrarPago(any(),any());verify(reservas,never()).liberarReserva(any());verify(reservas,never()).compensarReserva(any());verify(entradas,never()).anularEntradas(any());
+        recover.run();assertEquals(pago.getId(),pagos.procesarPago(c.getId(),"critical-"+family,MedioPago.TARJETA_DEBITO).getId());
+        pagos.procesarPago(c.getId(),"critical-"+family,MedioPago.TARJETA_DEBITO);
+        assertEquals(EstadoCompra.COMPLETADA,consultar(c).getEstado());assertEquals(30L,consultar(c).getReservaId());assertEquals(2,consultar(c).getEntradasIds().size());assertEquals(1,effects.get());assertEquals(1,pagoRepository.count());assertEquals(0,reintegros.count());verify(pasarela,times(1)).procesarPago(any(),any());
+    }
+
+    @Test void exhaustedAfterChargePersistsConfirmationWithoutCompensationAndRecoversSamePayment(){
+        Compra c=crear();
+        doAnswer(i->{var result=i.callRealMethod();var request=new org.springframework.mock.web.MockHttpServletRequest();ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.start(request,0);org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(new org.springframework.web.context.request.ServletRequestAttributes(request));return result;}).when(pasarela).procesarPago(any(),any());
+        Pago p;
+        try{p=pagos.procesarPago(c.getId(),"budget-after-charge",MedioPago.TARJETA_DEBITO);assertEquals(EstadoPago.APROBADO,p.getEstado());assertEquals(EtapaCompra.CONFIRMACION,consultar(c).getEtapa());verify(reservas,never()).confirmarReserva(any());verify(pasarela,never()).reintegrarPago(any(),any());}
+        finally{org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();}
+        assertEquals(p.getId(),pagos.procesarPago(c.getId(),"budget-after-charge",MedioPago.TARJETA_DEBITO).getId());assertEquals(EstadoCompra.COMPLETADA,consultar(c).getEstado());verify(pasarela,times(1)).procesarPago(any(),any());assertEquals(0,reintegros.count());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints={401,403,404,409,422,429,500,502,503,504})
+    void remoteConfirmationFailureNeverRefundsOrReleasesAndRecoversOriginalPayment(int status){
+        Compra c=crear();
+        doAnswer(i->{RestSupport.mutate(RestSupport.Operation.RESERVATION_CONFIRM,()->{throw remote(status);});return null;}).when(reservas).confirmarReserva(30L);
+        Pago p=pagos.procesarPago(c.getId(),"classification-confirm",MedioPago.TARJETA_DEBITO);
+        assertEquals(EstadoPago.APROBADO,p.getEstado());assertEquals(EtapaCompra.CONFIRMACION,consultar(c).getEtapa());
+        assertEquals(EstadoCompra.PROCESANDO,consultar(c).getEstado());assertEquals(0,reintegros.count());
+        verify(pasarela,never()).reintegrarPago(any(),any());verify(reservas,never()).compensarReserva(any());verify(reservas,never()).liberarReserva(any());
+        verify(entradas,never()).anularEntradas(any());
+        doCallRealMethod().when(reservas).confirmarReserva(30L);
+        assertEquals(p.getId(),pagos.procesarPago(c.getId(),"classification-confirm",MedioPago.TARJETA_DEBITO).getId());
+        assertEquals(EstadoCompra.COMPLETADA,consultar(c).getEstado());assertEquals(1,pagoRepository.count());assertEquals(0,reintegros.count());
+        verify(pasarela,times(1)).procesarPago(any(),any());
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints={401,403,404,409,422,429,500,502,503,504})
+    void remoteEmissionFailureNeverCompensatesAndRecoversOriginalBatch(int status){
+        Compra c=crear();
+        doAnswer(i->{RestSupport.mutate(RestSupport.Operation.TICKETS_ISSUE,()->{throw remote(status);});return null;}).when(entradas).solicitarEntradas(any(),any(),any(),anyList());
+        Pago p=pagos.procesarPago(c.getId(),"classification-issue",MedioPago.TARJETA_DEBITO);
+        assertEquals(EstadoPago.APROBADO,p.getEstado());assertEquals(EtapaCompra.EMISION,consultar(c).getEtapa());
+        assertEquals(0,reintegros.count());verify(pasarela,never()).reintegrarPago(any(),any());verify(entradas,never()).anularEntradas(any());
+        verify(reservas,never()).compensarReserva(any());verify(reservas,never()).liberarReserva(any());
+        doCallRealMethod().when(entradas).solicitarEntradas(any(),any(),any(),anyList());
+        assertEquals(p.getId(),pagos.procesarPago(c.getId(),"classification-issue",MedioPago.TARJETA_DEBITO).getId());
+        pagos.procesarPago(c.getId(),"classification-issue",MedioPago.TARJETA_DEBITO);
+        assertEquals(2,consultar(c).getEntradasIds().size());assertEquals(1,pagoRepository.count());assertEquals(0,reintegros.count());verify(pasarela,times(1)).procesarPago(any(),any());
+    }
+    private org.springframework.web.client.RestClientResponseException remote(int status){
+        return new org.springframework.web.client.RestClientResponseException("sentinel-secret",status,"failure",new org.springframework.http.HttpHeaders(),new byte[0],java.nio.charset.StandardCharsets.UTF_8);
+    }
+    @Test void contradictoryReservationSnapshotAfterChargeIsUnknownNotAReasonToRefund(){
+        Compra c=crear();var original=reservas.consultarReserva(30L);
+        doAnswer(i->{var charged=i.callRealMethod();doReturn(new ReservaDTO(original.reservaId(),999L,original.eventoId(),original.estado(),original.fechaVencimiento(),original.detalles())).when(reservas).consultarReserva(30L);return charged;}).when(pasarela).procesarPago(any(),any());
+        Pago p=pagos.procesarPago(c.getId(),"contradictory",MedioPago.TARJETA_DEBITO);
+        assertEquals(EstadoPago.APROBADO,p.getEstado());assertEquals(EtapaCompra.CONFIRMACION,consultar(c).getEtapa());assertEquals(0,reintegros.count());
+        verify(pasarela,never()).reintegrarPago(any(),any());verify(reservas,never()).compensarReserva(any());
+        doCallRealMethod().when(reservas).consultarReserva(30L);
+        assertEquals(p.getId(),pagos.procesarPago(c.getId(),"contradictory",MedioPago.TARJETA_DEBITO).getId());assertEquals(EstadoCompra.COMPLETADA,consultar(c).getEstado());verify(pasarela,times(1)).procesarPago(any(),any());
+    }
+
     @Test void exitoPersisteTodosLosEstadosSinTransaccionExterna() {
         doAnswer(i -> { sinTransaccion(); return i.callRealMethod(); }).when(pasarela).procesarPago(any(), any());
         doAnswer(i -> { sinTransaccion(); return i.callRealMethod(); }).when(reservas).confirmarReserva(any());

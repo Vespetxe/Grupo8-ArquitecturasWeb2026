@@ -18,6 +18,7 @@ import time
 FIELDS = set("@timestamp log service message ecs errorCode errorCategory exceptionType rootErrorCategory errorOrigin compraId devolucionId eventoId etapa trace span traceId spanId eventType correlationId httpMethod httpRoute httpStatus durationMs actorType actorId completion eventId timestamp action auditScope resourceType resourceId operationId outcome resourceState actorVerified initiatorId initiatorType".split())
 SEGMENT = re.compile(r"segment-[0-9]+\.jsonl\Z")
 SENSITIVE = re.compile(r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|-----BEGIN .*PRIVATE KEY-----|(?i:authorization\s*[:=]|client_secret\s*[:=]|password\s*[:=]|cookie\s*[:=])")
+FIELDS.update({"dependency", "operation", "circuit", "circuitState"})
 QUERY = {"correlationId", "traceId", "operationId"}
 
 

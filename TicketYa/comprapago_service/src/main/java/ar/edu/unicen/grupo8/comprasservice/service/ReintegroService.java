@@ -33,6 +33,7 @@ public class ReintegroService {
         this.entradas = entradas; this.reservas = reservas; this.eventos = eventos; this.compras = compras; this.clock = clock;
     }
     public ResultadoDevolucionDTO procesar(@NotNull @Positive Long id, @NotNull @Valid ProcesarDevolucionDTO dto) {
+        if(!ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.canStart())throw new ComunicacionPasarelaException("Presupuesto agotado; recuperar la misma devolucion y clave");
         var turno = registro.tomar(id, dto);
         if (turno.token() == null) return turno.resultado();
         String token = turno.token(); Long compraId = turno.compraId();
@@ -55,6 +56,7 @@ public class ReintegroService {
                 }
             }
             var ids = turno.resultado().devolucion().detalles().stream().map(DetalleDevolucionDTO::entradaId).toList();
+            if(!ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.canStart())throw new ComunicacionPasarelaException("Presupuesto agotado; recuperar la misma devolucion");
             if (turno.resultado().etapa() == EtapaDevolucion.ANULACION) {
                 var tickets = seleccionConfirmada(turno, ids);
                 if (tickets.stream().anyMatch(e -> !"ANULADA".equals(e.estado()))) {
@@ -111,6 +113,7 @@ public class ReintegroService {
         List<ResultadoDevolucionDTO> resultados = new ArrayList<>();
         List<Long> pendientes = new ArrayList<>();
         for (Long compraId : registro.comprasDelEvento(eventoId)) {
+            if(!ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.canStart()){pendientes.add(compraId);continue;}
             try {
                 var compra = compras.obtenerCompraPorId(compraId);
                 if (compra.getEstado() == EstadoCompra.PROCESANDO) {
@@ -125,6 +128,7 @@ public class ReintegroService {
                 }
                 var ids = devoluciones.prepararCancelacion(compraId, entradas.consultarEntradas(compraId));
                 for (Long id : ids) {
+                    if(!ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.canStart()){if(!pendientes.contains(compraId))pendientes.add(compraId);break;}
                     try { resultados.add(procesar(id, registro.datosParaCancelacion(id))); }
                     catch (RuntimeException ex) {
                         if (!pendientes.contains(compraId)) pendientes.add(compraId);

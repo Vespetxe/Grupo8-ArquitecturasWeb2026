@@ -31,7 +31,7 @@ class PublicacionRecuperacionTest {
     }
     private grupo22.eventocatalogo_service.security.ServiceTokens testTokens(String url){
       var tokens=org.mockito.Mockito.mock(grupo22.eventocatalogo_service.security.ServiceTokens.class);
-      org.mockito.Mockito.when(tokens.client(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyString())).thenReturn(org.springframework.web.client.RestClient.builder().baseUrl(url).build());return tokens;
+      org.mockito.Mockito.when(tokens.client(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyString())).thenReturn(org.springframework.web.client.RestClient.builder().baseUrl(url).requestFactory(new grupo22.eventocatalogo_service.timing.TimedTransport(new org.springframework.mock.env.MockEnvironment()).factory(false)).build());return tokens;
     }
     record Fixture(EventWorkflow workflow,EventService service,EventResponseDTO event) {}
     private Fixture workflow(String url) {
@@ -46,12 +46,22 @@ class PublicacionRecuperacionTest {
         when(sectors.findByVenueVenueId(2L)).thenReturn(List.of(sector));
         return new Fixture(new EventWorkflow(service,repository,sectors,mock(PlatformTransactionManager.class),url,url,url,testTokens(url)),service,response);
     }
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(ints={404,409,422,429,500,502,503,504})
+    void unconfirmedRemoteRejectionKeepsDraftRecoverable(int status)throws Exception{
+        var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+        server.createContext("/",x->{x.getRequestBody().readAllBytes();x.sendResponseHeaders(status,-1);x.close();});server.start();
+        try{var f=workflow("http://127.0.0.1:"+server.getAddress().getPort());
+            assertEquals(503,assertThrows(ResponseStatusException.class,()->f.workflow.publish(1L)).getStatusCode().value());
+            assertEquals(EventStatus.BORRADOR,f.event.getStatus());verify(f.service,never()).publishEvent(1L);
+        }finally{server.stop(0);}
+    }
     @Test void fallaDeHabilitacionSeRetomaSobrePublicadoSinReinicializar() throws Exception {
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         var prepared=new AtomicInteger();var enabled=new AtomicInteger();
         server.createContext("/",x->{x.getRequestBody().readAllBytes();boolean init=x.getRequestURI().getPath().endsWith("/inventario");
             int code;if(init){prepared.incrementAndGet();code=201;}else code=enabled.incrementAndGet()==1?503:200;
-            x.sendResponseHeaders(code,-1);x.close();});server.start();
+            if(init){byte[] b="{\"exitoso\":true,\"mensaje\":\"Inventario inicializado exitosamente\"}".getBytes();x.getResponseHeaders().set("Content-Type","application/json");x.sendResponseHeaders(code,b.length);x.getResponseBody().write(b);}
+            else x.sendResponseHeaders(code,-1);x.close();});server.start();
         try {
             var f=workflow("http://127.0.0.1:"+server.getAddress().getPort());
             assertEquals(503,assertThrows(ResponseStatusException.class,()->f.workflow.publish(1L)).getStatusCode().value());
@@ -62,11 +72,18 @@ class PublicacionRecuperacionTest {
     }
     @Test void inicializacionIncompatibleEsRechazoPermanenteYConservaBorrador() throws Exception {
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
-        server.createContext("/",x->{x.getRequestBody().readAllBytes();x.sendResponseHeaders(400,-1);x.close();});server.start();
+        server.createContext("/",x->{x.getRequestBody().readAllBytes();byte[] body="{\"exitoso\":false,\"mensaje\":\"El inventario para este evento y sector ya existe\"}".getBytes();x.getResponseHeaders().set("Content-Type","application/json");x.sendResponseHeaders(400,body.length);x.getResponseBody().write(body);x.close();});server.start();
         try {
             var f=workflow("http://127.0.0.1:"+server.getAddress().getPort());
             assertThrows(BusinessRuleException.class,()->f.workflow.publish(1L));
             verify(f.service,never()).publishEvent(1L);assertEquals(EventStatus.BORRADOR,f.event.getStatus());
         }finally{server.stop(0);}
+    }
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(strings={"","{}","{\"exitoso\":false}","null","broken"})
+    void invalidAcknowledgementNeverPublishes(String payload)throws Exception{
+        var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+        server.createContext("/",x->{x.getRequestBody().readAllBytes();byte[] b=payload.getBytes();x.getResponseHeaders().set("Content-Type","application/json");x.sendResponseHeaders(200,b.length==0?-1:b.length);if(b.length>0)x.getResponseBody().write(b);x.close();});server.start();
+        try{var f=workflow("http://127.0.0.1:"+server.getAddress().getPort());assertEquals(503,assertThrows(ResponseStatusException.class,()->f.workflow.publish(1L)).getStatusCode().value());verify(f.service,never()).publishEvent(1L);}
+        finally{server.stop(0);}
     }
 }

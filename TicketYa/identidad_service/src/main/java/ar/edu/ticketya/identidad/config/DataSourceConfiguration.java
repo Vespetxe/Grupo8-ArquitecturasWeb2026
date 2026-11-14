@@ -15,7 +15,7 @@ public class DataSourceConfiguration {
         if(!memoryTest && !ownMysql)throw new IllegalStateException("Identity datasource guard rejected configuration");
         HikariConfig config=new HikariConfig();
         config.setJdbcUrl(url);config.setUsername(user);config.setPassword(env.getRequiredProperty("spring.datasource.password"));
-        config.setMaximumPoolSize(5);
+        ar.edu.ticketya.identidad.timing.JdbcTimeoutConfiguration.apply(config,env);
         return new HikariDataSource(config);
     }
 }

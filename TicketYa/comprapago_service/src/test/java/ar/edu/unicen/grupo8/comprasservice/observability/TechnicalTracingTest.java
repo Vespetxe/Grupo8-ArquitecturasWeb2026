@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TechnicalTracingTest {
  @org.springframework.beans.factory.annotation.Autowired org.springframework.web.client.RestClient.Builder builder;
  @org.springframework.beans.factory.annotation.Autowired io.micrometer.tracing.Tracer tracer;
- @Test void businessReadTimeoutRemainsTenSecondsWithoutReplay()throws Exception{
+ @Test void businessReadTimeoutUsesTwoSecondsWithoutReplay()throws Exception{
   var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
   var executor=java.util.concurrent.Executors.newCachedThreadPool();server.setExecutor(executor);
   var calls=new AtomicInteger();
@@ -20,7 +20,7 @@ class TechnicalTracingTest {
    byte[] data="{\"access_token\":\"timeout-test-token\",\"token_type\":\"Bearer\",\"expires_in\":3600}".getBytes();
    e.getResponseHeaders().set("Content-Type","application/json");e.sendResponseHeaders(200,data.length);e.getResponseBody().write(data);e.close();
   });
-  server.createContext("/slow",e->{calls.incrementAndGet();try{Thread.sleep(20000);}catch(InterruptedException interrupted){Thread.currentThread().interrupt();}finally{e.close();}});
+  server.createContext("/slow",e->{calls.incrementAndGet();try{Thread.sleep(5000);}catch(InterruptedException interrupted){Thread.currentThread().interrupt();}finally{e.close();}});
   server.start();
   try{
    var env=new MockEnvironment().withProperty("TY_SECURITY_TOKEN_URL","http://127.0.0.1:"+server.getAddress().getPort()+"/oauth2/token");
@@ -30,7 +30,7 @@ class TechnicalTracingTest {
    long started=System.nanoTime();
    assertThrows(org.springframework.web.client.ResourceAccessException.class,()->client.get().uri("/slow").retrieve().toBodilessEntity());
    long elapsed=java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started);
-   assertTrue(elapsed>=8000&&elapsed<18000,"Read timeout outside preserved ten-second window");
+   assertTrue(elapsed>=1500&&elapsed<5000,"Read timeout outside configured two-second window");
    assertEquals(1,calls.get());assertNull(tracer.currentSpan());
   }finally{server.stop(0);executor.shutdownNow();}
  }

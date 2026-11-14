@@ -1,5 +1,9 @@
 package ar.edu.unicen.grupo8.comprasservice.security;
-/** A technical dependency failure, NEVER a commercial rejection or financial compensation trigger. */
+/** Controlled technical failure; never a commercial rejection or authorization bypass. */
 public class TechnicalAuthFailure extends org.springframework.web.client.RestClientException {
- public TechnicalAuthFailure(){super("Technical authentication unavailable; operation remains recoverable");}
+ public enum Reason { AUTHENTICATION,TOKEN_CIRCUIT_OPEN,TOKEN_SATURATED,TOKEN_LOCK_TIMEOUT,TOKEN_UNAVAILABLE }
+ private final Reason reason;
+ public TechnicalAuthFailure(){this(Reason.AUTHENTICATION);}
+ public TechnicalAuthFailure(Reason reason){super("Technical authentication unavailable; operation remains recoverable");this.reason=reason;}
+ public Reason reason(){return reason;}
 }

@@ -35,8 +35,8 @@ class TicketIssuanceIntegrationTest {
             compras = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
             compras.createContext("/internal/orders/", exchange -> {
                 String orderId = exchange.getRequestURI().getPath().substring("/internal/orders/".length());
-                int status = orderId.equals("missing") ? 404 : 200;
-                String body = orderId.equals("confirmed") ? CONFIRMED_ORDER
+                int status = orderId.equals("missing")||orderId.equals("unknown404") ? 404 : 200;
+                String body = orderId.equals("missing") ? "{\"status\":404,\"message\":\"No existe una compra con ID: missing\"}" : orderId.equals("confirmed") ? CONFIRMED_ORDER
                         : """
                           {"orderId":"pending","clientId":"client-1","status":"PENDIENTE",
                            "items":[{"eventId":"event-1","sectorId":"campo","seatId":null,"quantity":1}]}
@@ -81,6 +81,9 @@ class TicketIssuanceIntegrationTest {
         assertEquals(409, issue("pending").statusCode());
         assertEquals(0, tickets.count());
         assertEquals(0, batches.count());
+    }
+    @Test void malformedNotFoundIsUnavailableAndNeverEmits()throws Exception{
+        assertEquals(503,issue("unknown404").statusCode());assertEquals(0,tickets.count());assertEquals(0,batches.count());
     }
     private HttpResponse<String> issue(String orderId) throws Exception {
         HttpRequest request = HttpRequest.newBuilder(URI.create(

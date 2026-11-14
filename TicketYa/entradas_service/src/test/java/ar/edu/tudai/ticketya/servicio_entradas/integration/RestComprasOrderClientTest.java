@@ -30,7 +30,7 @@ class RestComprasOrderClientTest {
         assertEquals(2, order.items().getFirst().quantity());
     }
     @Test void rejectsAnOrderThatDoesNotExist() {
-        respond(404, "{}");
+        respond(404, "{\"status\":404,\"message\":\"No existe una compra con ID: missing\"}");
         assertThrows(OrderNotFoundException.class, () -> client.getOrder("missing"));
     }
     @Test void rejectsAnOrderThatIsNotConfirmed() {
@@ -39,6 +39,15 @@ class RestComprasOrderClientTest {
                  "items":[{"eventId":"event-1","sectorId":"campo","seatId":null,"quantity":1}]}
                 """);
         assertThrows(OrderNotConfirmedException.class, () -> client.getOrder("order-1"));
+    }
+    @Test void unknown404IsNotProofOfAbsence(){respond(404,"{}");assertThrows(OrdersUnavailableException.class,()->client.getOrder("order-1"));}
+    @Test void hiddenResourceNeverGrantsOwnership(){respond(404,"{\"status\":404,\"message\":\"Resource not found\"}");assertThrows(OrderNotFoundException.class,()->client.getOrderForOwnership("order-1"));}
+    @Test void invalidStatusIsUnknownInsteadOfDefinitiveOrderRejection(){respond(200,"{\"orderId\":\"order-1\",\"clientId\":\"client-1\",\"items\":[{\"eventId\":\"event-1\",\"sectorId\":\"s\",\"quantity\":1}]}");assertThrows(OrdersUnavailableException.class,()->client.getOrder("order-1"));}
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(ints={401,403,409,422,429,500,502,503,504})
+    void technicalStatusNeverBecomesOrderNotConfirmed(int status){
+        respond(status,"{\"message\":\"sentinel-secret\"}");
+        if(status==401||status==403)assertThrows(ar.edu.tudai.ticketya.servicio_entradas.security.TechnicalAuthFailure.class,()->client.getOrder("order-1"));
+        else {var e=assertThrows(OrdersUnavailableException.class,()->client.getOrder("order-1"));assertEquals(false,e.toString().contains("sentinel-secret"));}
     }
     private void respond(int status, String body) {
         server.createContext("/internal/orders/", exchange -> {

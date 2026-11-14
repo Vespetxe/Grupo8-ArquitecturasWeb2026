@@ -63,6 +63,7 @@ public class PagoService {
         Compra compra = compras.obtenerCompraPorId(compraId);
         if (compra.getEstado() == EstadoCompra.PENDIENTE && pagos.findByClaveIdempotencia(clave).isEmpty())
             validarCondicionesPrevias(compra);
+        if(!ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.canStart())throw new ComunicacionPasarelaException("Presupuesto agotado; recuperar la misma compra y clave");
         var turno = registro.tomar(compraId, clave, medio);
         if (turno.token() == null) return new ResultadoProcesamientoPagoDTO(turno.pago(), false);
         Pago pago = turno.pago();
@@ -81,6 +82,7 @@ public class PagoService {
         Pago pago = inicial;
         // Como máximo una pasada por cada etapa; una respuesta incierta queda recuperable.
         for (int paso = 0; paso < 6; paso++) {
+            if(!ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.canStart())return;
             Compra compra = pago.getCompra();
             EtapaCompra etapa = compra.getEtapa();
             if (etapa == EtapaCompra.FINALIZADA) return;
@@ -187,10 +189,10 @@ public class PagoService {
     }
 
     private void validarReserva(Compra c, ReservaDTO r) {
-        if (r == null) throw new IllegalStateException("Resultado de reserva desconocido");
-        if (!c.getReservaId().equals(r.reservaId()) || !c.getClienteId().equals(r.clienteId()) || !c.getEventoId().equals(r.eventoId()))
-            throw new OperacionExternaRechazadaException("La reserva no corresponde a la compra");
-        SeleccionReserva.validar(r, detalles(c));
+        if (r == null || !c.getReservaId().equals(r.reservaId()) || !c.getClienteId().equals(r.clienteId()) || !c.getEventoId().equals(r.eventoId())
+                || r.fechaVencimiento()==null || !Set.of("TEMPORAL","CONFIRMADA","LIBERADA","EXPIRADA").contains(r.estado()==null?"":r.estado()))
+            throw new RemoteFailure(RemoteFailure.Category.INVALID_RESPONSE);
+        try{SeleccionReserva.validar(r, detalles(c));}catch(IllegalArgumentException incompatible){throw new RemoteFailure(RemoteFailure.Category.INVALID_RESPONSE);}
         if (!"CONFIRMADA".equals(r.estado()) && (!"TEMPORAL".equals(r.estado()) || !r.fechaVencimiento().isAfter(LocalDateTime.now(clock))))
             throw new OperacionExternaRechazadaException("La reserva ya no puede confirmarse");
     }

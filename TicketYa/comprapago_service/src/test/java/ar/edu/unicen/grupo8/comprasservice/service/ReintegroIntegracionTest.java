@@ -77,6 +77,39 @@ class ReintegroIntegracionTest {
         var d = solicitar(c, ids); return servicio.aprobar(d.id(), new AprobarDevolucionDTO("Corresponde"));
     }
     private ProcesarDevolucionDTO datos(DevolucionDTO d) { return new ProcesarDevolucionDTO("devolucion-" + d.id(), d.importeSolicitado()); }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value=ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family.class,names={"TICKETS_READ","RESERVATION_READ"})
+    void reconciliationReadCircuitCannotRefundAgainOrReleaseUnconfirmedSeats(ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family family){
+        var c=crear(true);var selected=entradas.consultarEntradas(c.getId()).get(0);var d=aprobada(c,List.of(selected.entradaId()));
+        var env=new org.springframework.mock.env.MockEnvironment().withProperty("ticketya.resilience.read.window","2").withProperty("ticketya.resilience.read.minimum","2");var gate=new ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard(env,family);
+        for(int i=0;i<2;i++)assertThrows(org.springframework.web.client.RestClientException.class,()->gate.execute(()->{throw new org.springframework.web.client.ResourceAccessException("controlled unavailable");}));
+        org.mockito.stubbing.Answer<Object> read=i->{gate.execute(()->null);return i.callRealMethod();};
+        if(family==ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family.TICKETS_READ)doAnswer(read).when(entradas).consultarEntradas(c.getId());else doAnswer(read).when(reservas).consultarLugaresLiberados(c.getReservaId());
+        assertThrows(ComunicacionPasarelaException.class,()->procesar(d));var pending=flujo.obtener(d.id());assertEquals(EstadoReintegro.COMPLETADO,pending.reintegro().estado());assertEquals(family==ar.edu.unicen.grupo8.comprasservice.resilience.PilotReadGuard.Family.TICKETS_READ?EtapaDevolucion.ANULACION:EtapaDevolucion.LIBERACION,pending.etapa());verify(reservas,never()).liberarLugares(any(),anyList());assertEquals(1,reintegros.count());
+        ((io.github.resilience4j.circuitbreaker.CircuitBreaker)org.springframework.test.util.ReflectionTestUtils.getField(gate,"circuit")).transitionToClosedState();var result=procesar(d);completada(result);assertEquals(pending.reintegro().id(),result.reintegro().id());procesar(d);assertEquals(1,reintegros.count());verify(pasarela,times(1)).reintegrarPago(anyString(),anyString(),any());verify(reservas,times(1)).liberarLugares(any(),anyList());
+    }
+    @Test void expiredAfterRefundRetainsAnnulmentAndCannotRefundAgain(){
+        var c=crear(true);var d=aprobada(c,List.of(entradas.consultarEntradas(c.getId()).get(0).entradaId()));
+        doAnswer(i->{var result=i.callRealMethod();var request=new org.springframework.mock.web.MockHttpServletRequest();ar.edu.unicen.grupo8.comprasservice.timing.RequestBudget.start(request,0);org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(new org.springframework.web.context.request.ServletRequestAttributes(request));return result;}).when(pasarela).reintegrarPago(anyString(),anyString(),any());
+        ResultadoDevolucionDTO pending;
+        try{assertThrows(ar.edu.unicen.grupo8.comprasservice.exception.ComunicacionPasarelaException.class,()->procesar(d));pending=flujo.obtener(d.id());assertEquals(EtapaDevolucion.ANULACION,pending.etapa());assertEquals(EstadoReintegro.COMPLETADO,pending.reintegro().estado());verify(reservas,never()).liberarLugares(any(),anyList());}
+        finally{org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();}
+        var result=procesar(d);completada(result);assertEquals(pending.reintegro().id(),result.reintegro().id());verify(pasarela,times(1)).reintegrarPago(anyString(),anyString(),any());assertEquals(1,reintegros.count());
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints={401,403,404,409,422,429,500,502,503,504})
+    void annulmentFailurePreservesCompletedRefundWithoutReleasingOrRefundingTwice(int status){
+        var c=crear(true);var values=entradas.consultarEntradas(c.getId());var d=aprobada(c,List.of(values.get(0).entradaId()));
+        clearInvocations(entradas,reservas,pasarela);
+        doAnswer(i->{RestSupport.mutate(RestSupport.Operation.TICKET_STATUS,()->{throw new org.springframework.web.client.RestClientResponseException("sentinel-secret",status,"failure",new org.springframework.http.HttpHeaders(),new byte[0],java.nio.charset.StandardCharsets.UTF_8);});return null;}).when(entradas).anularEntradas(eq(c.getId()),anyList());
+        assertThrows(ar.edu.unicen.grupo8.comprasservice.exception.ComunicacionPasarelaException.class,()->procesar(d));
+        var pending=flujo.obtener(d.id());assertEquals(EtapaDevolucion.ANULACION,pending.etapa());assertEquals(EstadoReintegro.COMPLETADO,pending.reintegro().estado());
+        assertEquals(EstadoDevolucion.ERROR_PENDIENTE,pending.devolucion().estado());verify(reservas,never()).liberarLugares(any(),anyList());
+        doCallRealMethod().when(entradas).anularEntradas(eq(c.getId()),anyList());
+        var result=procesar(d);completada(result);assertEquals(pending.reintegro().id(),result.reintegro().id());procesar(d);
+        assertEquals(1,reintegros.count());verify(pasarela,times(1)).reintegrarPago(anyString(),anyString(),any());
+    }
     private ResultadoDevolucionDTO procesar(DevolucionDTO d) { return flujo.procesar(d.id(), datos(d)); }
     private void completada(ResultadoDevolucionDTO r) {
         assertEquals(EstadoDevolucion.COMPLETADA, r.devolucion().estado());

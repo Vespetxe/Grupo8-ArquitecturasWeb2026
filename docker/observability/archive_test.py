@@ -11,6 +11,16 @@ def envelope(**extra):
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_resilience_fields_survive_without_copying_credentials(self):
+        with tempfile.TemporaryDirectory() as d:
+            a = Archive(d)
+            a.append(envelope(dependency="eventos", operation="event-read", circuit="compras-eventos-read", circuitState="OPEN", errorCategory="CIRCUIT_OPEN", durationMs=1, headers={"Authorization": "not copied"}))
+            row = list(a.rows())[0]
+            self.assertEqual(row["circuitState"], "OPEN")
+            self.assertEqual(row["dependency"], "eventos")
+            self.assertEqual(row["operation"], "event-read")
+            self.assertNotIn("headers", row)
+
     def test_ecs_and_metadata(self):
         with tempfile.TemporaryDirectory() as d:
             a = Archive(d)

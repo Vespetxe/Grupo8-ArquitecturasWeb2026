@@ -1,17 +1,18 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,progress=()=>{}}){
+module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
- async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={}){
-  attest();const url=urlFor(meta,p);const payload=body===undefined?undefined:JSON.stringify(body);
+ async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
+  if(checkTopology)attest();const url=urlFor(meta,p);const payload=body===undefined?undefined:JSON.stringify(body);
   const response=await new Promise((resolve,reject)=>{
    const headers={Accept:'application/json',...extra,...(actor?{Authorization:'Bearer '+actor.token}:{}),...(payload===undefined?{}:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(payload)})};
    const req=http.request(url,{method,headers,timeout:25000},res=>{let data='';res.setEncoding('utf8');res.on('data',p=>data+=p);res.on('end',()=>{try{resolve({status:res.statusCode,correlationId:res.headers["x-correlation-id"],body:data?JSON.parse(data):null});}catch{reject(new Error('Non-JSON HTTP response'));}});});
    req.on('error',reject);req.on('timeout',()=>req.destroy(new Error('HTTP timeout; no automatic write retry')));if(payload!==undefined)req.write(payload);req.end();
   });
   report.requests.push({method,path:p,status:response.status,correlationId:response.correlationId,expected,actor:actor?.id});progress(report);
+  if(Array.isArray(expected)){assert.ok(expected.includes(response.status),'Unexpected fault response status');return response;}
   assert.equal(response.status,expected,method+' '+p+': expected '+expected+' received '+response.status);return response.body;
  }
  const get=p=>api('GET',p),post=(p,b,s=200)=>api('POST',p,b,s),patch=p=>api('PATCH',p);
@@ -146,7 +147,10 @@ async function recovered(){
 
  await numberedRefundCancellation();await rejected();await recovered();
  const concurrentStart=report.requests.length;
- await Promise.all(Array.from({length:24},async(_,index)=>{
+ // This checks ownership/context, not overload. Respect the eight-slot pilot;
+ // saturation and immediate 503 rejection have dedicated deterministic tests.
+ for(let offset=0;offset<24;offset+=8)await Promise.all(Array.from({length:8},async(_,localIndex)=>{
+  const index=offset+localIndex;
   const actor=clients[index%clients.length];
   const tickets=await api('GET','/tickets?clientId='+actor.id,undefined,200,actor);
   assert.ok(tickets.every(t=>t.clientId===String(actor.id)),'Concurrent ownership isolation');
@@ -154,7 +158,7 @@ async function recovered(){
  const concurrent=report.requests.slice(concurrentStart);
  assert.equal(concurrent.length,24);
  assert.equal(new Set(concurrent.map(r=>r.correlationId)).size,24);
- report.concurrencyEvidence={requests:24,distinctCorrelations:24,actors:clients.length};
+ report.concurrencyEvidence={requests:24,maxInFlight:8,distinctCorrelations:24,actors:clients.length};
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.compras}.compras;`),'3');
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.compras}.pagos;`),'3');
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.entradas}.tickets;`),'3');
@@ -166,5 +170,6 @@ async function recovered(){
  const refunds=JSON.parse(sql(`SELECT datos FROM ${meta.schemas.compras}.operaciones_simuladas WHERE clave LIKE 'reintegros-pago:%';`)).operaciones;
  assert.equal(Object.keys(refunds).length,2);assert.equal(Object.values(refunds).reduce((sum,r)=>sum+Number(r.importe),0),30000);
  report.financialEvidence={chargeAttempts:3,approvedCharges:2,rejectedCharges:1,approvedAmount:45000,refundOperations:2,refundedAmount:30000,tickets:3,emissionBatches:2};
+ if(faults)report.faults=await require('./fault-campaign.cjs')({meta,sql,attest,api,clients,admin,scenarios:report.scenarios,controls:faults});
  return {...report,result:'PASS',identities:{clients:clients.map(c=>c.id),organizers:organizers.map(c=>c.id),admin:admin.id,access:access.id}};
 };

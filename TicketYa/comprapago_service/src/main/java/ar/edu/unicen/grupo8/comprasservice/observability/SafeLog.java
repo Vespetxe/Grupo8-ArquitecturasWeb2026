@@ -32,7 +32,7 @@ public final class SafeLog {
 
     private enum Category {
         TECHNICAL_AUTHENTICATION, EXTERNAL_HTTP, EXTERNAL_COMMUNICATION,
-        PERSISTENCE, STATE_CONFLICT, INVALID_INPUT, UNEXPECTED
+        PERSISTENCE, STATE_CONFLICT, INVALID_INPUT, UNEXPECTED, RATE_LIMITED, RESULT_UNKNOWN, INVALID_RESPONSE, UNCONFIRMED_REJECTION, UNAVAILABLE
     }
 
     public static void refundPending(Logger log, Long id, RuntimeException failure) {
@@ -88,6 +88,7 @@ public final class SafeLog {
     }
 
     private static Category category(Throwable failure) {
+        if(failure instanceof ar.edu.unicen.grupo8.comprasservice.client.RemoteFailure remote)return Category.valueOf(remote.category().name());
         if (failure instanceof TechnicalAuthFailure) return Category.TECHNICAL_AUTHENTICATION;
         if (failure instanceof RestClientResponseException response) {
             int status = response.getStatusCode().value();

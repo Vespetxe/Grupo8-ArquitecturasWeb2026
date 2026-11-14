@@ -25,6 +25,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LoggingSafetyTest {
+    @Test void remoteCategoriesAreControlledAndNeverIncludeUntrustedBodies()throws Exception{
+        try(var fixture=new EcsLogFixture()){
+            var logger=fixture.context.getLogger("operational.remote.test");var appender=new ListAppender<ILoggingEvent>();appender.start();logger.addAppender(appender);
+            for(var category:ar.edu.unicen.grupo8.comprasservice.client.RemoteFailure.Category.values()){
+                SafeLog.paymentPending(logger,1L,EtapaCompra.CONFIRMACION,new ar.edu.unicen.grupo8.comprasservice.client.RemoteFailure(category));
+                var json=required(fixture.encode(appender.list.get(appender.list.size()-1)));assertEquals(category.name(),json.get("errorCategory").asText());noSecrets(json.toString());
+            }
+        }
+    }
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final String SECRET = "sentinel-39-do-not-log";
     private static final String TAINTED = "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.secret.signature password=" + SECRET
