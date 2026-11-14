@@ -44,10 +44,20 @@ services:
     environment:
       SERVER_PORT: "8082"
       SPRING_PROFILES_ACTIVE: integracion
+      TY_SECURITY_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
+      TY_SECURITY_KEY_ID: ${IDENTITY_JWT_KEY_ID:-identity-key-1}
+      TY_SECURITY_PUBLIC_KEY: /run/verification/public.pem
       DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_inventario?allowPublicKeyRetrieval=true&useSSL=false"
       DB_USERNAME: ty_inventario
       DB_PASSWORD: ${TY_E2_INVENTARIO_DB_PASSWORD:?Definir TY_E2_INVENTARIO_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      - type: bind
+        source: ${IDENTITY_KEYS_DIR:-../ticketya-identity-keys}/public.pem
+        target: /run/verification/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       mysql:
         condition: service_healthy
@@ -62,11 +72,23 @@ services:
     environment:
       SERVER_PORT: "8083"
       SPRING_PROFILES_ACTIVE: integracion
+      TY_SECURITY_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
+      TY_SECURITY_KEY_ID: ${IDENTITY_JWT_KEY_ID:-identity-key-1}
+      TY_SECURITY_PUBLIC_KEY: /run/verification/public.pem
+      TY_SECURITY_TOKEN_URL: http://identidad:8085/oauth2/token
+      TY_SECURITY_COMPRAS_SECRET: ${TY_SECURITY_ENTRADAS_COMPRAS_SECRET:-}
       DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_entradas?allowPublicKeyRetrieval=true&useSSL=false"
       DB_USERNAME: ty_entradas
       DB_PASSWORD: ${TY_E2_ENTRADAS_DB_PASSWORD:?Definir TY_E2_ENTRADAS_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       COMPRAS_BASE_URL: http://compras:8084
+    volumes:
+      - type: bind
+        source: ${IDENTITY_KEYS_DIR:-../ticketya-identity-keys}/public.pem
+        target: /run/verification/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       mysql:
         condition: service_healthy
@@ -81,6 +103,13 @@ services:
     environment:
       SERVER_PORT: "8084"
       SPRING_PROFILES_ACTIVE: integracion
+      TY_SECURITY_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
+      TY_SECURITY_KEY_ID: ${IDENTITY_JWT_KEY_ID:-identity-key-1}
+      TY_SECURITY_PUBLIC_KEY: /run/verification/public.pem
+      TY_SECURITY_TOKEN_URL: http://identidad:8085/oauth2/token
+      TY_SECURITY_EVENTOS_SECRET: ${TY_SECURITY_COMPRAS_EVENTOS_SECRET:-}
+      TY_SECURITY_INVENTARIO_SECRET: ${TY_SECURITY_COMPRAS_INVENTARIO_SECRET:-}
+      TY_SECURITY_ENTRADAS_SECRET: ${TY_SECURITY_COMPRAS_ENTRADAS_SECRET:-}
       DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_compras?allowPublicKeyRetrieval=true&useSSL=false"
       DB_USERNAME: ty_compras
       DB_PASSWORD: ${TY_E2_COMPRAS_DB_PASSWORD:?Definir TY_E2_COMPRAS_DB_PASSWORD}
@@ -88,6 +117,13 @@ services:
       EVENTOS_BASE_URL: http://eventos:8081
       INVENTARIO_BASE_URL: http://inventario:8082
       ENTRADAS_BASE_URL: http://entradas:8083
+    volumes:
+      - type: bind
+        source: ${IDENTITY_KEYS_DIR:-../ticketya-identity-keys}/public.pem
+        target: /run/verification/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       mysql:
         condition: service_healthy
@@ -102,6 +138,13 @@ services:
     environment:
       SERVER_PORT: "8081"
       SPRING_PROFILES_ACTIVE: integracion
+      TY_SECURITY_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
+      TY_SECURITY_KEY_ID: ${IDENTITY_JWT_KEY_ID:-identity-key-1}
+      TY_SECURITY_PUBLIC_KEY: /run/verification/public.pem
+      TY_SECURITY_TOKEN_URL: http://identidad:8085/oauth2/token
+      TY_SECURITY_INVENTARIO_SECRET: ${TY_SECURITY_EVENTOS_INVENTARIO_SECRET:-}
+      TY_SECURITY_ENTRADAS_SECRET: ${TY_SECURITY_EVENTOS_ENTRADAS_SECRET:-}
+      TY_SECURITY_COMPRAS_SECRET: ${TY_SECURITY_EVENTOS_COMPRAS_SECRET:-}
       DB_URL: "jdbc:mysql://mysql:3306/ticketya_e2_docker_eventos?allowPublicKeyRetrieval=true&useSSL=false"
       DB_USERNAME: ty_eventos
       DB_PASSWORD: ${TY_E2_EVENTOS_DB_PASSWORD:?Definir TY_E2_EVENTOS_DB_PASSWORD}
@@ -109,6 +152,13 @@ services:
       INVENTARIO_BASE_URL: http://inventario:8082
       COMPRAS_BASE_URL: http://compras:8084
       ENTRADAS_BASE_URL: http://entradas:8083
+    volumes:
+      - type: bind
+        source: ${IDENTITY_KEYS_DIR:-../ticketya-identity-keys}/public.pem
+        target: /run/verification/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       mysql:
         condition: service_healthy
@@ -156,12 +206,23 @@ services:
     environment:
       SERVER_PORT: "8080"
       SPRING_PROFILES_ACTIVE: integracion
+      TY_SECURITY_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
+      TY_SECURITY_KEY_ID: ${IDENTITY_JWT_KEY_ID:-identity-key-1}
+      TY_SECURITY_PUBLIC_KEY: /run/verification/public.pem
+      IDENTIDAD_BASE_URL: http://identidad:8085
       EVENTOS_BASE_URL: http://eventos:8081
       INVENTARIO_BASE_URL: http://inventario:8082
       ENTRADAS_BASE_URL: http://entradas:8083
       COMPRAS_BASE_URL: http://compras:8084
     ports:
       - "127.0.0.1:38080:8080"
+    volumes:
+      - type: bind
+        source: ${IDENTITY_KEYS_DIR:-../ticketya-identity-keys}/public.pem
+        target: /run/verification/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
     depends_on:
       eventos:
         condition: service_started

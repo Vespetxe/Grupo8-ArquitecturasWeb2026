@@ -32,10 +32,10 @@ class ApiIntegracionTest {
         reserva = Math.abs(UUID.randomUUID().getMostSignificantBits() % 1000000000L) + 10000;
         cliente = reserva;
         reservas.registrarReserva(new ReservaDTO(reserva, cliente, 20L, "TEMPORAL", LocalDateTime.now(Clock.systemUTC()).plusMinutes(15),
-                List.of(new DetalleEmisionDTO(1L, null, 2))));
+                List.of(new DetalleEmisionDTO(1L, null, 2)),cliente));
     }
     private HttpResponse<String> solicitar(String metodo, String ruta, String cuerpo) throws Exception {
-        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + ruta));
+        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + ruta)).header("Authorization","Bearer "+ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys.token("compras","user",Long.toString(cliente),(ruta.startsWith("/v3/")||ruta.startsWith("/swagger-ui/"))?"ADMINISTRADOR":"CLIENTE",null,300));
         if (cuerpo == null) builder.GET();
         else builder.header("Content-Type", "application/json").method(metodo, HttpRequest.BodyPublishers.ofString(cuerpo));
         return http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
@@ -82,25 +82,25 @@ class ApiIntegracionTest {
         error(solicitar("POST", "/compras", "{"), 400);
         error(solicitar("GET", "/compras?clienteId=-1", null), 400);
         error(solicitar("GET", "/compras", null), 400);
-        error(solicitar("GET", "/compras/no-numero", null), 400);
+        error(solicitar("GET", "/compras/no-numero", null), 403);
         error(solicitar("GET", "/compras/9223372036854775807", null), 404);
         error(solicitar("GET", "/pagos/9223372036854775807", null), 404);
         error(solicitar("POST", "/pagos", pagoJson(Long.MAX_VALUE, "inexistente")), 404);
-        error(solicitar("POST", "/pagos", pagoJson(1, "x".repeat(101))), 400);
+        error(solicitar("POST", "/pagos", pagoJson(crear(), "x".repeat(101))), 400);
     }
     @Test void creacionRepetidaDeReservaDevuelveConflicto() throws Exception {
         crear(); error(solicitar("POST", "/compras", compraJson("[{\"sectorId\":1,\"cantidad\":2}]")), 409);
     }
     @Test void erroresDeProtocoloConservanElMismoFormato() throws Exception {
-        error(solicitar("DELETE", "/compras", "{}"), 405);
-        error(solicitar("GET", "/ruta-inexistente", null), 404);
+        error(solicitar("DELETE", "/compras", "{}"), 403);
+        error(solicitar("GET", "/ruta-inexistente", null), 403);
         var solicitud = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/compras"))
-                .header("Content-Type", "text/plain").POST(HttpRequest.BodyPublishers.ofString("texto")).build();
+                .header("Authorization","Bearer "+ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys.token("compras","user",Long.toString(cliente),"CLIENTE",null,300)).header("Content-Type", "text/plain").POST(HttpRequest.BodyPublishers.ofString("texto")).build();
         error(http.send(solicitud, HttpResponse.BodyHandlers.ofString()), 415);
     }
     @Test void formatoNoAceptableDevuelve406ConErrorJson() throws Exception {
         var solicitud = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/compras?clienteId=" + cliente))
-                .header("Accept", "application/xml").GET().build();
+                .header("Authorization","Bearer "+ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys.token("compras","user",Long.toString(cliente),"CLIENTE",null,300)).header("Accept", "application/xml").GET().build();
         var respuesta = http.send(solicitud, HttpResponse.BodyHandlers.ofString());
         error(respuesta, 406);
         assertTrue(respuesta.headers().firstValue("Content-Type").orElse("").contains("application/json"));
@@ -188,4 +188,29 @@ class ApiIntegracionTest {
         assertFalse(schemas.at("/PagoDTO/properties/medioPago").isMissingNode());
         for (var medio : ar.edu.unicen.grupo8.comprasservice.entity.enums.MedioPago.values()) assertTrue(schemas.toString().contains(medio.name()));
     }
+
+    private HttpResponse<String> foreign(String method,String path,String body) throws Exception {
+        var b=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).header("Authorization","Bearer "+ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys.token("compras","user",Long.toString(cliente+1),"CLIENTE",null,300)).header("X-User-Role","ADMIN").header("X-Admin-Id","7");
+        if(body==null)b.GET();else b.header("Content-Type","application/json").method(method,HttpRequest.BodyPublishers.ofString(body));
+        return http.send(b.build(),HttpResponse.BodyHandlers.ofString());
+    }
+    @Test void foreignOwnerCannotQueryRegisterCorrespondencePayOrReuseIdempotency() throws Exception {
+        long id=crear();String body=pagoJson(id,"owner-"+reserva);
+        for(String suffix:List.of("","/estado","/detalle","/entradas"))error(foreign("GET","/compras/"+id+suffix,null),404);
+        error(foreign("GET","/compras?clienteId="+cliente,null),403);
+        error(foreign("POST","/pagos",body),404);
+        assertEquals(201,solicitar("POST","/pagos",body).statusCode());
+        error(foreign("POST","/pagos",body),404);
+        assertEquals(200,solicitar("POST","/pagos",body).statusCode());
+    }
+    @Test void matchingLegacyClientIdDoesNotClaimHistoricalPurchase() throws Exception {
+        var dto=mapper.readValue(compraJson("[{\"sectorId\":1,\"cantidad\":2}]"),CrearCompraDTO.class);
+        var c=comprasSinActor(dto);
+        assertNull(c.getIdentityOwnerId());
+        error(solicitar("GET","/compras/"+c.getId(),null),404);
+        assertFalse(mapper.readTree(solicitar("GET","/compras?clienteId="+cliente,null).body()).toString().contains("\"id\":"+c.getId()+","));
+    }
+    @Autowired ar.edu.unicen.grupo8.comprasservice.service.CompraService compraService;
+    private ar.edu.unicen.grupo8.comprasservice.entity.Compra comprasSinActor(CrearCompraDTO dto){return compraService.crearCompra(dto);}
+
 }

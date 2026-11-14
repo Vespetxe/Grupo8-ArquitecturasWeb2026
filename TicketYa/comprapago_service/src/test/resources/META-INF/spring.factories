@@ -1,1 +1,1 @@
-org.springframework.context.ApplicationContextInitializer=ar.edu.unicen.grupo8.comprasservice.EntornoPruebasSeguro
+org.springframework.context.ApplicationContextInitializer=ar.edu.unicen.grupo8.comprasservice.EntornoPruebasSeguro,ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys

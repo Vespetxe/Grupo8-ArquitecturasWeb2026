@@ -1,5 +1,8 @@
 # TicketYa
 
+Seguridad distribuida (validación JWT local, transporte técnico y rutas pendientes
+de propiedad): [etapa 35 y regresión aislada](docs/entrega2/seguridad-distribuida.md).
+
 Identidad y emisión JWT (etapa independiente, sin seguridad distribuida todavía):
 [diseño implementado, configuración y pruebas aisladas](docs/entrega2/identidad.md).
 
@@ -145,3 +148,5 @@ Las pruebas de Entrega 1 se ejecutan con Java 21 y Maven. La guía incluye el co
 La [lista de límites reales](docs/entrega1/limitaciones.md) forma parte de la documentación de la entrega. La auditoría final de conformidad se realiza por separado.
 
 Para las decisiones administrativas enviar `X-Admin-Id` positivo; en cancelar/suspender/status de Eventos también `X-User-Role: ADMIN`. Las reservas se habilitan solo después de confirmar la publicación; una habilitación pendiente se recupera repitiendo publicar. Una inicialización incompatible devuelve 422 y requiere revisar la configuración.
+
+Autorización por roles, propiedad y regresión comercial con JWT: [diseño y ejecución](docs/entrega2/autorizacion-propiedad.md).

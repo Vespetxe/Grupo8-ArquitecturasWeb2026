@@ -1,4 +1,13 @@
 'use strict';
+if(require.main!==module)throw new Error('CLI only: business regression is closed until ownership');
+// Business HTTP remains closed until ownership is implemented. Never start the
+// historical anonymous scenarios against the secured images.
+if(require.main===module){
+  const args=process.argv.slice(2);
+  if(args[0]!=='--security'){console.error('Regresion comercial pendiente de propiedad. Usar --security para seguridad y transporte aislados.');process.exit(2);}
+  const result=require('node:child_process').spawnSync(process.execPath,[require('node:path').join(__dirname,'run-security.cjs'),...args.slice(1)],{stdio:'inherit',shell:false});
+  process.exit(result.status??1);
+}
 // Owns a NEW Compose project per run. Never accepts a base URL, datasource or existing project.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');

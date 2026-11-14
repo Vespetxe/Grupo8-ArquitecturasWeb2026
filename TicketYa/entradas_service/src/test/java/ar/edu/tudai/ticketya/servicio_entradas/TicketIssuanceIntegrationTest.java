@@ -47,10 +47,12 @@ class TicketIssuanceIntegrationTest {
                 exchange.getResponseBody().write(bytes);
                 exchange.close();
             });
+            compras.createContext("/oauth2/token", exchange->{exchange.getRequestBody().readAllBytes();byte[] b="{\"access_token\":\"unit-technical-token\",\"token_type\":\"Bearer\",\"expires_in\":120}".getBytes(StandardCharsets.UTF_8);exchange.getResponseHeaders().add("Content-Type","application/json");exchange.sendResponseHeaders(200,b.length);exchange.getResponseBody().write(b);exchange.close();});
             compras.start();
         } catch (IOException exception) {
             throw new IllegalStateException(exception);
         }
+        registry.add("TY_SECURITY_TOKEN_URL", () -> "http://localhost:"+compras.getAddress().getPort()+"/oauth2/token");
         registry.add("ticketya.compras.base-url",
                 () -> "http://localhost:" + compras.getAddress().getPort());
     }
@@ -83,6 +85,7 @@ class TicketIssuanceIntegrationTest {
     private HttpResponse<String> issue(String orderId) throws Exception {
         HttpRequest request = HttpRequest.newBuilder(URI.create(
                         "http://localhost:" + port + "/internal/tickets/issue"))
+                .header("Authorization","Bearer "+SecurityTestKeys.token("entradas","service","service:compras-to-entradas",null,"tickets.issue",120))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString("{\"orderId\":\"" + orderId + "\"}"))
                 .build();

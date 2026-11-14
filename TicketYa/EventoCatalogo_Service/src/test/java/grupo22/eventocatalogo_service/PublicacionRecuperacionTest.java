@@ -18,6 +18,21 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class PublicacionRecuperacionTest {
+    @Test void rechazoDeAutenticacionNoEsRechazoComercialNiPublicaEvento()throws Exception{
+        for(int status:new int[]{401,403}){
+            var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+            server.createContext("/",x->{x.getRequestBody().readAllBytes();x.sendResponseHeaders(status,-1);x.close();});server.start();
+            try{
+                var f=workflow("http://127.0.0.1:"+server.getAddress().getPort());
+                assertEquals(503,assertThrows(ResponseStatusException.class,()->f.workflow.publish(1L)).getStatusCode().value());
+                verify(f.service,never()).publishEvent(any());assertEquals(EventStatus.BORRADOR,f.event.getStatus());
+            }finally{server.stop(0);}
+        }
+    }
+    private grupo22.eventocatalogo_service.security.ServiceTokens testTokens(String url){
+      var tokens=org.mockito.Mockito.mock(grupo22.eventocatalogo_service.security.ServiceTokens.class);
+      org.mockito.Mockito.when(tokens.client(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyString())).thenReturn(org.springframework.web.client.RestClient.builder().baseUrl(url).build());return tokens;
+    }
     record Fixture(EventWorkflow workflow,EventService service,EventResponseDTO event) {}
     private Fixture workflow(String url) {
         var service=mock(EventService.class);var repository=mock(EventRepository.class);var sectors=mock(SectorRepository.class);
@@ -29,7 +44,7 @@ class PublicacionRecuperacionTest {
         when(repository.findById(1L)).thenReturn(Optional.of(e));
         var sector=new Sector();sector.setSectorId(10L);sector.setType(SectorType.NO_NUMERADO);sector.setCapacity(2);
         when(sectors.findByVenueVenueId(2L)).thenReturn(List.of(sector));
-        return new Fixture(new EventWorkflow(service,repository,sectors,mock(PlatformTransactionManager.class),url,url,url),service,response);
+        return new Fixture(new EventWorkflow(service,repository,sectors,mock(PlatformTransactionManager.class),url,url,url,testTokens(url)),service,response);
     }
     @Test void fallaDeHabilitacionSeRetomaSobrePublicadoSinReinicializar() throws Exception {
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);

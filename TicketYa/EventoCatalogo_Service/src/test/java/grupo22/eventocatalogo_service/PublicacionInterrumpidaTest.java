@@ -15,6 +15,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 class PublicacionInterrumpidaTest {
+    private grupo22.eventocatalogo_service.security.ServiceTokens testTokens(String url){
+      var tokens=org.mockito.Mockito.mock(grupo22.eventocatalogo_service.security.ServiceTokens.class);
+      org.mockito.Mockito.when(tokens.client(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyString())).thenReturn(org.springframework.web.client.RestClient.builder().baseUrl(url).build());return tokens;
+    }
     @Test void noPublicaConUnSectorPendienteYReintentaElInventarioCompleto()throws Exception {
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);var calls=new AtomicInteger();
         server.createContext("/",exchange->{exchange.getRequestBody().readAllBytes();int n=calls.incrementAndGet();exchange.sendResponseHeaders(n==2?503:201,-1);exchange.close();});server.start();
@@ -28,7 +32,7 @@ class PublicacionInterrumpidaTest {
             var b=new Sector();b.setSectorId(11L);b.setType(SectorType.NO_NUMERADO);b.setCapacity(2);
             when(sectors.findByVenueVenueId(2L)).thenReturn(List.of(a,b));
             String url="http://127.0.0.1:"+server.getAddress().getPort();
-            var workflow=new EventWorkflow(service,repository,sectors,mock(PlatformTransactionManager.class),url,url,url);
+            var workflow=new EventWorkflow(service,repository,sectors,mock(PlatformTransactionManager.class),url,url,url,testTokens(url));
             assertThrows(ResponseStatusException.class,()->workflow.publish(1L));verify(service,never()).publishEvent(1L);
             workflow.publish(1L);verify(service,times(1)).publishEvent(1L);assertEquals(5,calls.get());
         }finally{server.stop(0);}

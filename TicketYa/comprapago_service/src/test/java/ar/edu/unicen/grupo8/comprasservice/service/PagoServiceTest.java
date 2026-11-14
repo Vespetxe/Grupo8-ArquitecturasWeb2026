@@ -17,6 +17,18 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class PagoServiceTest {
+    @Test void falloTecnicoDeAutenticacionConservaPagoYRecuperaSinSegundoCargo() {
+        doThrow(new ar.edu.unicen.grupo8.comprasservice.security.TechnicalAuthFailure()).when(reservas).confirmarReserva(1L);
+        Pago inicial=servicio.procesarPago(1L,"auth-recovery",MedioPago.TARJETA_DEBITO);
+        assertEquals(EstadoPago.APROBADO,inicial.getEstado());
+        assertEquals(EtapaCompra.CONFIRMACION,compra.getEtapa());
+        verify(pasarela,never()).reintegrarPago(any(),any());
+        verify(reservas,never()).compensarReserva(any());
+        doCallRealMethod().when(reservas).confirmarReserva(1L);
+        Pago recuperado=servicio.procesarPago(1L,"auth-recovery",MedioPago.TARJETA_DEBITO);
+        assertEquals(inicial.getId(),recuperado.getId());assertEquals(EstadoCompra.COMPLETADA,compra.getEstado());
+        verify(pasarela,times(1)).procesarPago(any(),any());verify(pasarela,never()).reintegrarPago(any(),any());
+    }
     private Compra compra;
     private ReservaClientSimulado reservas;
     private EntradaClientSimulado entradas;

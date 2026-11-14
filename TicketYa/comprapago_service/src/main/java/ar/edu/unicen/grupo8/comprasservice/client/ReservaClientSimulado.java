@@ -76,7 +76,7 @@ public class ReservaClientSimulado implements ReservaClient {
     }
 
     private ReservaDTO conEstado(ReservaDTO r, String estado) {
-        return new ReservaDTO(r.reservaId(), r.clienteId(), r.eventoId(), estado, r.fechaVencimiento(), r.detalles());
+        return new ReservaDTO(r.reservaId(), r.clienteId(), r.eventoId(), estado, r.fechaVencimiento(), r.detalles(),r.identityOwnerId());
     }
 
     public void registrarReserva(ReservaDTO reserva) {

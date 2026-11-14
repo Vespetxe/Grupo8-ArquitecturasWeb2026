@@ -5,12 +5,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.client.RestClient;
+import ar.edu.unicen.grupo8.comprasservice.security.ServiceTokens;
 import java.util.*;
 @Component @Profile("integracion")
 public class RestEntradaClient implements EntradaClient {
     private final RestClient rest;private final EntradaIdentidadService identidad;
     public record Ticket(String ticketId,String orderId,String eventId,String clientId,String sectorId,String seatId,String status,String qr){}
-    public RestEntradaClient(@Value("${ticketya.entradas.base-url:http://localhost:8083}") String url,EntradaIdentidadService identidad){rest=RestSupport.client(url);this.identidad=identidad;}
+    public RestEntradaClient(@Value("${ticketya.entradas.base-url:http://localhost:8083}") String url,EntradaIdentidadService identidad,ServiceTokens tokens){rest=tokens.client("entradas",url);this.identidad=identidad;}
     public List<EntradaDTO> consultarEntradas(Long id){
         Ticket[] values=rest.get().uri("/tickets?orderId={id}",id).retrieve().body(Ticket[].class);
         if(values==null)throw new IllegalStateException("Respuesta de Entradas desconocida");

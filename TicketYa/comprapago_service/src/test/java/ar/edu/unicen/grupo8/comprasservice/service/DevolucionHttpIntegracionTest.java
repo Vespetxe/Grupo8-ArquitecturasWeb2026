@@ -66,7 +66,7 @@ class DevolucionHttpIntegracionTest {
     private Compra crear(boolean pagar) {
         DetalleCompraDTO detalle = new DetalleCompraDTO(); detalle.setSectorId(1L); detalle.setCantidad(2);
         CrearCompraDTO dto = new CrearCompraDTO(); dto.setClienteId(10L); dto.setEventoId(20L); dto.setReservaId(30L); dto.setDetalles(List.of(detalle));
-        Compra c = compras.crearCompra(dto);
+        Compra c = ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys.asUser(10,"CLIENTE",()->compras.crearCompra(dto));
         if (pagar) pagos.procesarPago(c.getId(), "pago-devolucion", MedioPago.TARJETA_DEBITO);
         c = compras.obtenerCompraPorId(c.getId());
         clearInvocations(eventos, entradas, reservas, pasarela);
@@ -74,7 +74,9 @@ class DevolucionHttpIntegracionTest {
     }
     private java.net.http.HttpResponse<String> http(String metodo, String ruta, Object dto) throws Exception {
         var b = java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://127.0.0.1:" + port + ruta));
-        if(ruta.startsWith("/admin/"))b.header("X-Admin-Id","7");
+        boolean internal=ruta.startsWith("/admin/eventos/");
+        boolean admin=(ruta.startsWith("/admin/")||ruta.startsWith("/v3/")||ruta.startsWith("/swagger-ui/"))&&!internal;
+        b.header("Authorization","Bearer "+ar.edu.unicen.grupo8.comprasservice.SecurityTestKeys.token("compras",internal?"service":"user",internal?"service:eventos-to-compras":admin?"7":"10",internal?null:admin?"ADMINISTRADOR":"CLIENTE",internal?"purchases.event-cancel":null,300));
         if (dto == null) b.GET(); else b.header("Content-Type", "application/json").method(metodo,
                 java.net.http.HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(dto)));
         return http.send(b.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
@@ -116,7 +118,7 @@ class DevolucionHttpIntegracionTest {
         error(http("POST", "/admin/eventos/999/cancelacion", Map.of()),404);
         error(http("GET", "/admin/devoluciones?estado=INVENTADO", null),400);
         error(http("GET", "/admin/devoluciones", null),400);
-        error(http("GET", "/devoluciones/-1", null),400);
+        error(http("GET", "/devoluciones/-1", null),403);
         error(http("POST", "/devoluciones", Map.of()),400);
         var d = solicitud(crear(true));
         error(http("POST", ruta(d,"aprobar"), Map.of("motivo"," ")),400);

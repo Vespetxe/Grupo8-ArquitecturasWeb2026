@@ -3,6 +3,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.client.RestClient;
+import ar.edu.unicen.grupo8.comprasservice.security.ServiceTokens;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.List;
@@ -11,7 +12,7 @@ public class RestEventoClient implements EventoClient {
     record Precio(Long sectorId,BigDecimal price){}
     record Evento(Long eventId,String status,OffsetDateTime startDateTime,List<Precio> sectorPrices){}
     private final RestClient rest;
-    public RestEventoClient(@Value("${ticketya.eventos.base-url:http://localhost:8081}") String url){rest=RestSupport.client(url);}
+    public RestEventoClient(@Value("${ticketya.eventos.base-url:http://localhost:8081}") String url,ServiceTokens tokens){rest=tokens.client("eventos",url);}
     private Evento get(Long id){var e=rest.get().uri("/api/v1/events/{id}",id).retrieve().body(Evento.class);if(e==null)throw new IllegalStateException("Evento desconocido");return e;}
     public boolean eventoValido(Long id){var e=get(id);return "PUBLICADO".equals(e.status()) && e.startDateTime().isAfter(OffsetDateTime.now(ZoneOffset.UTC));}
     public LocalDateTime obtenerFechaInicio(Long id){return get(id).startDateTime().withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();}

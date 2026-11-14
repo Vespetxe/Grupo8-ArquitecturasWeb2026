@@ -10,5 +10,8 @@ import java.util.List;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select e from Event e where e.eventId = :id")
+    java.util.Optional<Event> lockForCancellation(@org.springframework.data.repository.query.Param("id") Long id);
     List<Event> findByStatus(EventStatus status);
 }

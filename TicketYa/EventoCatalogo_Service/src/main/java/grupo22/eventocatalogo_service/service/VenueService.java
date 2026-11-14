@@ -38,6 +38,7 @@ public class VenueService {
                 request.getLongitude()
         );
         venue.setCity(request.getCity());
+        venue.setIdentityOwnerId(grupo22.eventocatalogo_service.security.CurrentActor.humanId());
         Venue saved = venueRepository.save(venue);
         return mapToVenueResponse(saved);
     }

@@ -8,7 +8,7 @@ public class EntornoPruebasSeguro implements ApplicationContextInitializer<Confi
     @Override
     public void initialize(ConfigurableApplicationContext contexto) {
         String url = contexto.getEnvironment().getProperty("spring.datasource.url", "");
-        if (!url.matches("jdbc:mysql://127\\.0\\.0\\.1:33079/ticketya_compras_test(?:\\?.*)?")) {
+        if (!url.matches("jdbc:h2:mem:ticketya_compras_security_test(?:;.*)?") && !url.matches("jdbc:mysql://127\\.0\\.0\\.1:33079/ticketya_compras_test(?:\\?.*)?")) {
             throw new IllegalStateException("Tests bloqueados: se requiere MySQL aislado en 127.0.0.1:33079/ticketya_compras_test");
         }
     }

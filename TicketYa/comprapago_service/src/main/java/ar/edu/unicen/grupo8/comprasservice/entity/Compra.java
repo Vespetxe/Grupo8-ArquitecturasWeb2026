@@ -173,4 +173,10 @@ public class Compra {
     }
 
 
+
+    // Nullable intentionally: historical records are never assigned by matching legacy IDs.
+    @jakarta.persistence.Column(name="identity_owner_id", updatable=false)
+    private Long identityOwnerId;
+    public Long getIdentityOwnerId(){return identityOwnerId;}
+    public void setIdentityOwnerId(Long id){this.identityOwnerId=id;}
 }

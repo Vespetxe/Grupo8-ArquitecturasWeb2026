@@ -66,6 +66,7 @@ public class ReservaService {
         }
 
         Reserva reserva = new Reserva();
+        reserva.setIdentityOwnerId(example.microservicio_inventario_reservas.security.CurrentActor.humanId());
         reserva.setIdCliente(request.getIdCliente());
         reserva.setIdEvento(request.getIdEvento());
         reserva.setIdSector(request.getIdSector());
@@ -131,6 +132,7 @@ public class ReservaService {
     @Transactional(readOnly = true)
     public List<ReservaResponse> obtenerReservasPorCliente(Long idCliente) {
         return reservaRepository.findByIdCliente(idCliente).stream()
+                .filter(r -> example.microservicio_inventario_reservas.security.CurrentActor.jwt()==null || example.microservicio_inventario_reservas.security.CurrentActor.technical() || example.microservicio_inventario_reservas.security.CurrentActor.visible(r.getIdentityOwnerId()))
                 .map(r -> mapToReservaResponse(r, extraerAsientosDTO(r)))
                 .collect(Collectors.toList());
     }
@@ -249,7 +251,7 @@ public class ReservaService {
     }
 
     private ReservaResponse mapToReservaResponse(Reserva r, List<DetalleAsientoResponse> asientos) {
-        return new ReservaResponse(
+        var response = new ReservaResponse(
                 r.getIdReserva(),
                 r.getIdCliente(),
                 r.getIdEvento(),
@@ -260,5 +262,7 @@ public class ReservaService {
                 r.getEstado(),
                 asientos
         );
+        response.setIdentityOwnerId(r.getIdentityOwnerId());
+        return response;
     }
 }

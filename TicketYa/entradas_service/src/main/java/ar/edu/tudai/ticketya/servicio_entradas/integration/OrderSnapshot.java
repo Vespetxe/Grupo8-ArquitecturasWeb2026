@@ -1,3 +1,5 @@
 package ar.edu.tudai.ticketya.servicio_entradas.integration;
 import java.util.List;
-public record OrderSnapshot(String orderId, String clientId, String status, List<OrderItemSnapshot> items) {}
+public record OrderSnapshot(String orderId, String clientId, String status, List<OrderItemSnapshot> items, Long identityOwnerId) {
+ public OrderSnapshot(String orderId,String clientId,String status,List<OrderItemSnapshot> items){this(orderId,clientId,status,items,null);}
+}

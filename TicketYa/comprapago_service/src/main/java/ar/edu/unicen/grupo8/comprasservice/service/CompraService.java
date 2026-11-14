@@ -53,6 +53,7 @@ public class CompraService {
         SeleccionReserva.validar(reserva, dto.getDetalles().stream()
                 .map(d -> new DetalleEmisionDTO(d.getSectorId(), d.getAsientoId(), d.getCantidad())).toList());
         Compra compra = new Compra();
+        compra.setIdentityOwnerId(ar.edu.unicen.grupo8.comprasservice.security.CurrentActor.humanId());
         compra.setClienteId(dto.getClienteId());
         compra.setEventoId(dto.getEventoId());
         compra.setReservaId(dto.getReservaId());
@@ -89,7 +90,8 @@ public class CompraService {
     @Transactional(readOnly = true)
     public List<Compra> obtenerComprasPorCliente(Long clienteId) {
         validarId(clienteId);
-        var compras = compraRepository.findByClienteId(clienteId);
+        var compras = compraRepository.findByClienteId(clienteId).stream()
+                .filter(c -> ar.edu.unicen.grupo8.comprasservice.security.CurrentActor.jwt()==null || ar.edu.unicen.grupo8.comprasservice.security.CurrentActor.technical() || ar.edu.unicen.grupo8.comprasservice.security.CurrentActor.visible(c.getIdentityOwnerId())).toList();
         compras.forEach(c -> { c.getDetalles().size(); c.getEntradasIds().size(); });
         return compras;
     }

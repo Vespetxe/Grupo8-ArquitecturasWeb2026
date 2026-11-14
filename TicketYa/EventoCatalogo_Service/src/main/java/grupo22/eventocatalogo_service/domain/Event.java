@@ -111,4 +111,16 @@ public class Event {
 
     public List<EventSectorPrice> getSectorPrices() { return sectorPrices; }
     public void setSectorPrices(List<EventSectorPrice> sectorPrices) { this.sectorPrices = sectorPrices; }
+
+    // Nullable intentionally: historical records are never assigned by matching legacy IDs.
+    @jakarta.persistence.Column(name="identity_owner_id", updatable=false)
+    private Long identityOwnerId;
+    public Long getIdentityOwnerId(){return identityOwnerId;}
+    public void setIdentityOwnerId(Long id){this.identityOwnerId=id;}
+
+    private Long cancellationAuthorizedAdminId;
+    private String cancellationAuthorizationJti;
+    private java.time.Instant cancellationAuthorizedAt;
+    public Long getCancellationAuthorizedAdminId(){return cancellationAuthorizedAdminId;}
+    public void authorizeCancellation(Long admin,String jti){if(cancellationAuthorizedAdminId==null){cancellationAuthorizedAdminId=admin;cancellationAuthorizationJti=jti;cancellationAuthorizedAt=java.time.Instant.now();}}
 }

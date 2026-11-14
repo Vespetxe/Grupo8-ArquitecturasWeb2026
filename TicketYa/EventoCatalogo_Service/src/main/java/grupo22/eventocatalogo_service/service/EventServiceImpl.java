@@ -66,6 +66,7 @@ public class EventServiceImpl implements EventService {
             event.setParticipants(new HashSet<>(participants));
         }
 
+        event.setIdentityOwnerId(grupo22.eventocatalogo_service.security.CurrentActor.humanId());
         Event savedEvent = eventRepository.save(event);
         return mapToEventResponse(savedEvent);
     }

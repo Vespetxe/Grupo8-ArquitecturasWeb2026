@@ -44,7 +44,7 @@ class InventarioControllerTest {
         when(inventarioService.inicializarInventario(eq(idEvento), any(InicializarInventarioRequest.class)))
                 .thenReturn(response);
 
-        mockMvc.perform(post("/eventos/{idEvento}/inventario", idEvento)
+        mockMvc.perform(post("/eventos/{idEvento}/inventario", idEvento).header("Authorization", "Bearer "+example.microservicio_inventario_reservas.SecurityTestKeys.token("inventario","service","service:eventos-to-inventario",null,"inventory.prepare",120))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -97,7 +97,7 @@ class InventarioControllerTest {
 
         when(inventarioService.liberarPorDevolucion(any(LiberarDevolucionRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/ocupaciones/liberar")
+        mockMvc.perform(post("/ocupaciones/liberar").header("Authorization", "Bearer "+example.microservicio_inventario_reservas.SecurityTestKeys.token("inventario","service","service:compras-to-inventario",null,"reservations.return",120))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class InventarioControllerTest {
 
         when(inventarioService.cancelarInventarioEvento(idEvento)).thenReturn(response);
 
-        mockMvc.perform(post("/eventos/{idEvento}/cancelar-inventario", idEvento))
+        mockMvc.perform(post("/eventos/{idEvento}/cancelar-inventario", idEvento).header("Authorization", "Bearer "+example.microservicio_inventario_reservas.SecurityTestKeys.token("inventario","service","service:eventos-to-inventario",null,"inventory.lifecycle",120)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.exitoso").value(true))
                 .andExpect(jsonPath("$.mensaje").value("Inventario del evento invalidado correctamente por cancelación"));

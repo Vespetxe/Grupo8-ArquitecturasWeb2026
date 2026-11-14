@@ -3,7 +3,7 @@ const {spawnSync}=require('node:child_process');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../../..');
-const projects=[['api-gateway','gateway'],['EventoCatalogo_Service','eventos'],['inventarioReserva_service','inventario'],['entradas_service','entradas'],['comprapago_service','compras']];
+const projects=[['api-gateway','gateway'],['EventoCatalogo_Service','eventos'],['inventarioReserva_service','inventario'],['entradas_service','entradas'],['comprapago_service','compras'],['identidad_service','identidad']];
 if(require.main===module){
   assert.equal(process.argv.length,2,'No se admiten argumentos');
   for(const [directory,tag] of projects){

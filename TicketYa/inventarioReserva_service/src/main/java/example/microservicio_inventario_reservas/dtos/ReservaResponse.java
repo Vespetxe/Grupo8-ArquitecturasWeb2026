@@ -9,9 +9,13 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
+
 @ToString
 public class ReservaResponse {
+    private Long identityOwnerId;
+    public ReservaResponse(Long id,Long cliente,Long evento,Long sector,Integer cantidad,LocalDateTime creacion,LocalDateTime expiracion,EstadoReserva estado,List<DetalleAsientoResponse> asientos){
+        this.idReserva=id;this.idCliente=cliente;this.idEvento=evento;this.idSector=sector;this.cantidad=cantidad;this.fechaCreacion=creacion;this.fechaExpiracion=expiracion;this.estado=estado;this.asientosReservados=asientos;
+    }
 
     private Long idReserva;
     private Long idCliente;

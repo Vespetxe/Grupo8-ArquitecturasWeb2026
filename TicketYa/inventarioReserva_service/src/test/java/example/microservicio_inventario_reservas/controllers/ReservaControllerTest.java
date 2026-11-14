@@ -34,6 +34,10 @@ class ReservaControllerTest {
 
     @MockitoBean
     private ReservaService reservaService;
+    @MockitoBean private example.microservicio_inventario_reservas.repositories.ReservaRepository reservaRepository;
+    @org.junit.jupiter.api.BeforeEach void ownerFixture(){var r=new example.microservicio_inventario_reservas.entities.Reserva();r.setIdentityOwnerId(10L);when(reservaRepository.findById(50L)).thenReturn(java.util.Optional.of(r));}
+    private String human() throws Exception {return "Bearer "+example.microservicio_inventario_reservas.SecurityTestKeys.token("inventario","user","10","CLIENTE",null,300);}
+    private String service(String scope) throws Exception {return "Bearer "+example.microservicio_inventario_reservas.SecurityTestKeys.token("inventario","service","service:compras-to-inventario",null,scope,300);}
 
     @Test
     @DisplayName("POST /reservas - Debe crear reserva temporal y responder HTTP 201 Created")
@@ -47,7 +51,7 @@ class ReservaControllerTest {
 
         when(reservaService.crearReservaTemporal(any(CrearReservaRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/reservas")
+        mockMvc.perform(post("/reservas").header("Authorization",human())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -64,7 +68,7 @@ class ReservaControllerTest {
         when(reservaService.crearReservaTemporal(any(CrearReservaRequest.class)))
                 .thenThrow(new IllegalStateException("Capacidad o aforo insuficiente"));
 
-        mockMvc.perform(post("/reservas")
+        mockMvc.perform(post("/reservas").header("Authorization",human())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
@@ -84,7 +88,7 @@ class ReservaControllerTest {
 
         when(reservaService.obtenerReservaPorId(idReserva)).thenReturn(response);
 
-        mockMvc.perform(get("/reservas/{id}", idReserva))
+        mockMvc.perform(get("/reservas/{id}", idReserva).header("Authorization",human()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idReserva").value(idReserva))
                 .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
@@ -99,7 +103,7 @@ class ReservaControllerTest {
 
         when(reservaService.obtenerReservasPorCliente(idCliente)).thenReturn(List.of(r1, r2));
 
-        mockMvc.perform(get("/reservas").param("idCliente", String.valueOf(idCliente)))
+        mockMvc.perform(get("/reservas").header("Authorization",human()).param("idCliente", String.valueOf(idCliente)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].idCliente").value(idCliente))
@@ -114,7 +118,7 @@ class ReservaControllerTest {
 
         when(reservaService.confirmarReserva(idReserva)).thenReturn(response);
 
-        mockMvc.perform(post("/reservas/{id}/confirmar", idReserva))
+        mockMvc.perform(post("/reservas/{id}/confirmar", idReserva).header("Authorization",service("reservations.confirm")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.exitoso").value(true))
                 .andExpect(jsonPath("$.mensaje").value("Reserva confirmada exitosamente"));
@@ -128,9 +132,22 @@ class ReservaControllerTest {
 
         when(reservaService.liberarReserva(idReserva)).thenReturn(response);
 
-        mockMvc.perform(post("/reservas/{id}/liberar", idReserva))
+        mockMvc.perform(post("/reservas/{id}/liberar", idReserva).header("Authorization",service("reservations.release")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.exitoso").value(true))
                 .andExpect(jsonPath("$.mensaje").value("Reserva liberada y disponibilidad restablecida"));
     }
+
+    @Test void forgedClientIdIsRejectedBeforeBusinessLogic() throws Exception {
+        var request=new CrearReservaRequest(11L,100L,200L,1,null);
+        mockMvc.perform(post("/reservas").header("Authorization",human()).header("X-Admin-Id","7").header("X-User-Role","ADMIN").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request))).andExpect(status().isForbidden());
+        org.mockito.Mockito.verifyNoInteractions(reservaService);
+    }
+    @Test void historicalReservationIsNotClaimedByMatchingLegacyId() throws Exception {
+        var r=new example.microservicio_inventario_reservas.entities.Reserva();r.setIdCliente(10L);
+        when(reservaRepository.findById(50L)).thenReturn(java.util.Optional.of(r));
+        mockMvc.perform(get("/reservas/50").header("Authorization",human())).andExpect(status().isNotFound());
+        org.mockito.Mockito.verifyNoInteractions(reservaService);
+    }
+
 }

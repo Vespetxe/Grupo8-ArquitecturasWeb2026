@@ -1,3 +1,14 @@
+> Estado vigente de la etapa 36: ver [autorización por propiedad](autorizacion-propiedad.md). Las notas de cierre de rutas y regresión pendiente de la etapa 35 se conservan como registro histórico.
+
+# Actualización de la Implementación 35
+
+La regresión comercial de esta guía corresponde al Bloque 1. Con las imágenes
+seguras, ejecutar `node TicketYa/integration-tests/e2/run-regression.cjs --security`.
+El modo comercial queda cerrado hasta completar autorización por propiedad;
+no desactivar seguridad para ejecutar los escenarios anteriores. El builder
+incluye ahora Identidad como sexta imagen. Consultar
+[seguridad distribuida y pruebas aisladas](seguridad-distribuida.md).
+
 # Docker y regresion de Entrega 2
 
 ## Dos entornos distintos

@@ -13,6 +13,12 @@ public class RestComprasOrderClient implements OrderClient {
     }
     @Override
     public OrderSnapshot getOrder(String orderId) {
+        var order=getOrderForOwnership(orderId);
+        if (!"CONFIRMADA".equalsIgnoreCase(order.status())) throw new OrderNotConfirmedException(orderId);
+        return order;
+    }
+    @Override
+    public OrderSnapshot getOrderForOwnership(String orderId) {
         final OrderSnapshot order;
         try {
             order = restClient.get().uri("/internal/orders/{orderId}", orderId)
@@ -28,7 +34,6 @@ public class RestComprasOrderClient implements OrderClient {
                 || order.items() == null || order.items().isEmpty()) {
             throw new OrdersUnavailableException("Orders service returned an invalid order response");
         }
-        if (!"CONFIRMADA".equalsIgnoreCase(order.status())) throw new OrderNotConfirmedException(orderId);
         return order;
     }
 }

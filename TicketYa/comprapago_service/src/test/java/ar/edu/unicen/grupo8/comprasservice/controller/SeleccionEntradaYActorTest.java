@@ -24,14 +24,10 @@ class SeleccionEntradaYActorTest {
         assertEquals(101L,selected.entradaId());assertEquals("uuid-a",selected.ticketId());
         assertEquals(202L,result.get(0).entradaId());assertEquals("uuid-b",result.get(0).ticketId());
     }
-    @Test void administrativoExigeActorPositivoAntesDeEjecutarNegocio() throws Exception {
+    @Test void administrativoRequierePrincipalYNoUnActorDeclarado() {
         var devoluciones=mock(DevolucionService.class);var reintegros=mock(ReintegroService.class);
-        var mvc=MockMvcBuilders.standaloneSetup(new DevolucionAdminController(devoluciones,reintegros))
-            .setControllerAdvice(new GlobalExceptionHandler()).build();
-        mvc.perform(get("/admin/devoluciones?estado=PENDIENTE")).andExpect(status().isBadRequest());
-        mvc.perform(get("/admin/devoluciones?estado=PENDIENTE").header("X-Admin-Id","0")).andExpect(status().isBadRequest());
+        var controller=new DevolucionAdminController(devoluciones,reintegros);
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,()->controller.identificarAdministrador(null));
         verifyNoInteractions(devoluciones,reintegros);
-        mvc.perform(get("/admin/devoluciones?estado=PENDIENTE").header("X-Admin-Id","7")).andExpect(status().isOk());
-        verify(devoluciones).obtenerPorEstado(ar.edu.unicen.grupo8.comprasservice.entity.enums.EstadoDevolucion.PENDIENTE);
     }
 }

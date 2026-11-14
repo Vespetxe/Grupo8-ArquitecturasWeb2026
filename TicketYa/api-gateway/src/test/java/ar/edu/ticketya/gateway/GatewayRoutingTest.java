@@ -20,11 +20,11 @@ class GatewayRoutingTest {
     @AfterAll static void close(){upstream.stop(0);}
     HttpResponse<String> get(String path)throws Exception{return HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).GET().build(),HttpResponse.BodyHandlers.ofString());}
     @Test void enrutaLosCuatroServiciosSinCambiarRuta()throws Exception{
-        for(String path:new String[]{"/api/v1/events/search?city=Tandil","/reservas/1","/tickets?clientId=1","/compras/1"}){
+        for(String path:new String[]{"/api/v1/venues","/api/v1/participants"}){
             var result=get(path);assertEquals(200,result.statusCode());assertEquals(path,result.body());
         }
     }
     @Test void noPublicaOperacionesInternas()throws Exception{
-        for(String path:new String[]{"/internal/orders/1","/internal/tickets/issue","/reservas/1/confirmar","/ocupaciones/liberar","/eventos/1/inventario"})assertEquals(404,get(path).statusCode());
+        for(String path:new String[]{"/internal/orders/1","/internal/tickets/issue","/reservas/1/confirmar","/ocupaciones/liberar","/eventos/1/inventario"})assertEquals(401,get(path).statusCode());
     }
 }

@@ -26,12 +26,12 @@ public class EventWorkflow {
     public EventWorkflow(EventService events,EventRepository repository,SectorRepository sectors,PlatformTransactionManager manager,
             @Value("${ticketya.inventario.base-url:http://localhost:8082}") String inventoryUrl,
             @Value("${ticketya.compras.base-url:http://localhost:8084}") String comprasUrl,
-            @Value("${ticketya.entradas.base-url:http://localhost:8083}") String entradasUrl) {
+            @Value("${ticketya.entradas.base-url:http://localhost:8083}") String entradasUrl, grupo22.eventocatalogo_service.security.ServiceTokens tokens) {
         this.events=events;this.repository=repository;this.sectors=sectors;tx=new TransactionTemplate(manager);
         var factory=new SimpleClientHttpRequestFactory();factory.setConnectTimeout(2000);factory.setReadTimeout(10000);
-        inventory=RestClient.builder().requestFactory(factory).baseUrl(inventoryUrl).build();
-        compras=RestClient.builder().requestFactory(factory).baseUrl(comprasUrl).build();
-        entradas=RestClient.builder().requestFactory(factory).baseUrl(entradasUrl).build();
+        inventory=tokens.client("inventario",inventoryUrl);
+        compras=tokens.client("compras",comprasUrl);
+        entradas=tokens.client("entradas",entradasUrl);
     }
     public EventResponseDTO publish(Long id) {
         var event=events.getEventById(id);
@@ -49,6 +49,7 @@ public class EventWorkflow {
         try {
             for(var sector:stock)inventory.post().uri("/eventos/{id}/inventario",id).body(sector).retrieve().toBodilessEntity();
         } catch(org.springframework.web.client.RestClientResponseException ex) {
+            if(ex.getStatusCode().value()==401||ex.getStatusCode().value()==403)throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Autenticacion tecnica pendiente; reintente sin cambiar la operacion");
             if(ex.getStatusCode().is4xxClientError())throw new BusinessRuleException("Inicializacion de inventario incompatible o bloqueada; no reintentar sin revisar la configuracion");
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"No se pudo inicializar el inventario; reintente",ex);
         } catch(org.springframework.web.client.RestClientException ex) {
@@ -64,6 +65,7 @@ public class EventWorkflow {
     private void habilitarPublicacion(Long id) {
         try {inventory.post().uri("/internal/eventos/{id}/publicar",id).retrieve().toBodilessEntity();}
         catch(org.springframework.web.client.RestClientResponseException ex){
+            if(ex.getStatusCode().value()==401||ex.getStatusCode().value()==403)throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Autenticacion tecnica pendiente; reintente sin cambiar la operacion");
             if(ex.getStatusCode().is4xxClientError())throw new BusinessRuleException("Publicacion bloqueada por un estado de inventario incompatible");
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Evento publicado con habilitacion pendiente; reintente publicar",ex);
         }catch(org.springframework.web.client.RestClientException ex){throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Evento publicado con habilitacion pendiente; reintente publicar",ex);}
@@ -73,6 +75,12 @@ public class EventWorkflow {
         var event=events.getEventById(id);
         if(!"ADMIN".equalsIgnoreCase(role))throw new BusinessRuleException("Se requiere identificar administrador");
         if(event.getStatus()==EventStatus.FINALIZADO)throw new BusinessRuleException("Evento finalizado");
+        if(!grupo22.eventocatalogo_service.security.CurrentActor.admin())throw new org.springframework.security.access.AccessDeniedException("Administrator required");
+        tx.executeWithoutResult(status->{
+            var locked=repository.lockForCancellation(id).orElseThrow(grupo22.eventocatalogo_service.security.CurrentActor::missing);
+            locked.authorizeCancellation(grupo22.eventocatalogo_service.security.CurrentActor.humanId(),grupo22.eventocatalogo_service.security.CurrentActor.jwt().getId());
+            repository.save(locked);
+        });
         try {entradas.post().uri("/internal/events/{id}/cancel-emission",id).retrieve().toBodilessEntity();}
         catch(org.springframework.web.client.RestClientException ex){throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"No se pudo bloquear la emision; reintente",ex);}
         if(event.getStatus()!=EventStatus.CANCELADO) {
@@ -83,7 +91,7 @@ public class EventWorkflow {
         }
         try {
             inventory.post().uri("/eventos/{id}/cancelar-inventario",id).retrieve().toBodilessEntity();
-            var result=compras.post().uri("/admin/eventos/{id}/cancelacion",id).header("X-Admin-Id",administradorId.toString()).retrieve().toBodilessEntity();
+            var result=compras.post().uri("/admin/eventos/{id}/cancelacion",id).retrieve().toBodilessEntity();
             if(result.getStatusCode().value()==202)throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Cancelacion pendiente; reintente");
         } catch(org.springframework.web.client.RestClientException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Cancelacion registrada con coordinacion pendiente; reintente",ex);

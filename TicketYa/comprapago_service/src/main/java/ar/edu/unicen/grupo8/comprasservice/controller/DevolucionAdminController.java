@@ -13,15 +13,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
-@Tag(name="Administracion de devoluciones", description="Requiere autorizacion administrativa en la futura integracion. Esta entrega no implementa seguridad.")
+@Tag(name="Administracion de devoluciones", description="JWT humano ADMINISTRADOR para devoluciones y reintegros; coordinacion de cancelaciones exclusivamente tecnica.")
 @ApiResponses({@ApiResponse(responseCode="400", description="Datos invalidos"),
         @ApiResponse(responseCode="404", description="Recurso inexistente"),
         @ApiResponse(responseCode="409", description="Estado, clave o procesamiento incompatible"),
         @ApiResponse(responseCode="503", description="Operacion externa no confirmada. Consultar y reintentar con la misma clave")})
 public class DevolucionAdminController {
     @ModelAttribute
-    public void identificarAdministrador(@RequestHeader("X-Admin-Id") Long administradorId) {
-        if(administradorId==null || administradorId<=0)throw new IllegalArgumentException("X-Admin-Id debe identificar un administrador con ID positivo");
+    public void identificarAdministrador(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt) {
+        // Authorization is enforced by the local security chain, never by a supplied actor header.
+        if(jwt==null)throw new org.springframework.security.access.AccessDeniedException("Authentication required");
     }
     private final DevolucionService devoluciones;
     private final ReintegroService reintegros;
