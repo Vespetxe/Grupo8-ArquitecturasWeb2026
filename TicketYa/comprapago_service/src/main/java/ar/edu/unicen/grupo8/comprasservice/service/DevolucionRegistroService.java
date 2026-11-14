@@ -1,4 +1,6 @@
 package ar.edu.unicen.grupo8.comprasservice.service;
+import ar.edu.unicen.grupo8.comprasservice.observability.Audit;
+import ar.edu.unicen.grupo8.comprasservice.observability.AuditTx;
 
 import ar.edu.unicen.grupo8.comprasservice.dto.*;
 import ar.edu.unicen.grupo8.comprasservice.entity.*;
@@ -58,6 +60,7 @@ public class DevolucionRegistroService {
         devolucion.setImporteSolicitado(nuevos.stream().map(DetalleDevolucion::getImporte).reduce(BigDecimal.ZERO, BigDecimal::add));
         devoluciones.save(devolucion);
         nuevos.forEach(d -> d.setDevolucion(devolucion)); detalles.saveAll(nuevos);
+        if(!cancelacion)AuditTx.local(Audit.capture(Audit.Action.RETURN_REQUESTED,Audit.Resource.RETURN,devolucion.getId(),Audit.operation(Audit.Resource.RETURN,devolucion.getId()),Audit.Outcome.PENDING,devolucion.getEstado()));
         return convertir(devolucion, nuevos);
     }
 
@@ -89,6 +92,7 @@ public class DevolucionRegistroService {
             var d = devoluciones.findById(dto.id()).orElseThrow();
             d.setCancelacionEvento(true); d.setEstado(EstadoDevolucion.APROBADA);
             d.setMotivoResolucion("Cancelacion de evento"); d.setFechaResolucion(LocalDateTime.now(clock)); ids.add(d.getId());
+            AuditTx.local(Audit.capture(Audit.Action.RETURN_REQUESTED,Audit.Resource.RETURN,d.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),Audit.Outcome.PENDING,d.getEstado()));
         }
         return List.copyOf(ids);
     }
@@ -142,7 +146,8 @@ public class DevolucionRegistroService {
             return convertir(d, detalles.findByDevolucionId(id));
         }
         if (d.getEstado() != EstadoDevolucion.PENDIENTE) throw new IllegalStateException("Solo se puede resolver una devolucion pendiente");
-        d.setEstado(destino); d.setMotivoResolucion(motivo); d.setFechaResolucion(LocalDateTime.now(clock));
+        d.setEstado(destino); d.setMotivoResolucion(motivo);
+        AuditTx.local(Audit.capture(Audit.Action.RETURN_DECIDED,Audit.Resource.RETURN,d.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),destino==EstadoDevolucion.RECHAZADA?Audit.Outcome.REJECTED:Audit.Outcome.PENDING,d.getEstado())); d.setFechaResolucion(LocalDateTime.now(clock));
         if (destino == EstadoDevolucion.RECHAZADA) d.setMotivoRechazo(motivo);
         return convertir(d, detalles.findByDevolucionId(id));
     }

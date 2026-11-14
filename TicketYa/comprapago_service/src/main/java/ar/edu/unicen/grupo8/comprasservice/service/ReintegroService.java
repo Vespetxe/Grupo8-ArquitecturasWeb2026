@@ -85,7 +85,7 @@ public class ReintegroService {
             registro.error(id, token); throw ex;
         } catch (RuntimeException ex) {
             registro.error(id, token);
-            log.warn("Devolucion {} pendiente de recuperacion: {}", id, ex.toString());
+            ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.refundPending(log, id, ex);
             throw new ComunicacionPasarelaException("La devolucion quedo pendiente; reintente con la misma clave");
         } finally { registro.soltar(compraId, token); }
     }
@@ -128,12 +128,12 @@ public class ReintegroService {
                     try { resultados.add(procesar(id, registro.datosParaCancelacion(id))); }
                     catch (RuntimeException ex) {
                         if (!pendientes.contains(compraId)) pendientes.add(compraId);
-                        log.warn("Cancelacion evento {}, devolucion {} pendiente: {}", eventoId, id, ex.toString());
+                        ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.eventRefundPending(log, eventoId, id, ex);
                     }
                 }
             } catch (RuntimeException ex) {
                 if (!pendientes.contains(compraId)) pendientes.add(compraId);
-                log.warn("Cancelacion evento {}, compra {} pendiente: {}", eventoId, compraId, ex.toString());
+                ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.eventPurchasePending(log, eventoId, compraId, ex);
             }
         }
         return new CancelacionEventoDTO(eventoId, resultados, pendientes);

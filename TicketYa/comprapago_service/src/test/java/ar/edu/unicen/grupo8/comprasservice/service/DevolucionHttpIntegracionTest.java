@@ -153,4 +153,48 @@ class DevolucionHttpIntegracionTest {
         assertFalse(schemas.has("Reintegro")); assertFalse(schemas.has("Devolucion"));
         assertEquals(200,http("GET","/swagger-ui/index.html",null).statusCode());
     }
+
+    @Test void falloExternoConSecretosConservaHttpYFinanzasSinFiltrarElLog() throws Exception {
+        var c=crear(true);var d=solicitud(c);
+        assertEquals(200,http("POST",ruta(d,"aprobar"),new AprobarDevolucionDTO("Aprobada para prueba de logging")).statusCode());
+        String marker="sentinel-financial-39";
+        String tainted="Authorization: Bearer "+marker+" password="+marker+" client_secret="+marker
+                +" Cookie="+marker+" card=4111111111111111 claveIdempotencia=private-idem-39";
+        doThrow(new ComunicacionPasarelaException(tainted)).when(entradas).anularEntradas(any(),anyList());
+        var logger=(ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(ReintegroService.class);
+        var capture=new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        capture.start();logger.addAppender(capture);
+        var data=new ProcesarDevolucionDTO("private-idem-39",d.importeSolicitado());
+        try(var ecs=new ar.edu.unicen.grupo8.comprasservice.observability.EcsLogFixture()) {
+            var failure=http("POST",ruta(d,"procesar"),data);error(failure,503);
+            assertFalse(failure.body().contains(marker));
+            assertEquals("ERROR_PENDIENTE",mapper.readTree(http("GET",ruta(d,"procesamiento"),null).body()).at("/devolucion/estado").asText());
+            assertEquals(1,reintegros.count());assertEquals(1,capture.list.size());
+            var event=capture.list.get(0);assertNull(event.getThrowableProxy());
+            String encoded=ecs.encode(event);
+            for(String secret:List.of(marker,"Authorization","4111111111111111","private-idem-39"))assertFalse(encoded.contains(secret));
+            var diagnostic=mapper.readTree(encoded);
+            assertEquals("REFUND_RECOVERY_PENDING",diagnostic.get("errorCode").asText());
+            assertEquals(d.id().longValue(),diagnostic.get("devolucionId").asLong());
+            reset(entradas);
+            var recovered=http("POST",ruta(d,"procesar"),data);assertEquals(200,recovered.statusCode(),recovered.body());
+            assertEquals("COMPLETADA",mapper.readTree(recovered.body()).at("/devolucion/estado").asText());
+            assertEquals(1,reintegros.count());
+            verify(pasarela,times(1)).reintegrarPago(anyString(),anyString(),any(java.math.BigDecimal.class));
+            assertEquals(200,http("POST",ruta(d,"procesar"),data).statusCode());assertEquals(1,reintegros.count());
+        } finally {logger.detachAppender(capture);capture.stop();}
+    }
+
+    @Test void configuracionEfectivaUsaEcsStdoutYSilenciaSqlIncluidoElCanalDeErroresHibernate() {
+        var context=(ch.qos.logback.classic.LoggerContext)org.slf4j.LoggerFactory.getILoggerFactory();
+        var root=context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        var console=assertInstanceOf(ch.qos.logback.core.ConsoleAppender.class,root.getAppender("CONSOLE"));
+        assertInstanceOf(org.springframework.boot.logging.logback.StructuredLogEncoder.class,console.getEncoder());
+        assertEquals("System.out",console.getTarget());
+        for(String channel:List.of("org.hibernate.SQL","org.hibernate.orm.jdbc.bind","org.hibernate.orm.jdbc.extract",
+                "org.hibernate.orm.jdbc.error","org.hibernate.engine.jdbc.spi.SqlExceptionHelper")) {
+            assertFalse(context.getLogger(channel).isErrorEnabled(),channel);
+            assertFalse(context.getLogger(channel).isTraceEnabled(),channel);
+        }
+    }
 }

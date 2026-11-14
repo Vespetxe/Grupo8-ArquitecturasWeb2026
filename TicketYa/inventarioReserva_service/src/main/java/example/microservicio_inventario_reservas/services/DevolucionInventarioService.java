@@ -1,4 +1,6 @@
 package example.microservicio_inventario_reservas.services;
+import example.microservicio_inventario_reservas.observability.Audit;
+import example.microservicio_inventario_reservas.observability.AuditTx;
 
 import example.microservicio_inventario_reservas.dtos.DevolverLugaresRequest;
 import example.microservicio_inventario_reservas.entities.*;
@@ -55,6 +57,7 @@ public class DevolucionInventarioService {
                 if(i.getDisponibles()>i.getCapacidadTotal()) throw new IllegalStateException("Stock excedido");
             }
         }
+        AuditTx.local(Audit.capture(Audit.Action.RESERVATION_RETURN,Audit.Resource.RESERVATION,r.getIdReserva(),Audit.operation(Audit.Resource.RESERVATION,r.getIdReserva()),Audit.Outcome.SUCCESS,r.getEstado()));
         return devueltos.findByReservaIdReserva(id).stream().map(LugarDevuelto::getEntradaId).sorted().toList();
     }
     @Transactional(readOnly=true)

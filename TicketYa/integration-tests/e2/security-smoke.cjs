@@ -34,6 +34,7 @@ async function main(){
  }
  const email=`client-${id}@example.test`,password=crypto.randomBytes(32).toString('hex');
  await request('gateway','POST','/auth/register',null,{email,password},201);
+ await request('gateway','POST','/auth/login',null,{email,password:crypto.randomBytes(32).toString('hex')},401);
  const human=(await request('gateway','POST','/auth/login',null,{email,password},200)).access_token;
  const parts=human.split('.'),badSignature=Buffer.from(parts[2],'base64url');badSignature[0]^=1;
  const tampered=`${parts[0]}.${parts[1]}.${badSignature.toString('base64url')}`;

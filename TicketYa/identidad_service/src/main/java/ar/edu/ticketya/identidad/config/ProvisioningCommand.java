@@ -1,4 +1,6 @@
 package ar.edu.ticketya.identidad.config;
+import ar.edu.ticketya.identidad.observability.Audit;
+import ar.edu.ticketya.identidad.observability.AuditTx;
 
 import ar.edu.ticketya.identidad.service.ProvisioningService;
 import ar.edu.ticketya.identidad.entity.Role;
@@ -10,7 +12,9 @@ import java.util.*;
 
 @Configuration @Profile("provision")
 public class ProvisioningCommand {
-    @Bean CommandLineRunner provision(ProvisioningService service,Environment env,org.springframework.context.ApplicationContext context){return args->{
+    @Bean CommandLineRunner provision(ProvisioningService service,Environment env,org.springframework.context.ApplicationContext context,io.micrometer.tracing.Tracer tracer){return args->{
+        var span=tracer.spanBuilder().setNoParent().name("identity.provision").start();
+        try(var scope=tracer.withSpan(span)){
         if(context instanceof org.springframework.web.context.WebApplicationContext)
             throw new IllegalStateException("Provisioning requires CLI-only mode");
         String location=env.getRequiredProperty("IDENTITY_PROVISION_FILE");
@@ -25,8 +29,9 @@ public class ProvisioningCommand {
                     new HashSet<>(Arrays.asList(p.getProperty("scopes","").split(" "))),p.getProperty("secret",""));
                 default -> throw new IllegalArgumentException();
             }
-        } catch(RuntimeException ex){throw new IllegalStateException("Provisioning failed; no supplied credentials are included in diagnostics");}
+        } catch(RuntimeException ex){Audit.emit(Audit.capture(Audit.Action.PRIVILEGED_PROVISION,Audit.Resource.USER,null,null,Audit.Outcome.REJECTED,null).by(Audit.system()).result(Audit.Outcome.REJECTED,Audit.Error.PROVISION_REJECTED));throw new IllegalStateException("Provisioning failed; no supplied credentials are included in diagnostics");}
         finally {p.clear();}
         System.out.println("Identity provisioning completed");
+        }finally{span.end();}
     };}
 }

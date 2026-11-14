@@ -6,10 +6,14 @@ import java.util.*;import java.time.Duration;
 @Component
 public class ServiceTokens {
  private final AuthorizedClientServiceOAuth2AuthorizedClientManager manager;private final OAuth2AuthorizedClientService cache;
+ private final RestClient.Builder builder;
  private final String principal="service:compras";
  @org.springframework.beans.factory.annotation.Autowired
+ public ServiceTokens(Environment e,org.springframework.beans.factory.ObjectProvider<RestClient.Builder> builders){this(e,java.time.Clock.systemUTC(),builders.getObject());}
  public ServiceTokens(Environment e){this(e,java.time.Clock.systemUTC());}
- public ServiceTokens(Environment e,java.time.Clock clock){
+ public ServiceTokens(Environment e,java.time.Clock clock){this(e,clock,RestClient.builder());}
+ public ServiceTokens(Environment e,java.time.Clock clock,RestClient.Builder builder){
+  this.builder=builder;
   var registrations=new ArrayList<ClientRegistration>();
   for(String target:List.of("eventos","inventario","entradas")){
    String secret=e.getRequiredProperty("TY_SECURITY_"+target.toUpperCase(Locale.ROOT)+"_SECRET");
@@ -23,7 +27,7 @@ public class ServiceTokens {
   manager=new AuthorizedClientServiceOAuth2AuthorizedClientManager(repo,cache);
   var factory=new JdkClientHttpRequestFactory(java.net.http.HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build());factory.setReadTimeout(Duration.ofSeconds(10));
   var responseClient=new org.springframework.security.oauth2.client.endpoint.RestClientClientCredentialsTokenResponseClient();
-  responseClient.setRestClient(RestClient.builder().requestFactory(factory).messageConverters(c->{c.clear();c.add(new org.springframework.http.converter.FormHttpMessageConverter());c.add(new org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter());})
+  responseClient.setRestClient(builder.clone().requestFactory(factory).requestInterceptor(new ar.edu.unicen.grupo8.comprasservice.observability.CorrelationInterceptor()).messageConverters(c->{c.clear();c.add(new org.springframework.http.converter.FormHttpMessageConverter());c.add(new org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter());})
    .defaultStatusHandler(new org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler()).build());
   manager.setAuthorizedClientProvider(OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials(c->c.clock(clock).clockSkew(Duration.ofSeconds(30)).accessTokenResponseClient(responseClient)).build());
  }
@@ -40,6 +44,6 @@ public class ServiceTokens {
  };}
  public RestClient client(String target,String baseUrl){
   var factory=new JdkClientHttpRequestFactory(java.net.http.HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build());factory.setReadTimeout(Duration.ofSeconds(10));
-  return RestClient.builder().baseUrl(baseUrl).requestFactory(factory).requestInterceptor(interceptor(target)).build();
+  return builder.clone().baseUrl(baseUrl).requestFactory(factory).requestInterceptor(new ar.edu.unicen.grupo8.comprasservice.observability.CorrelationInterceptor()).requestInterceptor(interceptor(target)).build();
  }
 }

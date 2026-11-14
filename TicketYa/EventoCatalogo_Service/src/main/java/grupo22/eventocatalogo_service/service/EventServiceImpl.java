@@ -1,4 +1,6 @@
 package grupo22.eventocatalogo_service.service;
+import grupo22.eventocatalogo_service.observability.Audit;
+import grupo22.eventocatalogo_service.observability.AuditTx;
 
 import grupo22.eventocatalogo_service.DTO.request.EventRequestDTO;
 import grupo22.eventocatalogo_service.DTO.request.EventSectorPriceRequestDTO;
@@ -143,7 +145,9 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setStatus(EventStatus.PUBLICADO);
-        return mapToEventResponse(eventRepository.save(event));
+        var saved=eventRepository.save(event);
+        AuditTx.local(Audit.capture(Audit.Action.EVENT_PUBLICATION_LOCAL,Audit.Resource.EVENT,saved.getEventId(),Audit.operation(Audit.Resource.EVENT,saved.getEventId()),Audit.Outcome.PENDING,saved.getStatus()));
+        return mapToEventResponse(saved);
     }
 
     @Override
@@ -165,7 +169,9 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setStatus(EventStatus.CANCELADO);
-        return mapToEventResponse(eventRepository.save(event));
+        var saved=eventRepository.save(event);
+        AuditTx.local(Audit.capture(Audit.Action.EVENT_CANCELLATION_LOCAL,Audit.Resource.EVENT,saved.getEventId(),Audit.operation(Audit.Resource.EVENT,saved.getEventId()),Audit.Outcome.PENDING,saved.getStatus()).initiated(saved.getCancellationAuthorizedAdminId()));
+        return mapToEventResponse(saved);
     }
 
     @Override

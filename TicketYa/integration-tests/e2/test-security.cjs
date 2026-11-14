@@ -2,7 +2,7 @@
 const {spawnSync}=require('node:child_process');
 const path=require('node:path'),fs=require('node:fs'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../../..');
-const projects=['api-gateway','EventoCatalogo_Service','inventarioReserva_service','entradas_service','comprapago_service'];
+const projects=['api-gateway','EventoCatalogo_Service','inventarioReserva_service','entradas_service','comprapago_service','identidad_service'];
 assert.ok(process.argv.length===2 || (process.argv.length===3&&projects.includes(process.argv[2])));
 for(const project of process.argv[2]?[process.argv[2]]:projects){
  const dir=path.join(root,'TicketYa',project);

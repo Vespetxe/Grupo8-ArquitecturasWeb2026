@@ -1,4 +1,6 @@
 package example.microservicio_inventario_reservas.services;
+import example.microservicio_inventario_reservas.observability.Audit;
+import example.microservicio_inventario_reservas.observability.AuditTx;
 
 import example.microservicio_inventario_reservas.dtos.CrearReservaRequest;
 import example.microservicio_inventario_reservas.dtos.DetalleAsientoResponse;
@@ -117,6 +119,7 @@ public class ReservaService {
 
         Reserva guardada = reservaRepository.save(reserva);
 
+        AuditTx.local(Audit.capture(Audit.Action.RESERVATION_CREATED,Audit.Resource.RESERVATION,guardada.getIdReserva(),Audit.operation(Audit.Resource.RESERVATION,guardada.getIdReserva()),Audit.Outcome.SUCCESS,guardada.getEstado()));
         return mapToReservaResponse(guardada, asientosReservadosDTO);
     }
 
@@ -167,6 +170,7 @@ public class ReservaService {
         }
 
         reservaRepository.save(reserva);
+        AuditTx.local(Audit.capture(Audit.Action.RESERVATION_CONFIRMED,Audit.Resource.RESERVATION,reserva.getIdReserva(),Audit.operation(Audit.Resource.RESERVATION,reserva.getIdReserva()),Audit.Outcome.SUCCESS,reserva.getEstado()));
         return new MensajeResponse("Reserva confirmada exitosamente", true);
     }
 
@@ -204,7 +208,6 @@ public class ReservaService {
         return new MensajeResponse("Reserva compensada", true);
     }
 
-    @Scheduled(fixedDelayString = "${reservas.expiration-interval-ms:30000}")
     @Transactional
     public void expirarReservasVencidas() {
         List<Long> vencidas = reservaRepository.buscarIdsVencidos(LocalDateTime.now(java.time.ZoneOffset.UTC));
@@ -241,6 +244,8 @@ public class ReservaService {
             inventarioSectorRepository.save(inventario);
         }
         reservaRepository.save(reserva);
+        var audit=Audit.capture(nuevoEstado==EstadoReserva.EXPIRADA?Audit.Action.RESERVATION_EXPIRED:Audit.Action.RESERVATION_RELEASED,Audit.Resource.RESERVATION,reserva.getIdReserva(),Audit.operation(Audit.Resource.RESERVATION,reserva.getIdReserva()),Audit.Outcome.SUCCESS,nuevoEstado);
+        AuditTx.local(nuevoEstado==EstadoReserva.EXPIRADA?audit.by(Audit.system()):audit);
     }
 
     private List<DetalleAsientoResponse> extraerAsientosDTO(Reserva reserva) {

@@ -22,7 +22,8 @@ test('technical OAuth manager implementation is identical except caller and dest
   const text=fs.readFileSync(path.resolve(__dirname,'../../',dir,'src/main/java',pkg,'security/ServiceTokens.java'),'utf8').replace(/^package[^\n]+\n/,'').replace(/\r\n/g,'\n')
    .replace(/service:(eventos|compras|entradas)/g,'service:CALLER').replace(/for\(String target:List\.of\([^)]*\)\)/,'for(String target:TARGETS)')
    .replace(/\.clientId\("(eventos|compras|entradas)-to-"\+target\)/,'.clientId("CALLER-to-"+target)')
-   .replace(/requestedScopes\("(eventos|compras|entradas)",target\)/,'requestedScopes("CALLER",target)');
+   .replace(/requestedScopes\("(eventos|compras|entradas)",target\)/,'requestedScopes("CALLER",target)')
+   .replaceAll(pkg.replaceAll('/','.')+'.observability.CorrelationInterceptor','OBSERVABILITY.CorrelationInterceptor');
   if(expected)assert.equal(text,expected);else expected=text;
  }
 });

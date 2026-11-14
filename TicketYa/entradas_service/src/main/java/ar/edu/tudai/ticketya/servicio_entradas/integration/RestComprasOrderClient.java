@@ -7,10 +7,12 @@ import org.springframework.web.client.RestClientResponseException;
 @Component
 public class RestComprasOrderClient implements OrderClient {
     private final RestClient restClient;
-    public RestComprasOrderClient(RestClient.Builder builder,
+    @org.springframework.beans.factory.annotation.Autowired
+    public RestComprasOrderClient(RestClient.Builder builder, ar.edu.tudai.ticketya.servicio_entradas.security.ServiceTokens tokens,
             @Value("${ticketya.compras.base-url:http://localhost:8082}") String baseUrl) {
-        this.restClient = builder.baseUrl(baseUrl).build();
+        this.restClient = builder.clone().requestInterceptor(tokens.interceptor("compras")).baseUrl(baseUrl).build();
     }
+    public RestComprasOrderClient(RestClient.Builder builder,String baseUrl){this.restClient=builder.baseUrl(baseUrl).build();}
     @Override
     public OrderSnapshot getOrder(String orderId) {
         var order=getOrderForOwnership(orderId);

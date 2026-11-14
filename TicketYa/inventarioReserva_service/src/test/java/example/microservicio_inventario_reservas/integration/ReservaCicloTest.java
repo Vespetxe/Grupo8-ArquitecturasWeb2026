@@ -64,7 +64,11 @@ class ReservaCicloTest {
     @Test void vencimientoImpideConfirmarYReponeStockSinDuplicarlo() {
         InventarioSector i = inventario(true); Long id = reservar(i); vencer(id);
         assertThrows(IllegalStateException.class, () -> service.confirmarReserva(id));
-        service.expirarReservasVencidas(); service.expirarReservasVencidas();
+        try(var audit=new example.microservicio_inventario_reservas.observability.AuditCapture()){
+            service.expirarReservasVencidas(); service.expirarReservasVencidas();
+            var events=audit.rows().stream().filter(row->"RESERVATION_EXPIRED".equals(row.get("action"))&&String.valueOf(id).equals(row.get("resourceId"))).toList();
+            assertEquals(1,events.size());assertEquals("SISTEMA",events.get(0).get("actorType"));assertEquals("SUCCESS",events.get(0).get("outcome"));
+        }
         assertEquals(EstadoReserva.EXPIRADA, reservas.findById(id).orElseThrow().getEstado());
         assertEquals(1, inventarios.findById(i.getIdInventarioSector()).orElseThrow().getDisponibles());
     }

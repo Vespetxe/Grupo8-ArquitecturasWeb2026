@@ -5,9 +5,9 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class RestClientConfiguration {
     @Bean
-    RestClient.Builder restClientBuilder(ar.edu.tudai.ticketya.servicio_entradas.security.ServiceTokens tokens) {
+    org.springframework.boot.restclient.RestClientCustomizer technicalClient() {
         var factory=new org.springframework.http.client.SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(2000);factory.setReadTimeout(10000);
-        return RestClient.builder().requestFactory(factory).requestInterceptor(tokens.interceptor("compras"));
+        return builder -> builder.requestFactory(factory).requestInterceptor(new ar.edu.tudai.ticketya.servicio_entradas.observability.CorrelationInterceptor());
     }
 }

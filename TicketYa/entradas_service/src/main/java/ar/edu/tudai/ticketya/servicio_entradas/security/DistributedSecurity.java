@@ -19,6 +19,7 @@ public class DistributedSecurity {
    .exceptionHandling(x->x.authenticationEntryPoint(SecurityErrors::unauthorized).accessDeniedHandler(SecurityErrors::forbidden))
    .authorizeHttpRequests(x->x.anyRequest().access((authentication,context)->new AuthorizationDecision(RoutePolicy.allow("entradas",context.getRequest().getMethod(),context.getRequest().getRequestURI().substring(context.getRequest().getContextPath().length()),authentication.get()))))
    .addFilterAfter(new TrustedActorHeaders(),org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class)
-   .oauth2ResourceServer(x->x.authenticationEntryPoint(SecurityErrors::unauthorized).accessDeniedHandler(SecurityErrors::forbidden).jwt(j->j.jwtAuthenticationConverter(c))).build();
+   .addFilterAfter(new ar.edu.tudai.ticketya.servicio_entradas.observability.ServletActorCaptureFilter(),org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class)
+            .oauth2ResourceServer(x->x.authenticationEntryPoint(SecurityErrors::unauthorized).accessDeniedHandler(SecurityErrors::forbidden).jwt(j->j.jwtAuthenticationConverter(c))).build();
  }
 }

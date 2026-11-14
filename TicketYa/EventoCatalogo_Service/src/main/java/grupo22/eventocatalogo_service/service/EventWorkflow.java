@@ -1,4 +1,6 @@
 package grupo22.eventocatalogo_service.service;
+import grupo22.eventocatalogo_service.observability.Audit;
+import grupo22.eventocatalogo_service.observability.AuditTx;
 
 import grupo22.eventocatalogo_service.DTO.response.EventResponseDTO;
 import grupo22.eventocatalogo_service.domain.*;
@@ -35,7 +37,8 @@ public class EventWorkflow {
     }
     public EventResponseDTO publish(Long id) {
         var event=events.getEventById(id);
-        if(event.getStatus()==EventStatus.PUBLICADO){habilitarPublicacion(id);return events.getEventById(id);}
+        if(event.getStatus()==EventStatus.PUBLICADO){habilitarPublicacion(id);var result=events.getEventById(id);
+            AuditTx.completed(Audit.capture(Audit.Action.EVENT_PUBLICATION_REPLAY,Audit.Resource.EVENT,id,Audit.operation(Audit.Resource.EVENT,id),Audit.Outcome.SUCCESS,result.getStatus()));return result;}
         if(event.getStatus()!=EventStatus.BORRADOR)throw new BusinessRuleException("Solo se publica un borrador");
         List<StockSnapshot> stock=tx.execute(status->{
             var e=repository.findById(id).orElseThrow();
@@ -60,7 +63,9 @@ public class EventWorkflow {
             if(events.getEventById(id).getStatus()!=EventStatus.PUBLICADO)throw race;
         }
         habilitarPublicacion(id);
-        return events.getEventById(id);
+        var result=events.getEventById(id);
+        AuditTx.completed(Audit.capture(Audit.Action.EVENT_PUBLICATION,Audit.Resource.EVENT,id,Audit.operation(Audit.Resource.EVENT,id),Audit.Outcome.SUCCESS,result.getStatus()));
+        return result;
     }
     private void habilitarPublicacion(Long id) {
         try {inventory.post().uri("/internal/eventos/{id}/publicar",id).retrieve().toBodilessEntity();}
@@ -76,11 +81,17 @@ public class EventWorkflow {
         if(!"ADMIN".equalsIgnoreCase(role))throw new BusinessRuleException("Se requiere identificar administrador");
         if(event.getStatus()==EventStatus.FINALIZADO)throw new BusinessRuleException("Evento finalizado");
         if(!grupo22.eventocatalogo_service.security.CurrentActor.admin())throw new org.springframework.security.access.AccessDeniedException("Administrator required");
+        var originalAdmin=new java.util.concurrent.atomic.AtomicReference<Long>();
+        var retry=new java.util.concurrent.atomic.AtomicBoolean();
         tx.executeWithoutResult(status->{
             var locked=repository.lockForCancellation(id).orElseThrow(grupo22.eventocatalogo_service.security.CurrentActor::missing);
+            retry.set(locked.getCancellationAuthorizedAdminId()!=null);
             locked.authorizeCancellation(grupo22.eventocatalogo_service.security.CurrentActor.humanId(),grupo22.eventocatalogo_service.security.CurrentActor.jwt().getId());
             repository.save(locked);
+            originalAdmin.set(locked.getCancellationAuthorizedAdminId());
+            if(!retry.get())AuditTx.local(Audit.capture(Audit.Action.EVENT_CANCELLATION_AUTHORIZED,Audit.Resource.EVENT,locked.getEventId(),Audit.operation(Audit.Resource.EVENT,locked.getEventId()),Audit.Outcome.PENDING,null).initiated(originalAdmin.get()));
         });
+        try {
         try {entradas.post().uri("/internal/events/{id}/cancel-emission",id).retrieve().toBodilessEntity();}
         catch(org.springframework.web.client.RestClientException ex){throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"No se pudo bloquear la emision; reintente",ex);}
         if(event.getStatus()!=EventStatus.CANCELADO) {
@@ -96,7 +107,12 @@ public class EventWorkflow {
         } catch(org.springframework.web.client.RestClientException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Cancelacion registrada con coordinacion pendiente; reintente",ex);
         }
+        AuditTx.completed(Audit.capture(retry.get()?Audit.Action.EVENT_CANCELLATION_RETRY:Audit.Action.EVENT_CANCELLATION,Audit.Resource.EVENT,id,Audit.operation(Audit.Resource.EVENT,id),Audit.Outcome.SUCCESS,event.getStatus()).initiated(originalAdmin.get()));
         return event;
+        }catch(RuntimeException failure){
+            AuditTx.completed(Audit.capture(retry.get()?Audit.Action.EVENT_CANCELLATION_RETRY:Audit.Action.EVENT_CANCELLATION,Audit.Resource.EVENT,id,Audit.operation(Audit.Resource.EVENT,id),Audit.Outcome.PENDING,null).initiated(originalAdmin.get()));
+            throw failure;
+        }
     }
     public EventResponseDTO suspend(Long id,String role) {
         var event=events.suspendOrUpdateStatus(id,"SUSPENDIDO",role);

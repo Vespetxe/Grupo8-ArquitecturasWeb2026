@@ -1,4 +1,6 @@
 package ar.edu.tudai.ticketya.servicio_entradas.service;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.Audit;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.AuditTx;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.InvalidOrderException;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.Ticket;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.TicketBatch;
@@ -41,7 +43,9 @@ public class TicketBatchWriter {
                         batch, item.eventId(), order.clientId(), item.sectorId(), seatId));
             }
         }
-        return tickets.saveAllAndFlush(created);
+        var saved=tickets.saveAllAndFlush(created);
+        AuditTx.local(Audit.capture(Audit.Action.TICKETS_ISSUED,Audit.Resource.PURCHASE,batch.getOrderId(),Audit.operation(Audit.Resource.PURCHASE,batch.getOrderId()),Audit.Outcome.SUCCESS,null));
+        return saved;
     }
     private void validate(OrderSnapshot order) {
         if (order == null || !StringUtils.hasText(order.orderId()) || !StringUtils.hasText(order.clientId())

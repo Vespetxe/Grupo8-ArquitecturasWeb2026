@@ -1,4 +1,6 @@
 package ar.edu.tudai.ticketya.servicio_entradas.service;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.Audit;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.AuditTx;
 import ar.edu.tudai.ticketya.servicio_entradas.api.TicketResponse;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.InvalidTicketStatusException;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.Ticket;
@@ -18,14 +20,18 @@ public class TicketStatusService {
         Ticket ticket = tickets.findByTicketIdAndBatch_OrderId(ticketId, orderId)
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
         transition(ticket, requested);
-        return TicketResponse.from(tickets.saveAndFlush(ticket));
+        var saved=tickets.saveAndFlush(ticket);
+        AuditTx.local(Audit.capture(Audit.Action.TICKETS_ANNULLED,Audit.Resource.TICKET,saved.getTicketId(),Audit.operation(Audit.Resource.PURCHASE,saved.getBatch().getOrderId()),Audit.Outcome.SUCCESS,saved.getStatus()));
+        return TicketResponse.from(saved);
     }
     @Transactional
     public List<TicketResponse> updateForOrderEvent(String orderId, String eventId, TicketStatus requested) {
         validate(requested);
         List<Ticket> affected = tickets.findAllByBatch_OrderIdAndEventIdOrderByTicketId(orderId, eventId);
         affected.forEach(ticket -> transition(ticket, requested));
-        return tickets.saveAllAndFlush(affected).stream().map(TicketResponse::from).toList();
+        var saved=tickets.saveAllAndFlush(affected);
+        AuditTx.local(Audit.capture(Audit.Action.TICKETS_ANNULLED,Audit.Resource.PURCHASE,orderId,Audit.operation(Audit.Resource.PURCHASE,orderId),Audit.Outcome.SUCCESS,null));
+        return saved.stream().map(TicketResponse::from).toList();
     }
     private void validate(TicketStatus requested) {
         if (requested != TicketStatus.ANULADA && requested != TicketStatus.REINTEGRADA) {

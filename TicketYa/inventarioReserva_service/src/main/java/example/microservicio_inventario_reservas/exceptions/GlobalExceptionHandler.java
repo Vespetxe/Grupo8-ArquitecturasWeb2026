@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MensajeResponse> handleInternal(Exception ex) {
-        org.slf4j.LoggerFactory.getLogger(getClass()).error("Fallo interno de inventario", ex);
+        org.slf4j.LoggerFactory.getLogger(getClass()).atError().addKeyValue("errorCategory", "INTERNAL").log("Fallo interno de inventario");
         return ResponseEntity.internalServerError().body(new MensajeResponse("Error interno", false));
     }
 }

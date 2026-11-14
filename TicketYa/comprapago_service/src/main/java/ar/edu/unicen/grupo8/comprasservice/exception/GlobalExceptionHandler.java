@@ -50,6 +50,7 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler({DataIntegrityViolationException.class, ConcurrencyFailureException.class})
     public ResponseEntity<ErrorResponse> handlePersistencia(Exception ex) {
+        ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.persistenceConflict(log, ex);
         return respuesta(HttpStatus.CONFLICT, "Conflicto con una operacion existente; consulte su resultado antes de reintentar");
     }
     @ExceptionHandler(ComunicacionPasarelaException.class)
@@ -75,7 +76,7 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleErrorInterno(Exception ex) {
-        log.error("Error interno al procesar la solicitud", ex);
+        ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.unexpectedRequest(log, ex);
         return respuesta(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo completar la solicitud por un error interno");
     }
     private ResponseEntity<ErrorResponse> respuesta(HttpStatus estado, String mensaje) {

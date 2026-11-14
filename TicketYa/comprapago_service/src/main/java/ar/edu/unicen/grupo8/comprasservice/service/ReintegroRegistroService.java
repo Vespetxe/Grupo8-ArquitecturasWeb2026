@@ -1,4 +1,6 @@
 package ar.edu.unicen.grupo8.comprasservice.service;
+import ar.edu.unicen.grupo8.comprasservice.observability.Audit;
+import ar.edu.unicen.grupo8.comprasservice.observability.AuditTx;
 
 import ar.edu.unicen.grupo8.comprasservice.dto.*;
 import ar.edu.unicen.grupo8.comprasservice.entity.*;
@@ -43,7 +45,10 @@ public class ReintegroRegistroService {
             throw new IllegalArgumentException("Debe reintegrarse el importe completo autorizado para esta devolucion");
         var anteriores = reintegros.findByDevolucionId(id);
         if (!anteriores.isEmpty() && porClave == null) throw new IllegalStateException("Reintente con la clave original de la devolucion");
-        if (d.getEstado() == EstadoDevolucion.COMPLETADA) return turno(d, porClave, null);
+        if (d.getEstado() == EstadoDevolucion.COMPLETADA) {
+            AuditTx.local(Audit.capture(Audit.Action.REFUND_REPLAY,Audit.Resource.RETURN,d.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),Audit.Outcome.SUCCESS,d.getEstado()));
+            return turno(d, porClave, null);
+        }
         if (d.getEstado() != EstadoDevolucion.APROBADA && d.getEstado() != EstadoDevolucion.ERROR_PENDIENTE
                 && d.getEstado() != EstadoDevolucion.PROCESANDO) throw new IllegalStateException("La devolucion no esta aprobada");
         if (c.getEjecutor() != null && c.getBloqueoHasta() != null && c.getBloqueoHasta().isAfter(LocalDateTime.now(clock)))
@@ -93,7 +98,11 @@ public class ReintegroRegistroService {
         if (!Objects.equals(token, c.getEjecutor())) throw new IllegalStateException("El turno de procesamiento ya no pertenece a esta operacion");
         var d = devoluciones.buscarConBloqueo(id).orElseThrow();
         var r = reintegros.findByDevolucionId(id).get(0);
-        accion.accept(d, r); c.setBloqueoHasta(LocalDateTime.now(clock).plusMinutes(2));
+        var previousRefund=r.getEstado();var previousStage=d.getEtapa();
+        accion.accept(d, r);
+        if(previousRefund!=r.getEstado())AuditTx.local(Audit.capture(Audit.Action.REFUND_STATE,Audit.Resource.REFUND,r.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),r.getEstado()==EstadoReintegro.COMPLETADO?Audit.Outcome.SUCCESS:r.getEstado()==EstadoReintegro.RECHAZADO?Audit.Outcome.REJECTED:Audit.Outcome.PENDING,r.getEstado()));
+        if(previousStage!=d.getEtapa())AuditTx.local(Audit.capture(Audit.Action.RETURN_PROCESS,Audit.Resource.RETURN,d.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),d.getEtapa()==EtapaDevolucion.FINALIZADA?Audit.Outcome.SUCCESS:Audit.Outcome.PENDING,d.getEstado()));
+        c.setBloqueoHasta(LocalDateTime.now(clock).plusMinutes(2));
         return turno(d, r, token);
     }
     public Turno registrarResultado(Long id, String token, ResultadoPasarela respuesta) {

@@ -1,4 +1,6 @@
 package ar.edu.unicen.grupo8.comprasservice.service;
+import ar.edu.unicen.grupo8.comprasservice.observability.Audit;
+import ar.edu.unicen.grupo8.comprasservice.observability.AuditTx;
 
 import ar.edu.unicen.grupo8.comprasservice.dto.*;
 import ar.edu.unicen.grupo8.comprasservice.entity.*;
@@ -38,7 +40,10 @@ public class PagoRegistroService {
             if (medio == null && pago.getMedioPago() != null) throw new IllegalArgumentException("Debe indicar el medio de pago original");
             throw new IllegalStateException("La clave de idempotencia fue registrada con otro medio de pago; un historico sin dato no puede completarse por reintento");
         }
-        if (pago != null && compra.getEtapa() == EtapaCompra.FINALIZADA) return new Turno(inicializar(pago), null, false);
+        if (pago != null && compra.getEtapa() == EtapaCompra.FINALIZADA) {
+            auditar(pago,Audit.Action.PAYMENT_REPLAY,true);
+            return new Turno(inicializar(pago), null, false);
+        }
         if (compra.getEjecutor() != null && compra.getBloqueoHasta().isAfter(LocalDateTime.now(clock)))
             throw new IllegalStateException("La compra tiene una operacion en procesamiento; reintente con la misma clave");
         if (creado) {
@@ -52,6 +57,7 @@ public class PagoRegistroService {
         String token = UUID.randomUUID().toString();
         compra.setEjecutor(token);
         compra.setBloqueoHasta(LocalDateTime.now(clock).plusMinutes(2));
+        auditar(pago,creado?Audit.Action.PAYMENT_STATE:Audit.Action.PAYMENT_RECOVERY,false);
         return new Turno(inicializar(pago), token, creado);
     }
 
@@ -59,7 +65,10 @@ public class PagoRegistroService {
         Pago pago = pagos.findById(id).orElseThrow();
         Compra compra = compras.buscarPorIdConBloqueo(pago.getCompra().getId()).orElseThrow();
         if (!Objects.equals(token, compra.getEjecutor())) throw new IllegalStateException("El turno fue recuperado por otra solicitud");
+        var before=pago.getEstado();var stage=compra.getEtapa();
         cambio.accept(compra, pago);
+        if(before!=pago.getEstado())auditar(pago,Audit.Action.PAYMENT_STATE,false);
+        if(stage!=compra.getEtapa())AuditTx.local(Audit.capture(Audit.Action.PURCHASE_STAGE,Audit.Resource.PURCHASE,compra.getId(),Audit.operation(Audit.Resource.PURCHASE,compra.getId()),compra.getEtapa()==EtapaCompra.FINALIZADA?(compra.getEstado()==EstadoCompra.FALLIDA?Audit.Outcome.REJECTED:Audit.Outcome.SUCCESS):Audit.Outcome.PENDING,compra.getEtapa()));
         compra.setBloqueoHasta(LocalDateTime.now(clock).plusMinutes(2));
         return inicializar(pago);
     }
@@ -112,6 +121,12 @@ public class PagoRegistroService {
         return inicializar(pagos.findById(id).orElseThrow(() -> new PagoNoEncontradoException("No existe un pago con ID: " + id)));
     }
 
+    private void auditar(Pago pago,Audit.Action action,boolean terminal){
+        var outcome=pago.getEstado()==EstadoPago.RECHAZADO?Audit.Outcome.REJECTED:
+            terminal&&pago.getCompra().getEstado()==EstadoCompra.FALLIDA?Audit.Outcome.FAILED:
+            pago.getEstado()==EstadoPago.APROBADO||pago.getEstado()==EstadoPago.REINTEGRADO_PARCIAL||pago.getEstado()==EstadoPago.REINTEGRADO_TOTAL?Audit.Outcome.SUCCESS:Audit.Outcome.PENDING;
+        AuditTx.local(Audit.capture(action,Audit.Resource.PAYMENT,pago.getId(),Audit.operation(Audit.Resource.PURCHASE,pago.getCompra().getId()),outcome,pago.getEstado()));
+    }
     private Pago inicializar(Pago pago) {
         pago.getCompra().getDetalles().size(); pago.getCompra().getEntradasIds().size();
         return pago;

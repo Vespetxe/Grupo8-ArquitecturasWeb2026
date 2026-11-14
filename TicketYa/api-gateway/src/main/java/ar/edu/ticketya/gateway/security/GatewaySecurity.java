@@ -20,6 +20,7 @@ public class GatewaySecurity {
    jwt.getClaimAsStringList("roles").forEach(r->values.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_"+r)));return values;});
   return h.csrf(x->x.disable()).httpBasic(x->x.disable()).formLogin(x->x.disable())
    .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+   .addFilterAfter(new ar.edu.ticketya.gateway.observability.GatewayActorCaptureFilter(),org.springframework.security.config.web.server.SecurityWebFiltersOrder.AUTHENTICATION)
    .authorizeExchange(x->x.anyExchange().access((auth,context)->auth.<org.springframework.security.authorization.AuthorizationResult>map(a->new AuthorizationDecision(RoutePolicy.allow("gateway",context.getExchange().getRequest().getMethod().name(),context.getExchange().getRequest().getPath().value(),a)))
     .defaultIfEmpty(new AuthorizationDecision(RoutePolicy.allow("gateway",context.getExchange().getRequest().getMethod().name(),context.getExchange().getRequest().getPath().value(),null)))))
    .oauth2ResourceServer(x->x.jwt(j->j.jwtAuthenticationConverter(new ReactiveJwtAuthenticationConverterAdapter(c)))).build();

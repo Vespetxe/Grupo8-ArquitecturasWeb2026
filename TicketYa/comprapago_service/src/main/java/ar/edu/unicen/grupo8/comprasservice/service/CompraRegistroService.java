@@ -1,4 +1,6 @@
 package ar.edu.unicen.grupo8.comprasservice.service;
+import ar.edu.unicen.grupo8.comprasservice.observability.Audit;
+import ar.edu.unicen.grupo8.comprasservice.observability.AuditTx;
 
 import ar.edu.unicen.grupo8.comprasservice.entity.Compra;
 import ar.edu.unicen.grupo8.comprasservice.entity.enums.EstadoCompra;
@@ -40,7 +42,9 @@ public class CompraRegistroService {
         if (existentes + solicitadas > limite) {
             throw new IllegalArgumentException("La compra supera el limite de entradas permitido por cliente y evento");
         }
-        return compras.save(compra);
+        var saved=compras.save(compra);
+        AuditTx.local(Audit.capture(Audit.Action.PURCHASE_CREATED,Audit.Resource.PURCHASE,saved.getId(),Audit.operation(Audit.Resource.PURCHASE,saved.getId()),Audit.Outcome.SUCCESS,saved.getEstado()));
+        return saved;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

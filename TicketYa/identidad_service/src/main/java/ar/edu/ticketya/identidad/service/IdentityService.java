@@ -1,4 +1,6 @@
 package ar.edu.ticketya.identidad.service;
+import ar.edu.ticketya.identidad.observability.Audit;
+import ar.edu.ticketya.identidad.observability.AuditTx;
 
 import ar.edu.ticketya.identidad.dto.AuthDtos.*;
 import ar.edu.ticketya.identidad.entity.*;
@@ -35,8 +37,11 @@ public class IdentityService {
     @Transactional(readOnly=true) public TokenResponse login(Credentials input){
         IdentityUser user=users.findByEmail(canonical(input.email)).orElse(null);
         boolean correct=passwords.matches(input.password,user==null?dummyHash:user.getPasswordHash());
-        if(!correct || user==null || user.getStatus()!=AccountStatus.ACTIVE)
+        if(!correct || user==null || user.getStatus()!=AccountStatus.ACTIVE) {
+            Audit.emit(Audit.capture(Audit.Action.LOGIN,Audit.Resource.USER,null,null,Audit.Outcome.REJECTED,null)
+                    .result(Audit.Outcome.REJECTED,Audit.Error.AUTHENTICATION_REJECTED));
             throw new ApiException(HttpStatus.UNAUTHORIZED,"Credenciales inválidas");
+        }
         Instant now=clock.instant();
         Duration ttl=user.getRoles().equals(Set.of(Role.CLIENTE))?properties.userTtl():properties.privilegedTtl();
         JwtClaimsSet claims=JwtClaimsSet.builder().issuer(properties.issuer()).subject(user.getId().toString())
@@ -44,7 +49,10 @@ public class IdentityService {
             .id(UUID.randomUUID().toString()).claim("token_use","user")
             .claim("roles",user.getRoles().stream().map(Enum::name).sorted().toList()).build();
         JwsHeader header=JwsHeader.with(SignatureAlgorithm.RS256).keyId(properties.keyId()).build();
-        return new TokenResponse(encoder.encode(JwtEncoderParameters.from(header,claims)).getTokenValue(),"Bearer",ttl.toSeconds());
+        var response=new TokenResponse(encoder.encode(JwtEncoderParameters.from(header,claims)).getTokenValue(),"Bearer",ttl.toSeconds());
+        String role=user.getRoles().stream().map(Enum::name).sorted().findFirst().orElse("CLIENTE");
+        AuditTx.local(Audit.capture(Audit.Action.LOGIN,Audit.Resource.USER,user.getId(),Audit.operation(Audit.Resource.USER,user.getId()),Audit.Outcome.SUCCESS,user.getStatus()).by(new Audit.Actor(role,user.getId().toString(),true)));
+        return response;
     }
     @Transactional(readOnly=true) public UserView me(String subject){
         IdentityUser user=users.findById(Long.valueOf(subject)).filter(u->u.getStatus()==AccountStatus.ACTIVE)

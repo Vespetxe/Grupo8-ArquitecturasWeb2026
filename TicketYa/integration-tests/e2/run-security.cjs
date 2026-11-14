@@ -1,13 +1,14 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
-const guard=require('./security-isolation.cjs');
+const central=process.argv.includes('--centralized');
+const guard=require(central?'./central-isolation.cjs':'./security-isolation.cjs');
 const root=path.resolve(__dirname,'../../..');
 let stage='preflight';
-const args=process.argv.slice(2);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
+const args=process.argv.slice(2);if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
 const meta=guard.identity(crypto.randomBytes(8).toString('hex'),args.length?Number(args[1]):48082);
 const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('COMPOSE_')||k.startsWith('TY_REG_'))delete env[k];
-const credentials={};
+const credentials={};const provisionLogs=[];
 for(const name of ['ROOT','EVENTOS','INVENTARIO','ENTRADAS','COMPRAS','IDENTIDAD'])credentials[`TY_REG_${name}_PASSWORD`]=crypto.randomBytes(32).toString('hex');
 for(const [caller,targets]of Object.entries(guard.CALLS))for(const target of targets)credentials[`TY_REG_${caller.toUpperCase()}_${target.toUpperCase()}_SECRET`]=crypto.randomBytes(32).toString('hex');
 Object.assign(env,credentials);
@@ -19,13 +20,15 @@ function inspect(name){return JSON.parse(docker(['inspect',`${meta.project}-${na
 const images={};
 function attest(names){guard.validate(meta,JSON.parse(fs.readFileSync(file)));for(const name of names)guard.attest(meta,name,inspect(name),credentials,images);}
 function sql(query){attest(['mysql']);return docker(['exec','-i',`${meta.project}-mysql-1`,'sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root --batch --skip-column-names --raw'],query+'\n').trim();}
-async function wait(name){const deadline=Date.now()+180000;while(Date.now()<deadline){const c=inspect(name);if(name==='mysql'?c.State.Health?.Status==='healthy':docker(['logs',c.Id]).includes('Started '))return;assert.notEqual(c.State.Status,'exited');await new Promise(r=>setTimeout(r,2000));}throw new Error('Readiness deadline');}
+async function wait(name){const deadline=Date.now()+180000;while(Date.now()<deadline){const c=inspect(name);if(['mysql','collector'].includes(name)?c.State.Health?.Status==='healthy':docker(['logs',c.Id]).includes('Started '))return;assert.notEqual(c.State.Status,'exited');await new Promise(r=>setTimeout(r,2000));}throw new Error('Readiness deadline');}
 function snapshot(ids){return ids.map(id=>{const c=JSON.parse(docker(['inspect',id]))[0];return {id:c.Id,state:c.State.Status,start:c.State.StartedAt,finish:c.State.FinishedAt,restarts:c.RestartCount};});}
 async function main(){
  const spec=guard.spec(meta);guard.validate(meta,spec);
  const oldIds=docker(['ps','-aq']).trim().split(/\s+/).filter(Boolean),previous=snapshot(oldIds);
+ if(central)guard.assertEndpointFree(meta.logPort,oldIds.map(id=>JSON.parse(docker(['inspect',id]))[0]));
  assert.equal(docker(['ps','-aq','--filter',`label=com.docker.compose.project=${meta.project}`]).trim(),'');
  assert.equal(docker(['volume','ls','-q','--filter',`name=^${meta.volume}$`]).trim(),'');
+ if(central){assert.equal(docker(['volume','ls','-q','--filter',`name=^${meta.logVolume}$`]).trim(),'');await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',reject);server.listen(meta.logPort,'127.0.0.1',()=>server.close(resolve));});}
  // Check the only host port before creating any resources.
  await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',reject);server.listen(meta.port,'127.0.0.1',()=>server.close(resolve));});
  fs.mkdirSync(path.join(meta.directory,'keys'),{recursive:true,mode:0o700});
@@ -44,7 +47,7 @@ async function main(){
  }
  docker(['exec','-i','--env','IDENTITY_SCHEMA','--env','TY_E2_IDENTIDAD_DB_PASSWORD',`${meta.project}-mysql-1`,'bash','-s','--','--isolated'],fs.readFileSync(path.join(root,'docker/mysql/create-identity.sh'),'utf8').replace(/\r/g,''),{IDENTITY_SCHEMA:meta.identitySchema,TY_E2_IDENTIDAD_DB_PASSWORD:credentials.TY_REG_IDENTIDAD_PASSWORD});
  stage='identity startup';compose('up','--detach','--no-build','--no-deps','identidad');await wait('identidad');attest(['mysql','identidad']);
- function provision(values){attest(['mysql','identidad']);const request=path.join(meta.directory,'provision.properties');fs.writeFileSync(request,Object.entries(values).map(([k,v])=>`${k}=${v}`).join('\n'),{mode:0o600});compose('run','--rm','--no-deps','--volume',`${request}:/run/provision.properties:ro`,'--env','IDENTITY_PROVISION_FILE=/run/provision.properties','identidad','provision');}
+ function provision(values){attest(['mysql','identidad']);const request=path.join(meta.directory,'provision.properties');fs.writeFileSync(request,Object.entries(values).map(([k,v])=>`${k}=${v}`).join('\n'),{mode:0o600});provisionLogs.push(compose('run','--rm','--no-deps','--volume',`${request}:/run/provision.properties:ro`,'--env','IDENTITY_PROVISION_FILE=/run/provision.properties','identidad','provision'));}
  const adminPassword=crypto.randomBytes(32).toString('hex');provision({operation:'first-admin',email:`admin-${meta.id}@example.test`,password:adminPassword});
  const provisioned=[];
  for(const [name,role]of [['organizer-a','ORGANIZADOR'],['organizer-b','ORGANIZADOR'],['access','PERSONAL_ACCESO']]){const user={email:name+'-'+meta.id+'@example.test',password:crypto.randomBytes(32).toString('hex'),role};provision({operation:'user',...user});provisioned.push(user);}
@@ -53,17 +56,28 @@ async function main(){
  stage='business service startup';compose('up','--detach','--no-build','--no-deps','eventos','inventario','entradas','compras');
  for(const name of ['eventos','inventario','entradas','compras'])await wait(name);
  stage='gateway startup';compose('up','--detach','--no-build','--no-deps','gateway');await wait('gateway');
- stage='attestation';attest(Object.keys(spec.services));assert.equal(docker(['ps','-aq','--filter',`label=com.docker.compose.project=${meta.project}`]).trim().split(/\s+/).length,7);
+ if(central){stage='collector startup after applications';compose('up','--detach','--no-build','--no-deps','collector');await wait('collector');}
+ stage='attestation';attest(Object.keys(spec.services));assert.equal(docker(['ps','-aq','--filter',`label=com.docker.compose.project=${meta.project}`]).trim().split(/\s+/).length,central?8:7);
  stage='security HTTP';
  const mounts=['security-smoke.cjs','security-isolation.cjs','isolation.cjs'].flatMap(name=>['--mount',`type=bind,source=${path.join(__dirname,name)},target=/${name},readonly`]);
  const output=docker(['run','--rm','--log-driver','none','--network',meta.network,...mounts,'--mount',`type=bind,source=${path.join(meta.directory,'keys')},target=/keys,readonly`,
   '--env','RUN_ID','--env','ADMIN_PASSWORD',...Object.keys(credentials).flatMap(k=>['--env',k]),'node:22.21.1-alpine','node','/security-smoke.cjs'],undefined,{RUN_ID:meta.id,ADMIN_PASSWORD:adminPassword});
  Object.assign(report,JSON.parse(output));
+ if(central){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
  stage='commercial HTTP';
- report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services)),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ if(central){stage='collector recovery';compose('start','collector');await wait('collector');}
+ if(observe){
+  stage='tracing verification';
+  await new Promise(r=>setTimeout(r,500));
+  const logs=Object.fromEntries(['gateway','identidad','eventos','inventario','compras','entradas'].map(name=>[name,docker(['logs',inspect(name).Id])]));
+  report.tracing=require('./verify-tracing.cjs')({logs,requests:report.commercial.requests,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password)]});
+  if(audit){stage='audit verification';report.audit=require('./verify-audit.cjs').verify({progress:step=>{report.auditCheck=step;},logs:{...logs,provision:provisionLogs.join('\n')},secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password)],commercial:report.commercial,meta,sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'));return sql(query);}});}
+  if(central){stage='central archive verification';report.central=await require('./verify-central.cjs')({docker,container:inspect('collector').Id,logs,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password)],requests:report.commercial.requests});}
+ }
  stage='final checks';attest(Object.keys(spec.services));assert.deepEqual(snapshot(oldIds),previous);
  assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'26');
- Object.assign(report,{result:'PASS',services:7,schemas:5,previousContainersUnchanged:true,images});
+ Object.assign(report,{result:'PASS',services:central?8:7,schemas:5,previousContainersUnchanged:true,images});
  fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }
 main().catch(error=>{report.result='FAIL';report.stage=stage;try{fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));}catch{}

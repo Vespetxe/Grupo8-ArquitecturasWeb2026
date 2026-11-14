@@ -1,4 +1,6 @@
 package ar.edu.unicen.grupo8.comprasservice.service;
+import ar.edu.unicen.grupo8.comprasservice.observability.Audit;
+import ar.edu.unicen.grupo8.comprasservice.observability.AuditTx;
 
 import ar.edu.unicen.grupo8.comprasservice.client.*;
 import ar.edu.unicen.grupo8.comprasservice.dto.*;
@@ -69,7 +71,10 @@ public class PagoService {
         } finally {
             registro.soltar(compraId, turno.token());
         }
-        return new ResultadoProcesamientoPagoDTO(registro.obtener(pago.getId()), turno.creado());
+        var finalPago=registro.obtener(pago.getId());
+        var outcome=finalPago.getEstado()==EstadoPago.RECHAZADO?Audit.Outcome.REJECTED:finalPago.getCompra().getEtapa()==EtapaCompra.FINALIZADA?(finalPago.getCompra().getEstado()==EstadoCompra.FALLIDA?Audit.Outcome.FAILED:Audit.Outcome.SUCCESS):Audit.Outcome.PENDING;
+        AuditTx.completed(Audit.capture(Audit.Action.PAYMENT_PROCESS,Audit.Resource.PAYMENT,finalPago.getId(),Audit.operation(Audit.Resource.PURCHASE,compraId),outcome,finalPago.getEstado()));
+        return new ResultadoProcesamientoPagoDTO(finalPago, turno.creado());
     }
 
     private void continuar(Pago inicial, String token, boolean nuevo) {
@@ -210,7 +215,7 @@ public class PagoService {
         if (id == null || id <= 0) throw new IllegalArgumentException("El identificador debe ser positivo");
     }
     private void pendiente(Compra compra, RuntimeException ex) {
-        log.warn("Compra {} pendiente de recuperacion en etapa {} ({})", compra.getId(), compra.getEtapa(), ex.getClass().getSimpleName());
+        ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.paymentPending(log, compra.getId(), compra.getEtapa(), ex);
     }
     private void verificarCompensacionNoRechazada(Pago pago) {
         if (registro.compensacionRechazada(pago.getId())) {

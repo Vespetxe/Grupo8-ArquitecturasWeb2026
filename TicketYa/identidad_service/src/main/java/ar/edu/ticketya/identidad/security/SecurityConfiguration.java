@@ -26,6 +26,7 @@ public class SecurityConfiguration {
             http.securityMatcher(server.getEndpointsMatcher());
         }).authorizeHttpRequests(a->a.anyRequest().authenticated())
             .sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.addFilterBefore(new ar.edu.ticketya.identidad.observability.ServletActorCaptureFilter(),org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class);
         return http.build();
     }
     @Bean @Order(2) SecurityFilterChain api(HttpSecurity http) throws Exception {
@@ -34,6 +35,7 @@ public class SecurityConfiguration {
                 .requestMatchers(org.springframework.http.HttpMethod.POST,"/auth/register","/auth/login").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET,"/auth/me").authenticated()
                 .anyRequest().denyAll())
+            .addFilterAfter(new ar.edu.ticketya.identidad.observability.ServletActorCaptureFilter(),org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class)
             .oauth2ResourceServer(o->o.jwt(j->{}))
             .exceptionHandling(e->e.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
                 .accessDeniedHandler(new BearerTokenAccessDeniedHandler()));

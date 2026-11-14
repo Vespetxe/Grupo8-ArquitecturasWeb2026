@@ -108,7 +108,7 @@ public class CompraService {
             reserva = reservaClient.consultarReserva(compra.getReservaId());
             if (reserva == null || !"LIBERADA".equals(reserva.estado())) return compra;
         } catch (RuntimeException ex) {
-            log.warn("Compra {} cancelada con liberacion pendiente ({})", id, ex.getClass().getSimpleName());
+            ar.edu.unicen.grupo8.comprasservice.observability.SafeLog.purchaseReleasePending(log, id, ex);
             return compra;
         }
         return registro.finalizarCancelacion(id);

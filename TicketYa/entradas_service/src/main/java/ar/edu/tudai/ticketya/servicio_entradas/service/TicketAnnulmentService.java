@@ -1,4 +1,6 @@
 package ar.edu.tudai.ticketya.servicio_entradas.service;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.Audit;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.AuditTx;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.*;
 import ar.edu.tudai.ticketya.servicio_entradas.repository.*;
 import org.springframework.stereotype.Service;
@@ -14,5 +16,6 @@ public class TicketAnnulmentService {
         var values=tickets.findAllByBatch_OrderIdOrderByTicketId(id);
         values.forEach(t->{if(t.getStatus()!=TicketStatus.REINTEGRADA)t.setStatus(TicketStatus.ANULADA);});
         tickets.saveAllAndFlush(values);
+        AuditTx.local(Audit.capture(Audit.Action.TICKETS_ANNULLED,Audit.Resource.PURCHASE,batch.getOrderId(),Audit.operation(Audit.Resource.PURCHASE,batch.getOrderId()),Audit.Outcome.SUCCESS,null));
     }
 }

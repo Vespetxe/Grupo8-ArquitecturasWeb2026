@@ -1,4 +1,6 @@
 package ar.edu.ticketya.identidad.service;
+import ar.edu.ticketya.identidad.observability.Audit;
+import ar.edu.ticketya.identidad.observability.AuditTx;
 
 import ar.edu.ticketya.identidad.entity.*;
 import ar.edu.ticketya.identidad.repository.*;
@@ -36,7 +38,9 @@ public class ProvisioningService {
             || password==null || password.length()<12 || password.length()>128 || password.isBlank())
             throw new IllegalArgumentException("Invalid provisioning fields");
         if(users.existsByEmail(normalized))throw new IllegalStateException("Identity already exists");
-        return users.saveAndFlush(new IdentityUser(normalized,passwords.encode(password),Set.of(role))).getId();
+        var saved=users.saveAndFlush(new IdentityUser(normalized,passwords.encode(password),Set.of(role)));
+        AuditTx.local(Audit.capture(Audit.Action.PRIVILEGED_PROVISION,Audit.Resource.USER,saved.getId(),Audit.operation(Audit.Resource.USER,saved.getId()),Audit.Outcome.SUCCESS,role).by(Audit.system()));
+        return saved.getId();
     }
     @Transactional public void technicalClient(String caller,String audience,Set<String> scopes,String secret){
         if(!markers.existsById(ADMIN_MARKER) || secret==null || secret.length()<32 || secret.length()>128 || secret.isBlank()
@@ -45,5 +49,6 @@ public class ProvisioningService {
         String id=TechnicalClientPolicy.clientId(caller,audience);
         if(clients.existsById(id))throw new IllegalStateException("Technical client already exists");
         clients.saveAndFlush(new TechnicalClient(id,passwords.encode(secret),audience,String.join(" ",new TreeSet<>(scopes))));
+        AuditTx.local(Audit.capture(Audit.Action.TECHNICAL_CLIENT_PROVISION,Audit.Resource.TECHNICAL_CLIENT,id,Audit.operation(Audit.Resource.TECHNICAL_CLIENT,id),Audit.Outcome.SUCCESS,null).by(Audit.system()));
     }
 }

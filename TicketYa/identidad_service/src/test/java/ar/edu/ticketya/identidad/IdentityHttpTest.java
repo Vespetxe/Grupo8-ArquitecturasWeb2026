@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
     "spring.datasource.username=sa","spring.datasource.password=",
     "spring.jpa.hibernate.ddl-auto=create-drop"})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing
 class IdentityHttpTest {
     static final String ISSUER="http://identity-test.invalid";
     static final String PASSWORD=UUID.randomUUID().toString();
@@ -97,9 +98,14 @@ class IdentityHttpTest {
     }
     @Test void loginFailuresHaveSamePublicMessage()throws Exception{
         registerAndLogin("bad-password@example.test");
+        try(var audit=new ar.edu.ticketya.identidad.observability.AuditCapture()){
         var wrong=request("POST","/auth/login",Map.of("email","bad-password@example.test","password",UUID.randomUUID().toString()),null);
         var missing=request("POST","/auth/login",Map.of("email","missing@example.test","password",UUID.randomUUID().toString()),null);
         assertEquals(401,wrong.statusCode());assertEquals(401,missing.statusCode());assertEquals(wrong.body(),missing.body());
+        var rows=audit.rows().stream().filter(r->"LOGIN".equals(r.get("action"))).toList();
+        assertEquals(2,rows.size());
+        for(var row:rows){assertEquals("REJECTED",row.get("outcome"));assertEquals("AUTHENTICATION_REJECTED",row.get("errorCode"));assertEquals(false,row.get("actorVerified"));assertFalse(row.containsKey("actorId"));}
+        }
     }
     @Test void disabledAccountCannotLoginOrUseMe()throws Exception{
         String token=registerAndLogin("disabled@example.test");

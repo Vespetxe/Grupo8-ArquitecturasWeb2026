@@ -1,4 +1,6 @@
 package ar.edu.tudai.ticketya.servicio_entradas.service;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.Audit;
+import ar.edu.tudai.ticketya.servicio_entradas.observability.AuditTx;
 import ar.edu.tudai.ticketya.servicio_entradas.api.TicketResponse;
 import ar.edu.tudai.ticketya.servicio_entradas.domain.Ticket;
 import ar.edu.tudai.ticketya.servicio_entradas.integration.OrderClient;
@@ -24,7 +26,10 @@ public class TicketIssuanceService {
     }
     public TicketIssuanceResult issue(String orderId) {
         List<Ticket> existing = existingTickets(orderId);
-        if (existing != null) return result(existing, false);
+        if (existing != null) {
+            AuditTx.completed(Audit.capture(Audit.Action.TICKETS_REPLAY,Audit.Resource.PURCHASE,orderId,Audit.operation(Audit.Resource.PURCHASE,orderId),Audit.Outcome.SUCCESS,null));
+            return result(existing, false);
+        }
         OrderSnapshot order = orderClient.getOrder(orderId);
         try {
             return result(writer.create(order), true);

@@ -8,10 +8,10 @@ module.exports=async function commercial({meta,sql,attest,adminPassword,provisio
   attest();const url=urlFor(meta,p);const payload=body===undefined?undefined:JSON.stringify(body);
   const response=await new Promise((resolve,reject)=>{
    const headers={Accept:'application/json',...extra,...(actor?{Authorization:'Bearer '+actor.token}:{}),...(payload===undefined?{}:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(payload)})};
-   const req=http.request(url,{method,headers,timeout:25000},res=>{let data='';res.setEncoding('utf8');res.on('data',p=>data+=p);res.on('end',()=>{try{resolve({status:res.statusCode,body:data?JSON.parse(data):null});}catch{reject(new Error('Non-JSON HTTP response'));}});});
+   const req=http.request(url,{method,headers,timeout:25000},res=>{let data='';res.setEncoding('utf8');res.on('data',p=>data+=p);res.on('end',()=>{try{resolve({status:res.statusCode,correlationId:res.headers["x-correlation-id"],body:data?JSON.parse(data):null});}catch{reject(new Error('Non-JSON HTTP response'));}});});
    req.on('error',reject);req.on('timeout',()=>req.destroy(new Error('HTTP timeout; no automatic write retry')));if(payload!==undefined)req.write(payload);req.end();
   });
-  report.requests.push({method,path:p,status:response.status,expected,actor:actor?.id});progress(report);
+  report.requests.push({method,path:p,status:response.status,correlationId:response.correlationId,expected,actor:actor?.id});progress(report);
   assert.equal(response.status,expected,method+' '+p+': expected '+expected+' received '+response.status);return response.body;
  }
  const get=p=>api('GET',p),post=(p,b,s=200)=>api('POST',p,b,s),patch=p=>api('PATCH',p);
@@ -145,6 +145,16 @@ async function recovered(){
 }
 
  await numberedRefundCancellation();await rejected();await recovered();
+ const concurrentStart=report.requests.length;
+ await Promise.all(Array.from({length:24},async(_,index)=>{
+  const actor=clients[index%clients.length];
+  const tickets=await api('GET','/tickets?clientId='+actor.id,undefined,200,actor);
+  assert.ok(tickets.every(t=>t.clientId===String(actor.id)),'Concurrent ownership isolation');
+ }));
+ const concurrent=report.requests.slice(concurrentStart);
+ assert.equal(concurrent.length,24);
+ assert.equal(new Set(concurrent.map(r=>r.correlationId)).size,24);
+ report.concurrencyEvidence={requests:24,distinctCorrelations:24,actors:clients.length};
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.compras}.compras;`),'3');
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.compras}.pagos;`),'3');
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.entradas}.tickets;`),'3');
