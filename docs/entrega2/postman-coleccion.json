@@ -1,0 +1,644 @@
+{
+  "info": {
+    "name": "TicketYa E2 — referencia manual autenticada",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "No es un runner automático. Secciones requieren distintos roles reales. Completar variables sin exportar secretos. Pago GENERAL; para NUMERADO agregar idsAsientos y detalles por asiento según OpenAPI. No se fabrican éxitos ni se usan credenciales técnicas en cliente."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:48084",
+      "type": "string"
+    },
+    {
+      "key": "jwt",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "venueId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sectorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reservationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "purchaseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "qr",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Registrar CLIENTE",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Login real",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(pm.response.code===200){const b=pm.response.json();pm.collectionVariables.set('jwt',b.access_token);}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Identidad y roles",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/auth/me",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(pm.response.code===200)pm.collectionVariables.set('clientId',pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catálogo público",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/events/search?sort=DATE_ASC",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Detalle autenticado",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/events/{{eventId}}",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Sectores del lugar",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/venues/{{venueId}}/sectors",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Disponibilidad actual",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [],
+        "url": "{{baseUrl}}/disponibilidad/eventos/{{eventId}}/sectores/{{sectorId}}",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Ingresar FIFO cuando está activa",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/colas/eventos/{{eventId}}",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Turno propio",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/colas/eventos/{{eventId}}/mi-turno",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Reservar una unidad GENERAL",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/reservas",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"idCliente\":{{clientId}},\"idEvento\":{{eventId}},\"idSector\":{{sectorId}},\"cantidad\":1}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(pm.response.code===201)pm.collectionVariables.set('reservationId',pm.response.json().idReserva);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crear compra desde reserva",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/compras",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"clienteId\":{{clientId}},\"eventoId\":{{eventId}},\"reservaId\":{{reservationId}},\"detalles\":[{\"sectorId\":{{sectorId}},\"cantidad\":1}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(pm.response.code===201)pm.collectionVariables.set('purchaseId',pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pagar con clave estable provista por operador",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/pagos",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"compraId\":{{purchaseId}},\"claveIdempotencia\":\"{{paymentKey}}\",\"medioPago\":\"TARJETA_DEBITO\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Estado real de compra",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/compras/{{purchaseId}}",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Entradas propias",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/tickets?clientId={{clientId}}",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Preferencias propias",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/me/preferences",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Actualizar preferencias",
+      "request": {
+        "method": "PUT",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/me/preferences",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"favoriteTypes\": [\n    \"recital\"\n  ],\n  \"favoriteParticipantIds\": [],\n  \"preferredCity\": \"Tandil\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Recomendaciones",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/me/recommendations",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Bandeja propia",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/me/notifications",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "No leídas",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/me/notifications/unread-count",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Marcar propia leída",
+      "request": {
+        "method": "PUT",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/me/notifications/{{notificationId}}/read",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Push SSE",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/me/notifications/stream",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Reporte propio ORGANIZADOR",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/events/{{eventId}}/report",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Asignar personal ADMINISTRADOR",
+      "request": {
+        "method": "PUT",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/admin/accesos/eventos/{{eventId}}/personal/{{staffId}}",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente."
+      }
+    },
+    {
+      "name": "Validar QR PERSONAL_ACCESO asignado",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/accesos/eventos/{{eventId}}/validaciones",
+        "description": "Usar únicamente un Gateway aislado propio. JWT/rol/propiedad son autoridad del servidor; completar IDs reales y no ejecutar toda la colección automáticamente.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"qr\": \"{{qr}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

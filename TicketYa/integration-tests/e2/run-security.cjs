@@ -2,20 +2,23 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 const central=process.argv.includes('--centralized');
+const loadRequested=process.argv.includes('--load');
+const frontend=process.argv.includes('--frontend');
+assert.ok(!frontend||loadRequested,'Frontend delivery check requires the isolated load tickets');
+let loadContext;
 const cache=process.argv.includes('--cache');
 const reports=process.argv.includes('--reports');
 const notifications=process.argv.includes('--notifications');
 const recommendations=process.argv.includes('--recommendations')||notifications||reports;
 const mongoTopology=recommendations||cache;
-assert.ok(!mongoTopology||!central,'Recommendation campaign uses its own canonical Mongo topology');
-const guard=require(mongoTopology?'./recommendation-isolation.cjs':central?'./central-isolation.cjs':'./security-isolation.cjs');
+const guard=require(mongoTopology&&central?'./mongo-central-isolation.cjs':mongoTopology?'./recommendation-isolation.cjs':central?'./central-isolation.cjs':'./security-isolation.cjs');
 const root=path.resolve(__dirname,'../../..');
 let stage='preflight';
 const commercialOnly=process.argv.includes('--commercial-only');
 const faults=process.argv.includes('--faults');
 const queue=process.argv.includes('--queue');
 const qr=process.argv.includes('--qr'),qrSecrets=[];
-const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations','--notifications','--reports','--cache'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
+const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations','--notifications','--reports','--cache','--load','--frontend'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
 assert.ok(!commercialOnly||!observe,'Commercial-only skips the already approved security/observability suites, never application security');
 const meta=guard.identity(crypto.randomBytes(8).toString('hex'),args.length?Number(args[1]):48082);
 const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('COMPOSE_')||k.startsWith('TY_REG_'))delete env[k];
@@ -43,6 +46,7 @@ const controls={
   compose('start','collector');await wait('collector');
   const logs=Object.fromEntries(['gateway','identidad','eventos','inventario','compras','entradas'].map(name=>[name,docker(['logs',inspect(name).Id])]));
   report.centralBeforeFaults=await require('./verify-central.cjs')({docker,container:inspect('collector').Id,logs,secrets:[...Object.values(credentials),...faultSecrets],requests:report.commercial.requests});
+  if(mongoTopology){report.centralBeforeFaults.commercialDuringCollectorOutage=false;report.centralBeforeFaults.recoveredWithoutApplicationRestart=false;}
  },
  pausePurchases(){attest(['compras']);compose('pause','compras');assert.equal(inspect('compras').State.Paused,true);},
  resumePurchases(){compose('unpause','compras');attest(['compras']);},
@@ -85,7 +89,7 @@ async function main(){
  }
  docker(['exec','-i','--env','IDENTITY_SCHEMA','--env','TY_E2_IDENTIDAD_DB_PASSWORD',`${meta.project}-mysql-1`,'bash','-s','--','--isolated'],fs.readFileSync(path.join(root,'docker/mysql/create-identity.sh'),'utf8').replace(/\r/g,''),{IDENTITY_SCHEMA:meta.identitySchema,TY_E2_IDENTIDAD_DB_PASSWORD:credentials.TY_REG_IDENTIDAD_PASSWORD});
  stage='identity startup';compose('up','--detach','--no-build','--no-deps','identidad');await wait('identidad');attest(['mysql','identidad']);
- function provision(values){attest(['mysql','identidad']);const request=path.join(meta.directory,'provision.properties');fs.writeFileSync(request,Object.entries(values).map(([k,v])=>`${k}=${v}`).join('\n'),{mode:0o600});provisionLogs.push(compose('run','--rm','--no-deps','--volume',`${request}:/run/provision.properties:ro`,'--env','IDENTITY_PROVISION_FILE=/run/provision.properties','identidad','provision'));}
+ function provision(values){attest(['mysql','identidad']);const request=path.join(meta.directory,'provision.properties');fs.writeFileSync(request,Object.entries(values).map(([k,v])=>`${k}=${v}`).join('\n'),{mode:0o600});provisionLogs.push(compose('run','--no-deps','--volume',`${request}:/run/provision.properties:ro`,'--env','IDENTITY_PROVISION_FILE=/run/provision.properties','identidad','provision'));}
  const adminPassword=crypto.randomBytes(32).toString('hex');const adminPasswordForFaults=adminPassword;provision({operation:'first-admin',email:`admin-${meta.id}@example.test`,password:adminPassword});
  const provisioned=[];
  for(const [name,role]of [['organizer-a','ORGANIZADOR'],['organizer-b','ORGANIZADOR'],['access','PERSONAL_ACCESO']]){const user={email:name+'-'+meta.id+'@example.test',password:crypto.randomBytes(32).toString('hex'),role};provision({operation:'user',...user});provisioned.push(user);}
@@ -96,17 +100,17 @@ async function main(){
  for(const name of ['eventos','inventario','entradas','compras'])await wait(name);
  stage='gateway startup';compose('up','--detach','--no-build','--no-deps','gateway');await wait('gateway');
  if(central){stage='collector startup after applications';compose('up','--detach','--no-build','--no-deps','collector');await wait('collector');}
- stage='attestation';attest(Object.keys(spec.services));assert.equal(docker(['ps','-aq','--filter',`label=com.docker.compose.project=${meta.project}`]).trim().split(/\s+/).length,Object.keys(spec.services).length);
+ stage='attestation';attest(Object.keys(spec.services));assert.equal(docker(['ps','-q','--filter',`label=com.docker.compose.project=${meta.project}`]).trim().split(/\s+/).length,Object.keys(spec.services).length);
  if(!commercialOnly){
  stage='security HTTP';
  const mounts=['security-smoke.cjs','security-isolation.cjs','isolation.cjs'].flatMap(name=>['--mount',`type=bind,source=${path.join(__dirname,name)},target=/${name},readonly`]);
- const output=docker(['run','--rm','--log-driver','none','--network',meta.network,...mounts,'--mount',`type=bind,source=${path.join(meta.directory,'keys')},target=/keys,readonly`,
+ const output=docker(['run','--name',meta.project+'-security-probe','--label','com.docker.compose.project='+meta.project,'--log-driver','none','--network',meta.network,...mounts,'--mount',`type=bind,source=${path.join(meta.directory,'keys')},target=/keys,readonly`,
   '--env','RUN_ID','--env','ADMIN_PASSWORD',...Object.keys(credentials).flatMap(k=>['--env',k]),'node:22.21.1-alpine','node','/security-smoke.cjs'],undefined,{RUN_ID:meta.id,ADMIN_PASSWORD:adminPassword});
  Object.assign(report,JSON.parse(output));
  }
- if(central){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
+ if(central&&!mongoTopology){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
  stage='commercial HTTP';
- report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,notifications,reports,cache,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,notifications,reports,cache,prepareLoad:loadRequested?context=>{loadContext=context;}:undefined,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
  if(central){stage='collector recovery';if(!inspect('collector').State.Running)compose('start','collector');await wait('collector');}
  if(observe){
   stage='tracing verification';
@@ -114,9 +118,11 @@ async function main(){
   const logs=Object.fromEntries(['gateway','identidad','eventos','inventario','compras','entradas'].map(name=>[name,docker(['logs',inspect(name).Id])]));
   report.tracing=require('./verify-tracing.cjs')({logs,requests:report.commercial.requests,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password),...qrSecrets]});
   if(audit){stage='audit verification';report.audit=require('./verify-audit.cjs').verify({progress:step=>{report.auditCheck=step;},logs:{...logs,provision:provisionLogs.join('\n')},secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password),...qrSecrets],commercial:report.commercial,meta,sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'));return sql(query);}});}
-  if(central){stage='central archive verification';report.central=await require('./verify-central.cjs')({docker,container:inspect('collector').Id,logs,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password),...qrSecrets],requests:report.commercial.requests});}
+  if(central){stage='central archive verification';report.central=await require('./verify-central.cjs')({docker,container:inspect('collector').Id,logs,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password),...qrSecrets],requests:report.commercial.requests});if(mongoTopology){report.central.commercialDuringCollectorOutage=false;report.central.recoveredWithoutApplicationRestart=false;}}
  }
  if(mongoTopology){const text=docker(['logs',inspect('mongo').Id]);for(const secret of Object.values(credentials))assert.ok(!text.includes(secret),'Credential found in Mongo logs');report.mongoLogsRedacted=true;}
+ if(loadRequested){stage='bounded purchase load';const commercial=report.commercial;report.load=await require('./load-smoke.cjs')(loadContext);report.commercial=commercial;}
+ if(frontend){stage='frontend accepted QR';const commercial=report.commercial;report.frontend=await require('./frontend-delivery.cjs')({meta,context:loadContext,load:report.load,provisioned});report.commercial=commercial;}
  stage='final checks';attest(Object.keys(spec.services));assert.deepEqual(snapshot(oldIds),previous);
  assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'30');
  Object.assign(report,{result:'PASS',services:Object.keys(spec.services).length,schemas:5,previousContainersUnchanged:true,images});

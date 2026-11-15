@@ -1,3 +1,5 @@
+> Guía actual de entrega: [README](../../README.md), [matriz](entrega-final.md) y [campaña integral](regresion-final.md). Las referencias siguientes a Bloque 1/etapa 35 se conservan como antecedentes; la seguridad y propiedad ya están implementadas. No activar el proyecto histórico sin autorización.
+
 > Estado vigente de la etapa 36: ver [autorización por propiedad](autorizacion-propiedad.md). Las notas de cierre de rutas y regresión pendiente de la etapa 35 se conservan como registro histórico.
 
 # Actualización de la Implementación 35
@@ -30,15 +32,15 @@ Desde la raiz del repositorio:
 node TicketYa/integration-tests/e2/build-images.cjs
 ```
 
-El script construye los cinco proyectos Maven independientes, secuencialmente, desde sus propios contextos y con las etiquetas `ticketya-e2-*:dev`. Los Dockerfiles no utilizan `target` del host y omiten compilacion/ejecucion de tests. Construir imagenes no sustituye ejecutar la regresion ni modifica los contenedores que ya estan ejecutandose.
+El script construye los seis proyectos Maven independientes, secuencialmente, desde sus propios contextos y con las etiquetas `ticketya-e2-*:dev`. Los Dockerfiles no utilizan `target` del host y omiten compilacion/ejecucion de tests. Construir imagenes no sustituye ejecutar la regresion ni modifica los contenedores que ya estan ejecutandose.
 
-El Compose raiz tambien incluye `build.context` por aplicacion; para un entorno NUEVO se puede usar `docker compose --project-name ticketya-e2-infra up --detach --build`. `pull_policy: never` conserva las imagenes locales: el `--build` es explicito.
+El Compose raiz incluye `build.context` por aplicacion y `pull_policy: never`; construir es explicito. La versión actual requiere además Mongo, claves externas, esquema de Identidad, provisionamiento y siete clientes técnicos. No ejecutar un up genérico sobre ticketya-e2-infra. Para un clon nuevo usar la campaña canónica integral indicada en el README, que prepara todos esos recursos en un proyecto distinto.
 
 ## Credenciales y primer arranque persistente
 
 `generate-docker-env.ps1` se ejecuta solo si no existe `.env`, desde PowerShell en Windows. Genera cinco valores criptograficos, UTF-8 sin BOM y ACL restrictiva. No sobrescribir ni volver a generar credenciales de un volumen inicializado. Para otros sistemas operativos, suministrar las cinco variables de `.env.example` mediante el entorno o un `.env` local ignorado, sin versionar valores reales.
 
-Variables necesarias: `TY_E2_MYSQL_ROOT_PASSWORD`, `TY_E2_EVENTOS_DB_PASSWORD`, `TY_E2_INVENTARIO_DB_PASSWORD`, `TY_E2_ENTRADAS_DB_PASSWORD`, `TY_E2_COMPRAS_DB_PASSWORD`.
+Variables MySQL originales: `TY_E2_MYSQL_ROOT_PASSWORD`, `TY_E2_EVENTOS_DB_PASSWORD`, `TY_E2_INVENTARIO_DB_PASSWORD`, `TY_E2_ENTRADAS_DB_PASSWORD`, `TY_E2_COMPRAS_DB_PASSWORD`. No bastan por sí solas para la versión actual: agregar las dos de Mongo y preparar Identidad, claves y los siete secretos OAuth2 según .env.example y las guías de seguridad. El generador original no escribe esas variables adicionales.
 
 El proceso de Compose debe tener **ausente**, no vacia, una variable heredada `COMPOSE_DISABLE_ENV_FILE` invalida. En PowerShell puede quitarse solo de esa terminal:
 

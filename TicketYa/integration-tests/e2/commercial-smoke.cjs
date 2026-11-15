@@ -1,24 +1,25 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,cache,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
+module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,cache,prepareLoad,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
  async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
   if(checkTopology)attest();const url=urlFor(meta,p);const payload=body===undefined?undefined:JSON.stringify(body);
+  const started=performance.now();
   const response=await new Promise((resolve,reject)=>{
    const headers={Accept:'application/json',...extra,...(actor?{Authorization:'Bearer '+actor.token}:{}),...(payload===undefined?{}:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(payload)})};
    const req=http.request(url,{method,headers,timeout:25000},res=>{let data='';res.setEncoding('utf8');res.on('data',p=>data+=p);res.on('end',()=>{try{resolve({status:res.statusCode,correlationId:res.headers["x-correlation-id"],body:data?JSON.parse(data):null});}catch{reject(new Error('Non-JSON HTTP response'));}});});
    req.on('error',reject);req.on('timeout',()=>req.destroy(new Error('HTTP timeout; no automatic write retry')));if(payload!==undefined)req.write(payload);req.end();
   });
-  report.requests.push({method,path:p,status:response.status,correlationId:response.correlationId,expected,actor:actor?.id});progress(report);
+  report.requests.push({durationMs:Math.round((performance.now()-started)*100)/100,method,path:p,status:response.status,correlationId:response.correlationId,expected,actor:actor?.id});progress(report);
   if(Array.isArray(expected)){assert.ok(expected.includes(response.status),'Unexpected fault response status');return response;}
   assert.equal(response.status,expected,method+' '+p+': expected '+expected+' received '+response.status);return response.body;
  }
  const reportChecks=reports?require('./reports-smoke.cjs')({meta,sql,api,clients:()=>clients,organizers:()=>organizers,admin:()=>admin,access:()=>access,controls:recommendations}):null;
  const get=p=>api('GET',p),post=(p,b,s=200)=>api('POST',p,b,s),patch=p=>api('PATCH',p);
  async function login(email,password){const login=await api('POST','/auth/login',{email,password},200,null);const token=login.access_token;const me=await api('GET','/auth/me',undefined,200,{token});assert.ok(me.id>0);return {id:me.id,token};}
- for(let n=0;n<3;n++){const email='business-client-'+n+'-'+meta.id+'@example.test',password=crypto.randomBytes(32).toString('hex');await api('POST','/auth/register',{email,password},201,null);clients.push(await login(email,password));}
+ for(let n=0;n<3;n++){const email='business-client-'+n+'-'+meta.id+'@example.test',password=crypto.randomBytes(32).toString('hex');await api('POST','/auth/register',{email,password},201,null);clients.push({...await login(email,password),email,password});}
  admin=await login('admin-'+meta.id+'@example.test',adminPassword);
  for(const user of provisioned){const actor=await login(user.email,user.password);if(user.role==='ORGANIZADOR')organizers.push(actor);else access=actor;}
  currentClient=clients[0];
@@ -40,7 +41,7 @@ async function event(numbered,price,label,options={}){
   assert.equal((await patch(`/api/v1/events/${e.eventId}/publish`)).status,'PUBLICADO');
   const result={venue:v.venueId,event:e.eventId,sector:s.sectorId,numbered,price};
   const before=await stock(result,2);
-  if(reportChecks)await reportChecks.check(result,{sold:0,returned:0,gross:0,refund:0,net:0,occupancy:0});
+  if(reportChecks){if(options.expectReportUnavailable)await api('GET','/api/v1/events/'+result.event+'/report',undefined,503,organizers[0]);else await reportChecks.check(result,{sold:0,returned:0,gross:0,refund:0,net:0,occupancy:0});}
   assert.equal((await patch(`/api/v1/events/${e.eventId}/publish`)).status,'PUBLICADO');
   assert.deepEqual(await stock(result,2),before);
   return result;
@@ -188,5 +189,6 @@ async function recovered(){
  if(notifications)report.notifications=await require('./notifications-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event,scenarios:report.scenarios,controls:recommendations});
  if(queue)report.queue=await require('./queue-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,event});
  if(faults)report.faults=await require('./fault-campaign.cjs')({meta,sql,attest,api,clients,admin,scenarios:report.scenarios,controls:faults});
+ if(prepareLoad)prepareLoad({meta,sql,attest,api,clients,organizers,admin,access,event,requests:report.requests});
  return {...report,result:'PASS',identities:{clients:clients.map(c=>c.id),organizers:organizers.map(c=>c.id),admin:admin.id,access:access.id}};
 };
