@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({ testDir: './tests', testMatch: 'browser.spec.js', workers: 1, retries: 0, timeout: 90000, reporter: 'line', use: { baseURL: 'http://127.0.0.1:5173', channel: process.env.TY_BROWSER_CHANNEL || 'msedge', headless: true, trace: 'off', screenshot: 'off' }, webServer: { command: 'npm run dev', url: 'http://127.0.0.1:5173', reuseExistingServer: false, timeout: 30000, env: { TICKETYA_GATEWAY_URL: 'http://127.0.0.1:48080' } } });
