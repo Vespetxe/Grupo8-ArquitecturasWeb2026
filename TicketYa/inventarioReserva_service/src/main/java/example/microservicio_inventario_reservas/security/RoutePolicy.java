@@ -48,6 +48,9 @@ public final class RoutePolicy {
    if(get&&p.matches("/disponibilidad/eventos/[0-9]+/sectores/[0-9]+"))return true;
    if(post&&p.matches("/eventos/[0-9]+/inventario"))return service(a,"eventos",owner,"inventory.prepare");
    if(post&&(p.matches("/internal/eventos/[0-9]+/(publicar|habilitar|suspender)")||p.matches("/eventos/[0-9]+/cancelar-inventario")))return service(a,"eventos",owner,"inventory.lifecycle");
+   // Queue extension is local to Inventario and its Gateway boundary.
+   if("PUT".equals(method)&&p.matches("/colas/eventos/[0-9]+"))return human(a,"ADMINISTRADOR");
+   if((post&&p.matches("/colas/eventos/[0-9]+"))||((get||"DELETE".equals(method))&&p.matches("/colas/eventos/[0-9]+/mi-turno")))return human(a,"CLIENTE");
    if(post&&p.equals("/reservas"))return human(a,"CLIENTE");
    if(get&&p.equals("/reservas"))return human(a,"CLIENTE")||human(a,"ADMINISTRADOR");
    if(get&&p.matches("/reservas/[0-9]+"))return human(a,"CLIENTE")||human(a,"ADMINISTRADOR")||service(a,"compras",owner,"reservations.read");

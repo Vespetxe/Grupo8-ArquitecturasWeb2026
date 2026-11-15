@@ -41,6 +41,8 @@ public class ReservaService {
     @org.springframework.beans.factory.annotation.Value("${reservas.ttl-seconds:600}")
     private long ttlSeconds=600;
 
+    @Autowired private example.microservicio_inventario_reservas.queue.ColaService cola;
+
     // 1. POST /reservas (Crear reserva temporal - Anti Doble Venta)
     @Transactional
     public ReservaResponse crearReservaTemporal(CrearReservaRequest request) {
@@ -50,6 +52,7 @@ public class ReservaService {
                 || request.getIdSector() == null || request.getIdSector() <= 0) {
             throw new IllegalArgumentException("Cliente, evento, sector y cantidad deben ser positivos");
         }
+        var turno=cola.admitirReserva(request.getIdEvento(),request.getIdCliente());
         // Bloqueo pesimista sobre la fila del inventario del sector
         InventarioSector inventario = inventarioSectorRepository
                 .findByIdEventoAndIdSectorWithLock(request.getIdEvento(), request.getIdSector())
@@ -118,6 +121,7 @@ public class ReservaService {
         inventarioSectorRepository.save(inventario);
 
         Reserva guardada = reservaRepository.save(reserva);
+        cola.consumir(turno,guardada.getIdReserva());
 
         AuditTx.local(Audit.capture(Audit.Action.RESERVATION_CREATED,Audit.Resource.RESERVATION,guardada.getIdReserva(),Audit.operation(Audit.Resource.RESERVATION,guardada.getIdReserva()),Audit.Outcome.SUCCESS,guardada.getEstado()));
         return mapToReservaResponse(guardada, asientosReservadosDTO);

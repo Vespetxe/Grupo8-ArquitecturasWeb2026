@@ -11,7 +11,7 @@ public class GatewayApplication {
     @Bean RouteLocator routes(RouteLocatorBuilder b,Environment e){
         return b.routes()
             .route("eventos",r->r.path("/api/v1/events/**","/api/v1/venues/**","/api/v1/sectors/**","/api/v1/participants/**").uri(e.getRequiredProperty("ticketya.eventos.url")))
-            .route("reservas",r->r.path("/reservas","/reservas/{id}","/disponibilidad/**").uri(e.getRequiredProperty("ticketya.inventario.url")))
+            .route("reservas",r->r.path("/reservas","/reservas/{id}","/disponibilidad/**","/colas/eventos/**").uri(e.getRequiredProperty("ticketya.inventario.url")))
             .route("entradas",r->r.path("/tickets").and().method("GET").uri(e.getRequiredProperty("ticketya.entradas.url")))
             .route("compras",r->r.path("/compras/**","/pagos/**","/devoluciones/**","/admin/devoluciones","/admin/devoluciones/**","/admin/reintegros/{id}").uri(e.getRequiredProperty("ticketya.compras.url")))
             .route("identidad",r->r.path("/auth/register","/auth/login","/auth/me").uri(e.getRequiredProperty("ticketya.identidad.url")))

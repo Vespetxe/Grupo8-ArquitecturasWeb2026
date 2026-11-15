@@ -30,6 +30,8 @@ class ReservaServiceTest {
     @Mock
     private InventarioSectorRepository inventarioSectorRepository;
 
+    @Mock private example.microservicio_inventario_reservas.queue.ColaService cola;
+
     @InjectMocks
     private ReservaService reservaService;
 

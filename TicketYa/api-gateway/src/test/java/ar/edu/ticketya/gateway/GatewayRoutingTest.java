@@ -27,4 +27,19 @@ class GatewayRoutingTest {
     @Test void noPublicaOperacionesInternas()throws Exception{
         for(String path:new String[]{"/internal/orders/1","/internal/tickets/issue","/reservas/1/confirmar","/ocupaciones/liberar","/eventos/1/inventario"})assertEquals(401,get(path).statusCode());
     }
+
+    @Test void queueRoutesEnforceRolesAndKeepPaths()throws Exception{
+        for(String method:new String[]{"POST","GET","DELETE","PUT"}){
+            String route="/colas/eventos/7"+(method.equals("GET")||method.equals("DELETE")?"/mi-turno":"");
+            String role=method.equals("PUT")?"ADMINISTRADOR":"CLIENTE";
+            String token=SecurityTestKeys.token("gateway","user","7",role,null,300);
+            var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+route)).header("Authorization","Bearer "+token).method(method,HttpRequest.BodyPublishers.noBody()).build();
+            var response=HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.ofString());
+            assertEquals(200,response.statusCode());assertEquals(route,response.body());
+        }
+        assertEquals(401,get("/colas/eventos/7/mi-turno").statusCode());
+        String token=SecurityTestKeys.token("gateway","user","7","CLIENTE",null,300);
+        var forbidden=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/colas/eventos/7")).header("Authorization","Bearer "+token).PUT(HttpRequest.BodyPublishers.noBody()).build();
+        assertEquals(403,HttpClient.newHttpClient().send(forbidden,HttpResponse.BodyHandlers.discarding()).statusCode());
+    }
 }

@@ -18,6 +18,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     @org.springframework.data.jpa.repository.Query("select r.idReserva from Reserva r where r.estado = example.microservicio_inventario_reservas.enums.EstadoReserva.PENDIENTE and r.fechaExpiracion < :ahora")
     List<Long> buscarIdsVencidos(@org.springframework.data.repository.query.Param("ahora") LocalDateTime ahora);
 
+    boolean existsByIdEvento(Long idEvento);
+
     List<Reserva> findByIdCliente(Long idCliente);
 
     List<Reserva> findByEstadoAndFechaExpiracionBefore(EstadoReserva estado, LocalDateTime fechaLimite);

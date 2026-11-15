@@ -7,7 +7,8 @@ const root=path.resolve(__dirname,'../../..');
 let stage='preflight';
 const commercialOnly=process.argv.includes('--commercial-only');
 const faults=process.argv.includes('--faults');
-const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
+const queue=process.argv.includes('--queue');
+const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
 assert.ok(!commercialOnly||!observe,'Commercial-only skips the already approved security/observability suites, never application security');
 const meta=guard.identity(crypto.randomBytes(8).toString('hex'),args.length?Number(args[1]):48082);
 const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('COMPOSE_')||k.startsWith('TY_REG_'))delete env[k];
@@ -89,7 +90,7 @@ async function main(){
  }
  if(central){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
  stage='commercial HTTP';
- report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
  if(central){stage='collector recovery';if(!inspect('collector').State.Running)compose('start','collector');await wait('collector');}
  if(observe){
   stage='tracing verification';
@@ -100,7 +101,7 @@ async function main(){
   if(central){stage='central archive verification';report.central=await require('./verify-central.cjs')({docker,container:inspect('collector').Id,logs,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password)],requests:report.commercial.requests});}
  }
  stage='final checks';attest(Object.keys(spec.services));assert.deepEqual(snapshot(oldIds),previous);
- assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'26');
+ assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'27');
  Object.assign(report,{result:'PASS',services:central?8:7,schemas:5,previousContainersUnchanged:true,images});
  fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }
