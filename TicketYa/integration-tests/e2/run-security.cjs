@@ -2,7 +2,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 const central=process.argv.includes('--centralized');
-const recommendations=process.argv.includes('--recommendations');
+const notifications=process.argv.includes('--notifications');
+const recommendations=process.argv.includes('--recommendations')||notifications;
 assert.ok(!recommendations||!central,'Recommendation campaign uses its own canonical Mongo topology');
 const guard=require(recommendations?'./recommendation-isolation.cjs':central?'./central-isolation.cjs':'./security-isolation.cjs');
 const root=path.resolve(__dirname,'../../..');
@@ -11,7 +12,7 @@ const commercialOnly=process.argv.includes('--commercial-only');
 const faults=process.argv.includes('--faults');
 const queue=process.argv.includes('--queue');
 const qr=process.argv.includes('--qr'),qrSecrets=[];
-const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
+const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations','--notifications'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
 assert.ok(!commercialOnly||!observe,'Commercial-only skips the already approved security/observability suites, never application security');
 const meta=guard.identity(crypto.randomBytes(8).toString('hex'),args.length?Number(args[1]):48082);
 const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('COMPOSE_')||k.startsWith('TY_REG_'))delete env[k];
@@ -102,7 +103,7 @@ async function main(){
  }
  if(central){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
  stage='commercial HTTP';
- report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,notifications,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
  if(central){stage='collector recovery';if(!inspect('collector').State.Running)compose('start','collector');await wait('collector');}
  if(observe){
   stage='tracing verification';
@@ -114,7 +115,7 @@ async function main(){
  }
  if(recommendations){const text=docker(['logs',inspect('mongo').Id]);for(const secret of Object.values(credentials))assert.ok(!text.includes(secret),'Credential found in Mongo logs');report.mongoLogsRedacted=true;}
  stage='final checks';attest(Object.keys(spec.services));assert.deepEqual(snapshot(oldIds),previous);
- assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'28');
+ assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'30');
  Object.assign(report,{result:'PASS',services:Object.keys(spec.services).length,schemas:5,previousContainersUnchanged:true,images});
  fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }

@@ -51,6 +51,7 @@ class EventServiceImplTest {
     @Mock
     private EventSectorPriceRepository eventSectorPriceRepository;
 
+    @org.mockito.Mock grupo22.eventocatalogo_service.notifications.EventNoticeStore notices;
     @InjectMocks
     private EventServiceImpl eventService;
 
@@ -72,6 +73,14 @@ class EventServiceImplTest {
 
         mockSector2 = new Sector(mockVenue, "Platea", SectorType.NUMERADO, 200);
         mockSector2.setSectorId(102L);
+    }
+
+    @Test void repeatingSameStatusDoesNotCreateAnotherNotification(){
+        mockEvent.setStatus(EventStatus.SUSPENDIDO);
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(mockEvent));
+        when(eventRepository.save(any(Event.class))).thenAnswer(i->i.getArgument(0));
+        eventService.suspendOrUpdateStatus(10L,"SUSPENDIDO","ADMIN");
+        verify(notices,never()).capture(any(Event.class),anyString());
     }
 
     @Nested

@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 @Service
 public class EventServiceImpl implements EventService {
 
+    private final grupo22.eventocatalogo_service.notifications.EventNoticeStore notices;
     private final EventRepository eventRepository;
     private final VenueRepository venueRepository;
     private final SectorRepository sectorRepository;
@@ -36,7 +37,8 @@ public class EventServiceImpl implements EventService {
             VenueRepository venueRepository,
             SectorRepository sectorRepository,
             ParticipantRepository participantRepository,
-            EventSectorPriceRepository eventSectorPriceRepository) {
+            EventSectorPriceRepository eventSectorPriceRepository, grupo22.eventocatalogo_service.notifications.EventNoticeStore notices) {
+        this.notices=notices;
         this.eventRepository = eventRepository;
         this.venueRepository = venueRepository;
         this.sectorRepository = sectorRepository;
@@ -145,6 +147,7 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setStatus(EventStatus.PUBLICADO);
+        notices.capture(event,"ARTISTA_FAVORITO_PUBLICADO");
         var saved=eventRepository.save(event);
         AuditTx.local(Audit.capture(Audit.Action.EVENT_PUBLICATION_LOCAL,Audit.Resource.EVENT,saved.getEventId(),Audit.operation(Audit.Resource.EVENT,saved.getEventId()),Audit.Outcome.PENDING,saved.getStatus()));
         return mapToEventResponse(saved);
@@ -169,6 +172,7 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setStatus(EventStatus.CANCELADO);
+        notices.capture(event,"EVENTO_CANCELADO");
         var saved=eventRepository.save(event);
         AuditTx.local(Audit.capture(Audit.Action.EVENT_CANCELLATION_LOCAL,Audit.Resource.EVENT,saved.getEventId(),Audit.operation(Audit.Resource.EVENT,saved.getEventId()),Audit.Outcome.PENDING,saved.getStatus()).initiated(saved.getCancellationAuthorizedAdminId()));
         return mapToEventResponse(saved);
@@ -188,7 +192,9 @@ public class EventServiceImpl implements EventService {
         }
 
         validateStateTransition(event.getStatus(), newStatus);
+        boolean changed=event.getStatus()!=newStatus;
         event.setStatus(newStatus);
+        if(changed)notices.capture(event,"EVENTO_CAMBIADO");
         return mapToEventResponse(eventRepository.save(event));
     }
 

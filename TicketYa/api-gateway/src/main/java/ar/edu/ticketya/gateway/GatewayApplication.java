@@ -10,6 +10,7 @@ public class GatewayApplication {
     public static void main(String[] args){SpringApplication.run(GatewayApplication.class,args);}
     @Bean RouteLocator routes(RouteLocatorBuilder b,Environment e){
         return b.routes()
+            .route("notifications",r->r.path("/api/v1/me/notifications","/api/v1/me/notifications/**").uri(e.getRequiredProperty("ticketya.compras.url")))
             .route("eventos",r->r.path("/api/v1/me/preferences","/api/v1/me/recommendations","/api/v1/events/**","/api/v1/venues/**","/api/v1/sectors/**","/api/v1/participants/**").uri(e.getRequiredProperty("ticketya.eventos.url")))
             .route("reservas",r->r.path("/reservas","/reservas/{id}","/disponibilidad/**","/colas/eventos/**").uri(e.getRequiredProperty("ticketya.inventario.url")))
             .route("accesos",r->r.path("/accesos/eventos/**","/admin/accesos/eventos/**").uri(e.getRequiredProperty("ticketya.entradas.url")))

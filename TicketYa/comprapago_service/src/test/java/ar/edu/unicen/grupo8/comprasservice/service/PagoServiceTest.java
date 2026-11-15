@@ -63,7 +63,7 @@ class PagoServiceTest {
         CompraService consultas = mock(CompraService.class);
         when(consultas.obtenerCompraPorId(1L)).thenReturn(compra);
         servicio = new PagoService(reservas, entradas, pasarela,
-                new PagoRegistroService(compras, pagos, reintegros, Clock.systemUTC()), consultas, pagos, Clock.systemUTC());
+                new PagoRegistroService(compras, pagos, reintegros, Clock.systemUTC(), mock(ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter.class)), consultas, pagos, Clock.systemUTC());
     }
 
     @Test void debePermitirCompraPendienteConReservaVigente() { assertDoesNotThrow(() -> servicio.validarCondicionesPrevias(compra)); }

@@ -13,9 +13,11 @@ import java.util.List;
 
 @Service
 public class CompraRegistroService {
+    private final ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications;
     private final CompraRepository compras;
     private final ControlLimiteEntradasRepository limites;
-    public CompraRegistroService(CompraRepository compras, ControlLimiteEntradasRepository limites) {
+    public CompraRegistroService(CompraRepository compras, ControlLimiteEntradasRepository limites, ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications) {
+        this.notifications=notifications;
         this.compras = compras;
         this.limites = limites;
     }
@@ -64,6 +66,7 @@ public class CompraRegistroService {
         Compra compra = compras.buscarPorIdConBloqueo(id).orElseThrow(() -> new CompraNoEncontradaException(id));
         if (compra.getEstado() != EstadoCompra.CANCELADA) throw new IllegalStateException("La compra no tiene una cancelacion en curso");
         compra.setEtapa(EtapaCompra.FINALIZADA);
+        notifications.cancelled(compra);
         return inicializar(compra);
     }
 

@@ -24,3 +24,5 @@ test('rejects scheduler inheriting an HTTP trace',()=>{const f=fixture();f.logs.
 test('rejects sensitive query in logged path',()=>{const f=fixture();f.logs.entradas[0].httpRoute+='?secret=value';assert.throws(()=>run(f));});
 test('rejects secrets even outside access records',()=>{const f=fixture();f.logs.identidad.push('sentinel-41-secret');assert.throws(()=>run(f));});
 test('rejects JWT in any log line',()=>{const f=fixture();f.logs.identidad.push('eyJhbGciOiJSUzI1NiJ9.payload.signature');assert.throws(()=>run(f));});
+
+test('scheduler root may have internal HTTP children without inheriting a public trace',()=>{const f=fixture();f.logs.compras.push({eventType:'HTTP_REQUEST',trace:{id:'a'.repeat(32)},span:{id:'b'.repeat(16)},correlationId:'00000000-0000-4000-8000-000000000099',httpRoute:'/internal/notifications/events',httpStatus:200,actorType:'SERVICE'});assert.equal(run(f).result,'PASS');});

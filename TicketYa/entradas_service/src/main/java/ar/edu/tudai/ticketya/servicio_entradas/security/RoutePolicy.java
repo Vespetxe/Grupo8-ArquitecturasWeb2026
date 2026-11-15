@@ -7,7 +7,7 @@ public final class RoutePolicy {
   return java.util.Map.of(
    "eventos:inventario",java.util.List.of("inventory.prepare","inventory.lifecycle"),
    "eventos:entradas",java.util.List.of("tickets.event-block"),
-   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read"),
+   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read","notifications.publish"),
    "compras:eventos",java.util.List.of("events.read"),
    "compras:inventario",java.util.List.of("reservations.read","reservations.confirm","reservations.release","reservations.compensate","reservations.return"),
    "compras:entradas",java.util.List.of("tickets.read","tickets.issue","tickets.annul","tickets.status"),

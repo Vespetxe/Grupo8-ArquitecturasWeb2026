@@ -36,7 +36,7 @@ class CompraServiceValidacionTest {
                 reservaClient,
                 eventoClient,
                 controlLimiteEntradasRepository,
-                6
+                6, mock(ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter.class)
         );
 
 

@@ -8,7 +8,7 @@ public final class TechnicalClientPolicy {
     private TechnicalClientPolicy() {}
     private static final Map<String,Map<String,Set<String>>> POLICY=Map.of(
         "eventos",Map.of("ticketya-inventario",Set.of("inventory.prepare","inventory.lifecycle"),
-            "ticketya-entradas",Set.of("tickets.event-block"),"ticketya-compras",Set.of("purchases.event-cancel","purchases.history.read")),
+            "ticketya-entradas",Set.of("tickets.event-block"),"ticketya-compras",Set.of("purchases.event-cancel","purchases.history.read","notifications.publish")),
         "compras",Map.of("ticketya-eventos",Set.of("events.read"),
             "ticketya-inventario",Set.of("reservations.read","reservations.confirm","reservations.release","reservations.compensate","reservations.return"),
             "ticketya-entradas",Set.of("tickets.read","tickets.issue","tickets.annul","tickets.status")),

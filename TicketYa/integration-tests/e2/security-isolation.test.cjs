@@ -21,6 +21,8 @@ test('JWT trust and common policy stay synchronized; local feature rules stay sc
     ['queue','   // Queue extension','   if(post&&p.equals("/reservas"))',['api-gateway','inventarioReserva_service']],
     ['qr','   // QR extension','   // End QR extension.',['api-gateway','entradas_service']],
     ['recommendations','   // Recommendations extension','   // End recommendations extension.',['api-gateway','EventoCatalogo_Service']],
+    ['notifications','   // Notifications extension','   // End notifications extension.',['api-gateway','comprapago_service']],
+    ['notificationDelivery','   // Notification delivery extension','   // End notification delivery extension.',['comprapago_service']],
     ['history','   // Technical history extension','   // End history extension.',['comprapago_service']]]){
      const at=text.indexOf(begin);if(!owners.includes(dir)){assert.equal(at,-1);continue;}
      assert.ok(at>=0);let until=text.indexOf(end,at);assert.ok(until>at);if(name!=='queue')until+=end.length+1;

@@ -21,12 +21,14 @@ public class PagoRegistroService {
         compras.buscarPorIdConBloqueo(id).orElseThrow().solicitarCancelacionEvento();
     }
     public record Turno(Pago pago, String token, boolean creado) { }
+    private final ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications;
     private final CompraRepository compras;
     private final PagoRepository pagos;
     private final ReintegroRepository reintegros;
     private final Clock clock;
 
-    public PagoRegistroService(CompraRepository compras, PagoRepository pagos, ReintegroRepository reintegros, Clock clock) {
+    public PagoRegistroService(CompraRepository compras, PagoRepository pagos, ReintegroRepository reintegros, Clock clock, ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications) {
+        this.notifications=notifications;
         this.compras = compras; this.pagos = pagos; this.reintegros = reintegros; this.clock = clock;
     }
 
@@ -67,6 +69,7 @@ public class PagoRegistroService {
         if (!Objects.equals(token, compra.getEjecutor())) throw new IllegalStateException("El turno fue recuperado por otra solicitud");
         var before=pago.getEstado();var stage=compra.getEtapa();
         cambio.accept(compra, pago);
+        notifications.payment(compra,pago);
         if(before!=pago.getEstado())auditar(pago,Audit.Action.PAYMENT_STATE,false);
         if(stage!=compra.getEtapa())AuditTx.local(Audit.capture(Audit.Action.PURCHASE_STAGE,Audit.Resource.PURCHASE,compra.getId(),Audit.operation(Audit.Resource.PURCHASE,compra.getId()),compra.getEtapa()==EtapaCompra.FINALIZADA?(compra.getEstado()==EstadoCompra.FALLIDA?Audit.Outcome.REJECTED:Audit.Outcome.SUCCESS):Audit.Outcome.PENDING,compra.getEtapa()));
         compra.setBloqueoHasta(LocalDateTime.now(clock).plusMinutes(2));

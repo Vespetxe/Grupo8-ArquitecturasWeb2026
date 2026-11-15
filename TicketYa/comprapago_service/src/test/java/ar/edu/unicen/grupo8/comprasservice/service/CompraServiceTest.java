@@ -61,7 +61,7 @@ class CompraServiceTest {
                 reservaClient,
                 eventoClient,
                 controlLimiteEntradasRepository,
-                6
+                6, mock(ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter.class)
         );
 
         lenient().when(
@@ -369,7 +369,7 @@ class CompraServiceTest {
                 reservaClient,
                 eventoClient,
                 controlLimiteEntradasRepository,
-                4
+                4, mock(ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter.class)
         );
 
         when(eventoClient.eventoValido(20L)).thenReturn(true);

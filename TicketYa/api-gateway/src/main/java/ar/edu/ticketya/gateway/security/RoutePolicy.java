@@ -7,7 +7,7 @@ public final class RoutePolicy {
   return java.util.Map.of(
    "eventos:inventario",java.util.List.of("inventory.prepare","inventory.lifecycle"),
    "eventos:entradas",java.util.List.of("tickets.event-block"),
-   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read"),
+   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read","notifications.publish"),
    "compras:eventos",java.util.List.of("events.read"),
    "compras:inventario",java.util.List.of("reservations.read","reservations.confirm","reservations.release","reservations.compensate","reservations.return"),
    "compras:entradas",java.util.List.of("tickets.read","tickets.issue","tickets.annul","tickets.status"),
@@ -76,6 +76,10 @@ public final class RoutePolicy {
    if(post&&p.matches("/internal/events/[^/]+/cancel-emission"))return service(a,"eventos",owner,"tickets.event-block");
   }
   if("compras".equals(owner)){
+   // Notifications extension: Compras and Gateway only.
+   if(get&&(p.equals("/api/v1/me/notifications")||p.equals("/api/v1/me/notifications/unread-count")||p.equals("/api/v1/me/notifications/stream")))return human(a,"CLIENTE");
+   if("PUT".equals(method)&&p.matches("/api/v1/me/notifications/[0-9a-f-]{36}/read"))return human(a,"CLIENTE");
+   // End notifications extension.
    if(post&&(p.equals("/compras")||p.equals("/pagos")||p.equals("/devoluciones")||p.matches("/compras/[0-9]+/cancelar")))return human(a,"CLIENTE");
    if(get&&(p.equals("/compras")||p.matches("/compras/[0-9]+(/(estado|detalle|entradas))?")||p.equals("/pagos")||p.matches("/(pagos|devoluciones)/[0-9]+")))return human(a,"CLIENTE")||human(a,"ADMINISTRADOR");
    if(get&&p.matches("/internal/orders/[^/]+"))return service(a,"entradas",owner,"orders.read");

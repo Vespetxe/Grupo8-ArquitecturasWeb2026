@@ -45,7 +45,7 @@ module.exports=function verify({logs,requests,secrets=[]}){
  assert.ok(records.some(r=>r.component==='identidad'&&r.httpRoute==='/oauth2/token'&&r.httpStatus===200&&r.actorType==='SERVICE'),'OAuth2 tracing');
  const timers=records.filter(r=>r.eventType==='SCHEDULED_TASK');
  assert.ok(timers.length>0,'Scheduler tracing');
- const httpTraces=new Set(records.filter(r=>r.eventType==='HTTP_REQUEST').map(r=>r.trace.id));
- assert.ok(timers.every(r=>!httpTraces.has(r.trace.id)),'Scheduler root independent of HTTP');
+ const httpTraces=new Set(records.filter(r=>r.eventType==='HTTP_REQUEST'&&r.component==='gateway').map(r=>r.trace.id));
+ assert.ok(timers.every(r=>!httpTraces.has(r.trace.id)),'Scheduler root independent of public ingress');
  return {result:'PASS',httpRecords:records.filter(r=>r.eventType==='HTTP_REQUEST').length,scheduledRecords:timers.length,distributedRequests:distributed.length,circuits:distributed.filter(r=>r.method!=='GET')};
 };

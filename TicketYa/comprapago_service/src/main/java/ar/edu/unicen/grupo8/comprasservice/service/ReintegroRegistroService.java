@@ -20,6 +20,7 @@ import java.util.function.BiConsumer;
 public class ReintegroRegistroService {
     public record Turno(ResultadoDevolucionDTO resultado, Long compraId, Long reservaId,
             String clavePago, String token, Map<Long, DetalleEmisionDTO> lugares) { }
+    private final ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications;
     private final CompraRepository compras;
     private final DevolucionRepository devoluciones;
     private final DetalleDevolucionRepository detalles;
@@ -27,7 +28,8 @@ public class ReintegroRegistroService {
     private final ReintegroRepository reintegros;
     private final Clock clock;
     public ReintegroRegistroService(CompraRepository compras, DevolucionRepository devoluciones,
-            DetalleDevolucionRepository detalles, PagoRepository pagos, ReintegroRepository reintegros, Clock clock) {
+            DetalleDevolucionRepository detalles, PagoRepository pagos, ReintegroRepository reintegros, Clock clock, ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications) {
+        this.notifications=notifications;
         this.compras = compras; this.devoluciones = devoluciones; this.detalles = detalles;
         this.pagos = pagos; this.reintegros = reintegros; this.clock = clock;
     }
@@ -100,6 +102,7 @@ public class ReintegroRegistroService {
         var r = reintegros.findByDevolucionId(id).get(0);
         var previousRefund=r.getEstado();var previousStage=d.getEtapa();
         accion.accept(d, r);
+        notifications.refunded(d);
         if(previousRefund!=r.getEstado())AuditTx.local(Audit.capture(Audit.Action.REFUND_STATE,Audit.Resource.REFUND,r.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),r.getEstado()==EstadoReintegro.COMPLETADO?Audit.Outcome.SUCCESS:r.getEstado()==EstadoReintegro.RECHAZADO?Audit.Outcome.REJECTED:Audit.Outcome.PENDING,r.getEstado()));
         if(previousStage!=d.getEtapa())AuditTx.local(Audit.capture(Audit.Action.RETURN_PROCESS,Audit.Resource.RETURN,d.getId(),Audit.operation(Audit.Resource.RETURN,d.getId()),d.getEtapa()==EtapaDevolucion.FINALIZADA?Audit.Outcome.SUCCESS:Audit.Outcome.PENDING,d.getEstado()));
         c.setBloqueoHasta(LocalDateTime.now(clock).plusMinutes(2));

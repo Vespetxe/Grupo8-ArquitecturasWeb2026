@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),path=require('node:path');
 const legacy=require('./isolation.cjs');
 const CALLS={eventos:['inventario','entradas','compras'],compras:['eventos','inventario','entradas'],entradas:['compras']};
-const SCOPES={'eventos:inventario':'inventory.prepare inventory.lifecycle','eventos:entradas':'tickets.event-block','eventos:compras':'purchases.event-cancel purchases.history.read','compras:eventos':'events.read','compras:inventario':'reservations.read reservations.confirm reservations.release reservations.compensate reservations.return','compras:entradas':'tickets.read tickets.issue tickets.annul tickets.status','entradas:compras':'orders.read'};
+const SCOPES={'eventos:inventario':'inventory.prepare inventory.lifecycle','eventos:entradas':'tickets.event-block','eventos:compras':'purchases.event-cancel purchases.history.read notifications.publish','compras:eventos':'events.read','compras:inventario':'reservations.read reservations.confirm reservations.release reservations.compensate reservations.return','compras:entradas':'tickets.read tickets.issue tickets.annul tickets.status','entradas:compras':'orders.read'};
 const root=path.resolve(__dirname,'../../..');
 function identity(id,port=48082){const meta=legacy.identity(id,port);return {...meta,identitySchema:`ty_e2_identity_${id}`,directory:path.join(root,'TicketYa/integration-tests/target/security',id)};}
 function spec(meta){

@@ -13,6 +13,7 @@ public final class HttpRoutes {
  "/admin/devoluciones/{id}/aprobar","/admin/devoluciones/{id}/rechazar","/admin/devoluciones/{id}/procesar","/admin/devoluciones/{id}/procesamiento","/admin/devoluciones","/admin/reintegros/{id}","/admin/eventos/{id}/cancelacion",
  "/internal/security/readiness","/internal/orders/{id}","/internal/tickets/issue","/internal/tickets/orders/{id}/annul","/internal/tickets/status","/internal/tickets/{id}/status","/internal/events/{id}/cancel-emission",
  "/api/v1/me/preferences","/api/v1/me/recommendations","/internal/recommendations/customers/{id}/history",
+ "/api/v1/me/notifications","/api/v1/me/notifications/unread-count","/api/v1/me/notifications/stream","/api/v1/me/notifications/{id}/read","/internal/notifications/events",
  "/auth/register","/auth/login","/auth/me","/oauth2/token");
  public static String route(String rawPath){if(rawPath==null)return "/unmapped";for(String template:ROUTES)if(rawPath.matches(template.replace("{id}","[^/]+")))return template;return "/unmapped";}
  public static String method(String value){return value!=null&&Set.of("GET","POST","PUT","PATCH","DELETE","HEAD","OPTIONS","TRACE","CONNECT").contains(value)?value:"OTHER";}

@@ -35,8 +35,8 @@ public class CompraService {
     }
 
     public CompraService(CompraRepository compras, ReservaClient reservas, EventoClient eventos,
-            ControlLimiteEntradasRepository limites, int limite) {
-        this(compras, reservas, eventos, new CompraRegistroService(compras, limites), limite);
+            ControlLimiteEntradasRepository limites, int limite, ar.edu.unicen.grupo8.comprasservice.notifications.NotificationWriter notifications) {
+        this(compras, reservas, eventos, new CompraRegistroService(compras, limites, notifications), limite);
     }
 
     @Transactional(propagation = Propagation.NEVER)

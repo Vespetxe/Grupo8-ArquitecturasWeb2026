@@ -69,4 +69,13 @@ class GatewayRoutingTest {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/v1/me/recommendations")).header("Authorization","Bearer "+admin).GET().build();
         assertEquals(403,HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.discarding()).statusCode());
     }
+    @Test void notificationRoutesRequireClientAndTargetPurchases()throws Exception{
+        for(String route:java.util.List.of("/api/v1/me/notifications","/api/v1/me/notifications/unread-count","/api/v1/me/notifications/stream")){
+            assertEquals(401,get(route).statusCode());
+            for(String role:java.util.List.of("CLIENTE","ADMINISTRADOR")){
+                var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+route)).header("Authorization","Bearer "+SecurityTestKeys.token("gateway","user","9",role,null,300)).GET().build();
+                var response=HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.ofString());assertEquals(role.equals("CLIENTE")?200:403,response.statusCode());if(role.equals("CLIENTE"))assertEquals(route,response.body());
+            }
+        }
+    }
 }
