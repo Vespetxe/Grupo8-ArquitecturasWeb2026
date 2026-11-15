@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
+module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
  async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
@@ -15,6 +15,7 @@ module.exports=async function commercial({meta,sql,attest,adminPassword,provisio
   if(Array.isArray(expected)){assert.ok(expected.includes(response.status),'Unexpected fault response status');return response;}
   assert.equal(response.status,expected,method+' '+p+': expected '+expected+' received '+response.status);return response.body;
  }
+ const reportChecks=reports?require('./reports-smoke.cjs')({meta,sql,api,clients:()=>clients,organizers:()=>organizers,admin:()=>admin,access:()=>access,controls:recommendations}):null;
  const get=p=>api('GET',p),post=(p,b,s=200)=>api('POST',p,b,s),patch=p=>api('PATCH',p);
  async function login(email,password){const login=await api('POST','/auth/login',{email,password},200,null);const token=login.access_token;const me=await api('GET','/auth/me',undefined,200,{token});assert.ok(me.id>0);return {id:me.id,token};}
  for(let n=0;n<3;n++){const email='business-client-'+n+'-'+meta.id+'@example.test',password=crypto.randomBytes(32).toString('hex');await api('POST','/auth/register',{email,password},201,null);clients.push(await login(email,password));}
@@ -39,6 +40,7 @@ async function event(numbered,price,label,options={}){
   assert.equal((await patch(`/api/v1/events/${e.eventId}/publish`)).status,'PUBLICADO');
   const result={venue:v.venueId,event:e.eventId,sector:s.sectorId,numbered,price};
   const before=await stock(result,2);
+  if(reportChecks)await reportChecks.check(result,{sold:0,returned:0,gross:0,refund:0,net:0,occupancy:0});
   assert.equal((await patch(`/api/v1/events/${e.eventId}/publish`)).status,'PUBLICADO');
   assert.deepEqual(await stock(result,2),before);
   return result;
@@ -56,6 +58,7 @@ async function reserveAndBuy(e,client,quantity){
   await api('GET','/reservas?idCliente='+client,undefined,403,clients.find(c=>c.id!==client));
   const c=await post('/compras',{clienteId:client,eventoId:e.event,reservaId:r.idReserva,detalles:details},201);
   assert.equal(c.estado,'PENDIENTE');assert.equal(c.importeTotal,e.price*quantity);
+  if(reportChecks)await reportChecks.check(e,{sold:0,returned:0,gross:0,refund:0,net:0,occupancy:0});
   const outsider=clients.find(x=>x.id!==client);
   const detailsForSpoof={clienteId:outsider.id,eventoId:e.event,reservaId:r.idReserva,detalles:details};
   await api('POST','/compras',detailsForSpoof,404,outsider);
@@ -85,6 +88,7 @@ async function numberedRefundCancellation(){
   const payment={compraId:c.purchase,claveIdempotencia:`pago-${meta.id}-numerado`,medioPago:'TARJETA_DEBITO'};
   const p=await post('/pagos',payment,201);assert.equal(p.estado,'APROBADO');assert.equal(p.importe,30000);
   const tickets=await completed(c);await stock(e,0);
+  if(reportChecks)await reportChecks.check(e,{sold:2,returned:0,gross:30000,refund:0,net:30000,occupancy:100});
   await api('POST','/pagos',payment,404,clients[1]);
   await api('GET','/pagos/'+p.id,undefined,404,clients[1]);
   await api('GET','/pagos?compraId='+c.purchase,undefined,404,clients[1]);
@@ -105,6 +109,7 @@ async function numberedRefundCancellation(){
   assert.equal(processed.etapa,'FINALIZADA');assert.equal(processed.reintegro.estado,'COMPLETADO');assert.equal(processed.reintegro.importe,15000);
   const after=await get(`/tickets?orderId=${c.purchase}`);
   assert.equal(after.find(t=>t.ticketId===selected.ticketId).status,'ANULADA');assert.equal(after.find(t=>t.ticketId===other.ticketId).status,'EMITIDA');
+  if(reportChecks)await reportChecks.check(e,{sold:2,returned:1,gross:30000,refund:15000,net:15000,occupancy:50});
   const free=await stock(e,1);assert.equal(free.asientosLibres[0].idAsiento,selected.asientoId);
   assert.deepEqual(await post(`/admin/devoluciones/${d.id}/procesar`,refund),processed);assert.deepEqual(await stock(e,1),free);
   assert.equal((await get(`/pagos/${p.id}`)).importeReintegrado,15000);
@@ -121,6 +126,7 @@ async function numberedRefundCancellation(){
   assert.deepEqual(await get(`/pagos/${p.id}`),finalPay);assert.deepEqual(await get(`/tickets?orderId=${c.purchase}`),cancelled);
   assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.compras}.reintegros;`),count);
   assert.equal(sql(`SELECT CONCAT(cancellation_authorized_admin_id,':',cancellation_authorization_jti,':',cancellation_authorized_at) FROM ${meta.schemas.eventos}.event WHERE event_id=${e.event};`),originalAuthority);await stock(e,0);
+  if(reportChecks)await reportChecks.check(e,{sold:2,returned:2,gross:30000,refund:30000,net:0,occupancy:0});
   report.originalCancellationAuthorityPreserved=true;
   report.scenarios.push({name:'numerada_pago_idempotente_devolucion_parcial_cancelacion',...c,payment:p.id,refund:d.id});
 }
@@ -131,12 +137,14 @@ async function rejected(){
   assert.equal((await get(`/compras/${c.purchase}`)).estado,'FALLIDA');assert.equal((await get(`/reservas/${c.reservation}`)).estado,'LIBERADA');
   assert.deepEqual(await get(`/tickets?orderId=${c.purchase}`),[]);await stock(e,2);
   assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.entradas}.ticket_batches WHERE order_id='${c.purchase}';`),'0');
+  if(reportChecks)await reportChecks.check(e,{sold:0,returned:0,gross:0,refund:0,net:0,occupancy:0});
   report.scenarios.push({name:'rechazo_y_liberacion',...c,payment:p.id});
 }
 async function recovered(){
   const e=await event(false,15000,'recuperacion');const c=await reserveAndBuy(e,clients[2].id,1);
   const key=`simular-timeout-${meta.id}`;const body={compraId:c.purchase,claveIdempotencia:key,medioPago:'TARJETA_DEBITO'};
   const p=await post('/pagos',body,201);assert.equal(p.estado,'RESULTADO_DESCONOCIDO');
+  if(reportChecks)await reportChecks.check(e,{sold:0,returned:0,gross:0,refund:0,net:null,occupancy:0,complete:false});
   assert.equal((await get(`/compras/${c.purchase}`)).estado,'PROCESANDO');assert.deepEqual(await get(`/tickets?orderId=${c.purchase}`),[]);
   const query=`SELECT datos FROM ${meta.schemas.compras}.operaciones_simuladas WHERE clave='cobro:${key}';`;
   const before=sql(query);assert.equal(JSON.parse(before).aprobado,true);
@@ -144,6 +152,7 @@ async function recovered(){
   await completed(c);await stock(e,1);assert.equal(sql(query),before);
   assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.compras}.pagos WHERE compra_id=${c.purchase};`),'1');
   assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.entradas}.ticket_batches WHERE order_id='${c.purchase}';`),'1');
+  if(reportChecks)await reportChecks.check(e,{sold:1,returned:0,gross:15000,refund:0,net:15000,occupancy:50});
   report.scenarios.push({name:'pago_incierto_recuperado',...c,payment:p.id});
 }
 
@@ -174,6 +183,7 @@ async function recovered(){
  assert.equal(Object.keys(refunds).length,2);assert.equal(Object.values(refunds).reduce((sum,r)=>sum+Number(r.importe),0),30000);
  report.financialEvidence={chargeAttempts:3,approvedCharges:2,rejectedCharges:1,approvedAmount:45000,refundOperations:2,refundedAmount:30000,tickets:3,emissionBatches:2};
  if(recommendations)report.recommendations=await require('./recommendations-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event,scenarios:report.scenarios,controls:recommendations});
+ if(reportChecks)report.reports=await reportChecks.final(report.scenarios);
  if(notifications)report.notifications=await require('./notifications-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event,scenarios:report.scenarios,controls:recommendations});
  if(queue)report.queue=await require('./queue-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,event});
  if(faults)report.faults=await require('./fault-campaign.cjs')({meta,sql,attest,api,clients,admin,scenarios:report.scenarios,controls:faults});

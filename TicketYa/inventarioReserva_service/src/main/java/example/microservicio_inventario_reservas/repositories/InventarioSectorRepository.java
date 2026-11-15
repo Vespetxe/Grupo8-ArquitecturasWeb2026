@@ -13,6 +13,7 @@ import java.util.Optional;
 
 @Repository("InventarioSectorRepository")
 public interface InventarioSectorRepository extends JpaRepository<InventarioSector, Long> {
+    java.util.List<InventarioSector> findAllByIdEventoOrderByIdSector(Long eventId);
     @Query("select coalesce(sum(i.disponibles),0) from InventarioSector i where i.idEvento=:id and i.estado<>example.microservicio_inventario_reservas.enums.EstadoInventario.CANCELADO")
     long cupos(@Param("id") Long id);
     @Modifying @Query("update InventarioSector i set i.estado=example.microservicio_inventario_reservas.enums.EstadoInventario.HABILITADO where i.idEvento=:id and i.estado<>example.microservicio_inventario_reservas.enums.EstadoInventario.CANCELADO")

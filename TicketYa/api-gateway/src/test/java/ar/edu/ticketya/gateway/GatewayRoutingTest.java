@@ -78,4 +78,7 @@ class GatewayRoutingTest {
             }
         }
     }
+    @Test void reportRouteRequiresOrganizer()throws Exception{
+        String route="/api/v1/events/9/report";assertEquals(401,get(route).statusCode());for(String role:java.util.List.of("ORGANIZADOR","CLIENTE","ADMINISTRADOR")){var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+route)).header("Authorization","Bearer "+SecurityTestKeys.token("gateway","user","9",role,null,300)).GET().build();assertEquals(role.equals("ORGANIZADOR")?200:403,HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.discarding()).statusCode());}
+    }
 }

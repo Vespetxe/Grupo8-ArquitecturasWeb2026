@@ -5,9 +5,9 @@ public final class RoutePolicy {
  private RoutePolicy(){}
  public static java.util.List<String> requestedScopes(String caller,String target){
   return java.util.Map.of(
-   "eventos:inventario",java.util.List.of("inventory.prepare","inventory.lifecycle"),
-   "eventos:entradas",java.util.List.of("tickets.event-block"),
-   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read","notifications.publish"),
+   "eventos:inventario",java.util.List.of("inventory.prepare","inventory.lifecycle","reports.inventory.read"),
+   "eventos:entradas",java.util.List.of("tickets.event-block","reports.tickets.read"),
+   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read","notifications.publish","reports.sales.read"),
    "compras:eventos",java.util.List.of("events.read"),
    "compras:inventario",java.util.List.of("reservations.read","reservations.confirm","reservations.release","reservations.compensate","reservations.return"),
    "compras:entradas",java.util.List.of("tickets.read","tickets.issue","tickets.annul","tickets.status"),
@@ -28,7 +28,14 @@ public final class RoutePolicy {
    case "compras" -> service(a,"eventos",owner,"purchases.event-cancel")||service(a,"entradas",owner,"orders.read");
    default -> false;
   };
+  if(get&&p.matches("/internal/reports/events/[0-9]+/(sales|tickets|inventory)"))return switch(owner){
+   case "compras" -> p.endsWith("/sales")&&service(a,"eventos",owner,"reports.sales.read");
+   case "entradas" -> p.endsWith("/tickets")&&service(a,"eventos",owner,"reports.tickets.read");
+   case "inventario" -> p.endsWith("/inventory")&&service(a,"eventos",owner,"reports.inventory.read");
+   default -> false;
+  };
   if("gateway".equals(owner)){
+
    if(post&&(p.equals("/auth/register")||p.equals("/auth/login")))return true;
    if(get&&p.equals("/auth/me"))return a instanceof JwtAuthenticationToken t&&"user".equals(t.getToken().getClaimAsString("token_use"));
    if(p.startsWith("/internal/")||p.matches("/admin/eventos/.*"))return false;
@@ -36,6 +43,9 @@ public final class RoutePolicy {
    return allow("eventos",method,p,a)||allow("inventario",method,p,a)||allow("compras",method,p,a)||allow("entradas",method,p,a);
   }
   if("eventos".equals(owner)){
+   // Reports extension: Eventos and Gateway only.
+   if(get&&p.matches("/api/v1/events/[0-9]+/report"))return human(a,"ORGANIZADOR");
+   // End reports extension.
    // Recommendations extension: Eventos and Gateway only.
    if((get||"PUT".equals(method))&&p.equals("/api/v1/me/preferences"))return human(a,"CLIENTE");
    if(get&&p.equals("/api/v1/me/recommendations"))return human(a,"CLIENTE");
