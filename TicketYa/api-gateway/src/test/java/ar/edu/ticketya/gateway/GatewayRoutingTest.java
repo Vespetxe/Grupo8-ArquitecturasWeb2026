@@ -42,4 +42,19 @@ class GatewayRoutingTest {
         var forbidden=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/colas/eventos/7")).header("Authorization","Bearer "+token).PUT(HttpRequest.BodyPublishers.noBody()).build();
         assertEquals(403,HttpClient.newHttpClient().send(forbidden,HttpResponse.BodyHandlers.discarding()).statusCode());
     }
+
+    @Test void qrRoutesEnforceAccessAndAdminRoles()throws Exception{
+        String scan="/accesos/eventos/7/validaciones",assignment="/admin/accesos/eventos/7/personal/9";
+        for(String method:new String[]{"POST","PUT","DELETE"}){
+            String route=method.equals("POST")?scan:assignment,role=method.equals("POST")?"PERSONAL_ACCESO":"ADMINISTRADOR";
+            var token=SecurityTestKeys.token("gateway","user","9",role,null,300);
+            var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+route)).header("Authorization","Bearer "+token).method(method,HttpRequest.BodyPublishers.noBody()).build();
+            var result=HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.ofString());assertEquals(200,result.statusCode());assertEquals(route,result.body());
+        }
+        for(String role:new String[]{"CLIENTE","ORGANIZADOR","ADMINISTRADOR"}){
+            var token=SecurityTestKeys.token("gateway","user","9",role,null,300);
+            var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+scan)).header("Authorization","Bearer "+token).POST(HttpRequest.BodyPublishers.noBody()).build();
+            assertEquals(403,HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.discarding()).statusCode());
+        }
+    }
 }

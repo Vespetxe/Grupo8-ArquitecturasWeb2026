@@ -58,6 +58,10 @@ public final class RoutePolicy {
    if(post&&p.equals("/ocupaciones/liberar"))return service(a,"compras",owner,"reservations.return");
   }
   if("entradas".equals(owner)){
+   // QR extension is local to Entradas and its Gateway boundary.
+   if(post&&p.matches("/accesos/eventos/[A-Za-z0-9_-]+/validaciones"))return human(a,"PERSONAL_ACCESO");
+   if(("PUT".equals(method)||"DELETE".equals(method))&&p.matches("/admin/accesos/eventos/[A-Za-z0-9_-]+/personal/[0-9]+"))return human(a,"ADMINISTRADOR");
+   // End QR extension.
    if(get&&p.equals("/tickets"))return human(a,"CLIENTE")||human(a,"ADMINISTRADOR")||service(a,"compras",owner,"tickets.read");
    if(post&&p.equals("/internal/tickets/issue"))return service(a,"compras",owner,"tickets.issue");
    if(post&&p.matches("/internal/tickets/orders/[^/]+/annul"))return service(a,"compras",owner,"tickets.annul");

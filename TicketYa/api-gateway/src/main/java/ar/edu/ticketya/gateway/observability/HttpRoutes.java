@@ -10,6 +10,7 @@ public final class HttpRoutes {
  "/colas/eventos/{id}/mi-turno","/colas/eventos/{id}",
  "/reservas/{id}/confirmar","/reservas/{id}/liberar","/reservas/{id}","/reservas","/disponibilidad/eventos/{id}/sectores/{id}",
  "/eventos/{id}/inventario","/eventos/{id}/cancelar-inventario","/ocupaciones/liberar","/internal/eventos/{id}/publicar","/internal/eventos/{id}/habilitar","/internal/eventos/{id}/suspender","/internal/reservas/{id}/compensar","/internal/reservas/{id}/devoluciones",
+ "/accesos/eventos/{id}/validaciones","/admin/accesos/eventos/{id}/personal/{id}",
  "/compras/{id}/estado","/compras/{id}/detalle","/compras/{id}/entradas","/compras/{id}/cancelar","/compras/{id}","/compras","/pagos/{id}","/pagos","/devoluciones/{id}","/devoluciones","/tickets",
  "/admin/devoluciones/{id}/aprobar","/admin/devoluciones/{id}/rechazar","/admin/devoluciones/{id}/procesar","/admin/devoluciones/{id}/procesamiento","/admin/devoluciones","/admin/reintegros/{id}","/admin/eventos/{id}/cancelacion",
  "/internal/security/readiness","/internal/orders/{id}","/internal/tickets/issue","/internal/tickets/orders/{id}/annul","/internal/tickets/status","/internal/tickets/{id}/status","/internal/events/{id}/cancel-emission",

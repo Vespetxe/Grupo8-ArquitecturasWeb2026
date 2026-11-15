@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,faults,progress=()=>{}}){
+module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,rememberQr=()=>{},faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
  async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
@@ -108,7 +108,9 @@ async function numberedRefundCancellation(){
   const free=await stock(e,1);assert.equal(free.asientosLibres[0].idAsiento,selected.asientoId);
   assert.deepEqual(await post(`/admin/devoluciones/${d.id}/procesar`,refund),processed);assert.deepEqual(await stock(e,1),free);
   assert.equal((await get(`/pagos/${p.id}`)).importeReintegrado,15000);
+  if(qr){rememberQr(after.map(t=>t.qr));report.qr=await require('./qr-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event:e.event,active:after.find(t=>t.status==='EMITIDA'),annulled:after.find(t=>t.status==='ANULADA')});}
   assert.equal((await patch(`/api/v1/events/${e.event}/cancel`)).status,'CANCELADO');
+  if(qr){assert.equal(sql(`SELECT CONCAT(validated_at,':',validated_by) FROM ${meta.schemas.entradas}.tickets WHERE ticket_id='${report.qr.usedTicketId}';`),report.qr.persistedAdmission);const blocked=await api('POST',`/accesos/eventos/${e.event}/validaciones`,{qr:after.find(t=>t.status==='EMITIDA').qr},409,access);assert.equal(blocked.code,'EVENT_BLOCKED');report.qr.cancellationPreservesAdmission=true;}
   const finalPay=await get(`/pagos/${p.id}`);assert.equal(finalPay.estado,'REINTEGRADO_TOTAL');assert.equal(finalPay.importeReintegrado,30000);
   assert.equal((await get(`/compras/${c.purchase}`)).estado,'DEVUELTA_TOTAL');
   const cancelled=await get(`/tickets?orderId=${c.purchase}`);assert.equal(cancelled.length,2);assert.ok(cancelled.every(t=>t.status==='ANULADA'));await stock(e,0);

@@ -22,6 +22,14 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
     private TicketStatus status;
+    @Column(name="validated_at") private java.time.Instant validatedAt;
+    @Column(name="validated_by") private Long validatedBy;
+    public java.time.Instant getValidatedAt(){return validatedAt;}
+    public Long getValidatedBy(){return validatedBy;}
+    public void recordAdmission(java.time.Instant at,Long staff){
+        if(status!=TicketStatus.EMITIDA||validatedAt!=null)throw new IllegalStateException("Ticket not available for admission");
+        validatedAt=java.util.Objects.requireNonNull(at);validatedBy=java.util.Objects.requireNonNull(staff);
+    }
     protected Ticket() {}
     public Ticket(String ticketId, String qrPayload, TicketBatch batch, String eventId,
                   String clientId, String sectorId, String seatId) {
