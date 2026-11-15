@@ -7,7 +7,7 @@ public final class RoutePolicy {
   return java.util.Map.of(
    "eventos:inventario",java.util.List.of("inventory.prepare","inventory.lifecycle"),
    "eventos:entradas",java.util.List.of("tickets.event-block"),
-   "eventos:compras",java.util.List.of("purchases.event-cancel"),
+   "eventos:compras",java.util.List.of("purchases.event-cancel","purchases.history.read"),
    "compras:eventos",java.util.List.of("events.read"),
    "compras:inventario",java.util.List.of("reservations.read","reservations.confirm","reservations.release","reservations.compensate","reservations.return"),
    "compras:entradas",java.util.List.of("tickets.read","tickets.issue","tickets.annul","tickets.status"),
@@ -36,6 +36,10 @@ public final class RoutePolicy {
    return allow("eventos",method,p,a)||allow("inventario",method,p,a)||allow("compras",method,p,a)||allow("entradas",method,p,a);
   }
   if("eventos".equals(owner)){
+   // Recommendations extension: Eventos and Gateway only.
+   if((get||"PUT".equals(method))&&p.equals("/api/v1/me/preferences"))return human(a,"CLIENTE");
+   if(get&&p.equals("/api/v1/me/recommendations"))return human(a,"CLIENTE");
+   // End recommendations extension.
    if(get&&p.equals("/api/v1/events/search"))return true;
    if(get&&(p.matches("/api/v1/venues(/[0-9]+(/sectors)?)?")||p.matches("/api/v1/participants(/[0-9]+)?")||p.matches("/api/v1/sectors/[0-9]+/seats")))return true;
    // Published detail is public; backend checks draft ownership before serialization.

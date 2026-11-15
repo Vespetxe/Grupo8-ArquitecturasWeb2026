@@ -36,6 +36,30 @@ services:
       retries: 6
       start_period: 90s
 
+  mongo:
+    image: mongo:8.0.16
+    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    mem_limit: 768m
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ty_mongo_admin
+      MONGO_INITDB_ROOT_PASSWORD: ${TY_E2_MONGO_ROOT_PASSWORD:?Definir TY_E2_MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ticketya_e2_preferences
+      TY_E2_EVENTOS_MONGO_PASSWORD: ${TY_E2_EVENTOS_MONGO_PASSWORD:?Definir TY_E2_EVENTOS_MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo/01-create-user.js:/docker-entrypoint-initdb.d/01-create-user.js:ro
+      - ./docker/mongo/healthcheck.js:/opt/ticketya/healthcheck.js:ro
+    tmpfs:
+      - /data/configdb:rw,noexec,nosuid,size=16m
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--file", "/opt/ticketya/healthcheck.js"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - backend
+
   inventario:
     image: ticketya-e2-inventario:dev
     build:
@@ -136,6 +160,7 @@ services:
       context: ./TicketYa/EventoCatalogo_Service
     pull_policy: never
     environment:
+      MONGODB_URI: "mongodb://ty_eventos_preferences:${TY_E2_EVENTOS_MONGO_PASSWORD:?Definir TY_E2_EVENTOS_MONGO_PASSWORD}@mongo:27017/ticketya_e2_preferences?authSource=ticketya_e2_preferences&serverSelectionTimeoutMS=1000&connectTimeoutMS=1000&socketTimeoutMS=1000&waitQueueTimeoutMS=500&maxPoolSize=10&retryReads=false&retryWrites=false"
       SERVER_PORT: "8081"
       SPRING_PROFILES_ACTIVE: integracion
       TY_SECURITY_ISSUER: ${IDENTITY_JWT_ISSUER:-http://identidad:8085}
@@ -236,6 +261,7 @@ services:
       - backend
 
 volumes:
+  mongo_data:
   mysql_data:
 
 networks:

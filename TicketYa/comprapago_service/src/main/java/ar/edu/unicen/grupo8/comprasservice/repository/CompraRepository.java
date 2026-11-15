@@ -15,6 +15,15 @@ import java.util.Optional;
 
 public interface CompraRepository extends JpaRepository<Compra, Long> {
 
+    @Query("""
+      select distinct c.eventoId from Compra c
+      where c.identityOwnerId=:owner and c.estado in :states and c.cancelacionSolicitada=false and c.importeTotal>0
+      and exists (select p.id from Pago p where p.compra=c and p.estado in :payments and p.importe>coalesce(p.importeReintegrado,0))
+      order by c.eventoId
+      """)
+    List<Long> recommendationEvents(@Param("owner") Long owner,@Param("states") Collection<EstadoCompra> states,
+       @Param("payments") Collection<ar.edu.unicen.grupo8.comprasservice.entity.enums.EstadoPago> payments);
+
     List<Compra> findByClienteId(Long clienteId);
 
     List<Compra> findByEventoId(Long eventoId);

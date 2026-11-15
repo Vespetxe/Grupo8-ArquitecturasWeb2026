@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,rememberQr=()=>{},faults,progress=()=>{}}){
+module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
  async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
@@ -24,11 +24,11 @@ module.exports=async function commercial({meta,sql,attest,adminPassword,provisio
  await api('POST','/api/v1/events',{name:'spoof',eventType:'Recital',organizerId:organizers[1].id,venueId:999,startDateTime:new Date(Date.now()+8*86400000).toISOString()},403,organizers[0]);
  await api('GET','/tickets?clientId='+clients[0].id,undefined,200,clients[0]).then(list=>assert.deepEqual(list,[]));
 async function stock(e,n){const s=await get(`/disponibilidad/eventos/${e.event}/sectores/${e.sector}`);assert.equal(s.disponibles,n);assert.equal(s.capacidadTotal,2);return s;}
-async function event(numbered,price,label){
+async function event(numbered,price,label,options={}){
   const name=`E2 ${meta.id} ${label}`;
-  const v=await post('/api/v1/venues',{name,address:'Prueba E2 aislada',city:'Tandil',latitude:-37.328,longitude:-59.137},201);
+  const v=await post('/api/v1/venues',{name,address:'Prueba E2 aislada',city:options.city||'Tandil',latitude:-37.328,longitude:-59.137},201);
   const s=await post(`/api/v1/venues/${v.venueId}/sectors`,{name:'Sector',type:numbered?'NUMERADO':'NO_NUMERADO',capacity:2,...(numbered?{rows:1,seatsPerRow:2}:{})},201);
-  const e=await post('/api/v1/events',{name,eventType:'Recital',organizerId:organizers[0].id,venueId:v.venueId,startDateTime:new Date(Date.now()+8*86400000).toISOString(),participantIds:[]},201);
+  const e=await post('/api/v1/events',{name,eventType:options.type||'Recital',organizerId:organizers[0].id,venueId:v.venueId,startDateTime:new Date(Date.now()+8*86400000).toISOString(),participantIds:options.participantIds||[]},201);
   assert.equal(e.status,'BORRADOR');
   await api('PATCH', '/api/v1/events/'+e.eventId+'/publish',undefined,404,organizers[1]);
   await api('POST','/api/v1/events/'+e.eventId+'/prices',[{sectorId:s.sectorId,price}],404,organizers[1]);
@@ -147,7 +147,8 @@ async function recovered(){
   report.scenarios.push({name:'pago_incierto_recuperado',...c,payment:p.id});
 }
 
- await numberedRefundCancellation();await rejected();await recovered();
+ if(recommendations){recommendations.stop('mongo');try{await numberedRefundCancellation();await rejected();await recovered();report.mongoCommercialOutageVerified=true;}finally{if(recommendations.available())await recommendations.start('mongo');}}
+ else{await numberedRefundCancellation();await rejected();await recovered();}
  const concurrentStart=report.requests.length;
  // This checks ownership/context, not overload. Respect the eight-slot pilot;
  // saturation and immediate 503 rejection have dedicated deterministic tests.
@@ -172,6 +173,7 @@ async function recovered(){
  const refunds=JSON.parse(sql(`SELECT datos FROM ${meta.schemas.compras}.operaciones_simuladas WHERE clave LIKE 'reintegros-pago:%';`)).operaciones;
  assert.equal(Object.keys(refunds).length,2);assert.equal(Object.values(refunds).reduce((sum,r)=>sum+Number(r.importe),0),30000);
  report.financialEvidence={chargeAttempts:3,approvedCharges:2,rejectedCharges:1,approvedAmount:45000,refundOperations:2,refundedAmount:30000,tickets:3,emissionBatches:2};
+ if(recommendations)report.recommendations=await require('./recommendations-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event,scenarios:report.scenarios,controls:recommendations});
  if(queue)report.queue=await require('./queue-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,event});
  if(faults)report.faults=await require('./fault-campaign.cjs')({meta,sql,attest,api,clients,admin,scenarios:report.scenarios,controls:faults});
  return {...report,result:'PASS',identities:{clients:clients.map(c=>c.id),organizers:organizers.map(c=>c.id),admin:admin.id,access:access.id}};

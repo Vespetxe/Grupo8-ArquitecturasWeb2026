@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ParticipantRepository extends JpaRepository<Participant, Long> {
+    long countByParticipantIdIn(java.util.Collection<Long> ids);
 }

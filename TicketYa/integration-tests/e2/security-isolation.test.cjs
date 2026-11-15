@@ -11,10 +11,28 @@ test('reject persistent ports, credentials topology, external volumes and privat
  for(const change of [s=>s.services.mysql.ports=['3306:3306'],s=>s.services.compras.environment.DB_URL='jdbc:mysql://mysql/ticketya_e2_docker_compras',s=>s.volumes.mysql_data.external=true,s=>s.services.gateway.volumes[0].source='private.pem',s=>s.services.gateway.environment.SPRING_APPLICATION_JSON='{}']){const s=spec(meta);change(s);assert.throws(()=>validate(meta,s));}
  assert.throws(()=>identity(meta.id,38080));
 });
-test('JWT trust and route policy copies remain synchronized across independent Maven projects',()=>{
- const projects={ 'api-gateway':'ar/edu/ticketya/gateway','EventoCatalogo_Service':'grupo22/eventocatalogo_service','inventarioReserva_service':'example/microservicio_inventario_reservas','entradas_service':'ar/edu/tudai/ticketya/servicio_entradas','comprapago_service':'ar/edu/unicen/grupo8/comprasservice'};
- let queuePolicy,qrPolicy;for(const file of ['JwtTrust.java','RoutePolicy.java']){let expected;for(const [dir,pkg]of Object.entries(projects)){let text=fs.readFileSync(path.resolve(__dirname,'../../',dir,'src/main/java',pkg,'security',file),'utf8').replace(/^package[^\n]+\n/,'').replace(/\r\n/g,'\n');if(file==='RoutePolicy.java'){const qrStart=text.indexOf('   // QR extension');if(['api-gateway','entradas_service'].includes(dir)){assert.ok(qrStart>=0);const marker='   // End QR extension.';const qrEnd=text.indexOf(marker,qrStart)+marker.length+1;const extension=text.slice(qrStart,qrEnd);if(qrPolicy)assert.equal(extension,qrPolicy);else qrPolicy=extension;text=text.slice(0,qrStart)+text.slice(qrEnd);}else assert.equal(qrStart,-1);const start=text.indexOf('   // Queue extension');if(['api-gateway','inventarioReserva_service'].includes(dir)){assert.ok(start>=0);const end=text.indexOf('   if(post&&p.equals("/reservas"))',start);const extension=text.slice(start,end);if(queuePolicy)assert.equal(extension,queuePolicy);else queuePolicy=extension;text=text.slice(0,start)+text.slice(end);}else assert.equal(start,-1);}if(expected)assert.equal(text,expected);else expected=text;}}
+test('JWT trust and common policy stay synchronized; local feature rules stay scoped',()=>{
+ const projects={'api-gateway':'ar/edu/ticketya/gateway','EventoCatalogo_Service':'grupo22/eventocatalogo_service','inventarioReserva_service':'example/microservicio_inventario_reservas','entradas_service':'ar/edu/tudai/ticketya/servicio_entradas','comprapago_service':'ar/edu/unicen/grupo8/comprasservice'};
+ for(const file of ['JwtTrust.java','RoutePolicy.java']){
+  let expected;const extensions={};
+  for(const [dir,pkg]of Object.entries(projects)){
+   let text=fs.readFileSync(path.resolve(__dirname,'../../',dir,'src/main/java',pkg,'security',file),'utf8').replace(/^package[^\n]+\n/,'').replace(/\r\n/g,'\n');
+   if(file==='RoutePolicy.java')for(const [name,begin,end,owners]of [
+    ['queue','   // Queue extension','   if(post&&p.equals("/reservas"))',['api-gateway','inventarioReserva_service']],
+    ['qr','   // QR extension','   // End QR extension.',['api-gateway','entradas_service']],
+    ['recommendations','   // Recommendations extension','   // End recommendations extension.',['api-gateway','EventoCatalogo_Service']],
+    ['history','   // Technical history extension','   // End history extension.',['comprapago_service']]]){
+     const at=text.indexOf(begin);if(!owners.includes(dir)){assert.equal(at,-1);continue;}
+     assert.ok(at>=0);let until=text.indexOf(end,at);assert.ok(until>at);if(name!=='queue')until+=end.length+1;
+     const extension=text.slice(at,until);if(extensions[name])assert.equal(extension,extensions[name]);else extensions[name]=extension;
+     if(name==='history')assert.match(extension,/service\(a,"eventos",owner,"purchases.history.read"\)/);
+     text=text.slice(0,at)+text.slice(until);
+   }
+   if(expected)assert.equal(text,expected);else expected=text;
+  }
+ }
 });
+
 test('technical OAuth manager implementation is identical except caller and destinations',()=>{
  const projects={'EventoCatalogo_Service':'grupo22/eventocatalogo_service','entradas_service':'ar/edu/tudai/ticketya/servicio_entradas','comprapago_service':'ar/edu/unicen/grupo8/comprasservice'};
  let expected;

@@ -11,6 +11,7 @@ import grupo22.eventocatalogo_service.timing.RequestBudget;
 /** Reused pilot guard, one instance per selected HTTP family. Never retries or invents business data. */
 public final class PilotReadGuard {
     public enum Family {
+        HISTORY("compras","purchase-history","eventos-compras-history","purchase-history"),
         INVENTORY_INIT("inventario","inventory-init","eventos-inventario-init","inventory-init"),
         INVENTORY_LIFECYCLE("inventario","inventory-lifecycle","eventos-inventario-lifecycle","inventory-lifecycle"),
         EMISSION_BLOCK("entradas","emission-block","eventos-entradas-block","emission-block"),

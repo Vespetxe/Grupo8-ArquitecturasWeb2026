@@ -57,4 +57,16 @@ class GatewayRoutingTest {
             assertEquals(403,HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.discarding()).statusCode());
         }
     }
+
+    @Test void personalPreferencesAndRecommendationsAreClientOnly()throws Exception{
+        for(String method:new String[]{"GET","PUT"}){
+            String route="/api/v1/me/preferences";var token=SecurityTestKeys.token("gateway","user","9","CLIENTE",null,300);
+            var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+route)).header("Authorization","Bearer "+token).method(method,HttpRequest.BodyPublishers.noBody()).build();
+            var result=HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.ofString());assertEquals(200,result.statusCode());assertEquals(route,result.body());
+        }
+        assertEquals(401,get("/api/v1/me/recommendations").statusCode());
+        var admin=SecurityTestKeys.token("gateway","user","9","ADMINISTRADOR",null,300);
+        var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/v1/me/recommendations")).header("Authorization","Bearer "+admin).GET().build();
+        assertEquals(403,HttpClient.newHttpClient().send(request,HttpResponse.BodyHandlers.discarding()).statusCode());
+    }
 }
