@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class EventServiceImpl implements EventService {
 
     private final grupo22.eventocatalogo_service.notifications.EventNoticeStore notices;
+    private final grupo22.eventocatalogo_service.cache.PublicCatalogueCache catalogueCache;
     private final EventRepository eventRepository;
     private final VenueRepository venueRepository;
     private final SectorRepository sectorRepository;
@@ -37,7 +38,8 @@ public class EventServiceImpl implements EventService {
             VenueRepository venueRepository,
             SectorRepository sectorRepository,
             ParticipantRepository participantRepository,
-            EventSectorPriceRepository eventSectorPriceRepository, grupo22.eventocatalogo_service.notifications.EventNoticeStore notices) {
+            EventSectorPriceRepository eventSectorPriceRepository, grupo22.eventocatalogo_service.notifications.EventNoticeStore notices,grupo22.eventocatalogo_service.cache.PublicCatalogueCache catalogueCache) {
+        this.catalogueCache=catalogueCache;
         this.notices=notices;
         this.eventRepository = eventRepository;
         this.venueRepository = venueRepository;
@@ -72,6 +74,7 @@ public class EventServiceImpl implements EventService {
 
         event.setIdentityOwnerId(grupo22.eventocatalogo_service.security.CurrentActor.humanId());
         Event savedEvent = eventRepository.save(event);
+        catalogueCache.invalidateAfterCommit();
         return mapToEventResponse(savedEvent);
     }
 
@@ -112,6 +115,7 @@ public class EventServiceImpl implements EventService {
         }
 
         eventRepository.save(event);
+        catalogueCache.invalidateAfterCommit();
 
         return event.getSectorPrices().stream()
                 .map(p -> new EventSectorPriceResponseDTO(p.getSectorId(), p.getPrice()))
@@ -149,6 +153,7 @@ public class EventServiceImpl implements EventService {
         event.setStatus(EventStatus.PUBLICADO);
         notices.capture(event,"ARTISTA_FAVORITO_PUBLICADO");
         var saved=eventRepository.save(event);
+        catalogueCache.invalidateAfterCommit();
         AuditTx.local(Audit.capture(Audit.Action.EVENT_PUBLICATION_LOCAL,Audit.Resource.EVENT,saved.getEventId(),Audit.operation(Audit.Resource.EVENT,saved.getEventId()),Audit.Outcome.PENDING,saved.getStatus()));
         return mapToEventResponse(saved);
     }
@@ -174,6 +179,7 @@ public class EventServiceImpl implements EventService {
         event.setStatus(EventStatus.CANCELADO);
         notices.capture(event,"EVENTO_CANCELADO");
         var saved=eventRepository.save(event);
+        catalogueCache.invalidateAfterCommit();
         AuditTx.local(Audit.capture(Audit.Action.EVENT_CANCELLATION_LOCAL,Audit.Resource.EVENT,saved.getEventId(),Audit.operation(Audit.Resource.EVENT,saved.getEventId()),Audit.Outcome.PENDING,saved.getStatus()).initiated(saved.getCancellationAuthorizedAdminId()));
         return mapToEventResponse(saved);
     }
@@ -194,7 +200,7 @@ public class EventServiceImpl implements EventService {
         validateStateTransition(event.getStatus(), newStatus);
         boolean changed=event.getStatus()!=newStatus;
         event.setStatus(newStatus);
-        if(changed)notices.capture(event,"EVENTO_CAMBIADO");
+        if(changed){notices.capture(event,"EVENTO_CAMBIADO");catalogueCache.invalidateAfterCommit();}
         return mapToEventResponse(eventRepository.save(event));
     }
 

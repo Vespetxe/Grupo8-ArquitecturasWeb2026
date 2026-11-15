@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
+module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,cache,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
  async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
@@ -182,6 +182,7 @@ async function recovered(){
  const refunds=JSON.parse(sql(`SELECT datos FROM ${meta.schemas.compras}.operaciones_simuladas WHERE clave LIKE 'reintegros-pago:%';`)).operaciones;
  assert.equal(Object.keys(refunds).length,2);assert.equal(Object.values(refunds).reduce((sum,r)=>sum+Number(r.importe),0),30000);
  report.financialEvidence={chargeAttempts:3,approvedCharges:2,rejectedCharges:1,approvedAmount:45000,refundOperations:2,refundedAmount:30000,tickets:3,emissionBatches:2};
+ if(cache)report.cache=await require('./cache-smoke.cjs')({api,clients,admin,meta});
  if(recommendations)report.recommendations=await require('./recommendations-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event,scenarios:report.scenarios,controls:recommendations});
  if(reportChecks)report.reports=await reportChecks.final(report.scenarios);
  if(notifications)report.notifications=await require('./notifications-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,access,event,scenarios:report.scenarios,controls:recommendations});

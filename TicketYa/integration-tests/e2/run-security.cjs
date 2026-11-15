@@ -2,23 +2,25 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 const central=process.argv.includes('--centralized');
+const cache=process.argv.includes('--cache');
 const reports=process.argv.includes('--reports');
 const notifications=process.argv.includes('--notifications');
 const recommendations=process.argv.includes('--recommendations')||notifications||reports;
-assert.ok(!recommendations||!central,'Recommendation campaign uses its own canonical Mongo topology');
-const guard=require(recommendations?'./recommendation-isolation.cjs':central?'./central-isolation.cjs':'./security-isolation.cjs');
+const mongoTopology=recommendations||cache;
+assert.ok(!mongoTopology||!central,'Recommendation campaign uses its own canonical Mongo topology');
+const guard=require(mongoTopology?'./recommendation-isolation.cjs':central?'./central-isolation.cjs':'./security-isolation.cjs');
 const root=path.resolve(__dirname,'../../..');
 let stage='preflight';
 const commercialOnly=process.argv.includes('--commercial-only');
 const faults=process.argv.includes('--faults');
 const queue=process.argv.includes('--queue');
 const qr=process.argv.includes('--qr'),qrSecrets=[];
-const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations','--notifications','--reports'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
+const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations','--notifications','--reports','--cache'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
 assert.ok(!commercialOnly||!observe,'Commercial-only skips the already approved security/observability suites, never application security');
 const meta=guard.identity(crypto.randomBytes(8).toString('hex'),args.length?Number(args[1]):48082);
 const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('COMPOSE_')||k.startsWith('TY_REG_'))delete env[k];
 const credentials={};const provisionLogs=[];
-for(const name of ['ROOT','EVENTOS','INVENTARIO','ENTRADAS','COMPRAS','IDENTIDAD',...(recommendations?['MONGO_ROOT','MONGO_EVENTOS']:[])])credentials[`TY_REG_${name}_PASSWORD`]=crypto.randomBytes(32).toString('hex');
+for(const name of ['ROOT','EVENTOS','INVENTARIO','ENTRADAS','COMPRAS','IDENTIDAD',...(mongoTopology?['MONGO_ROOT','MONGO_EVENTOS']:[])])credentials[`TY_REG_${name}_PASSWORD`]=crypto.randomBytes(32).toString('hex');
 for(const [caller,targets]of Object.entries(guard.CALLS))for(const target of targets)credentials[`TY_REG_${caller.toUpperCase()}_${target.toUpperCase()}_SECRET`]=crypto.randomBytes(32).toString('hex');
 Object.assign(env,credentials);
 const file=path.join(meta.directory,'compose.json');
@@ -62,7 +64,7 @@ async function main(){
  if(central)guard.assertEndpointFree(meta.logPort,oldIds.map(id=>JSON.parse(docker(['inspect',id]))[0]));
  assert.equal(docker(['ps','-aq','--filter',`label=com.docker.compose.project=${meta.project}`]).trim(),'');
  assert.equal(docker(['volume','ls','-q','--filter',`name=^${meta.volume}$`]).trim(),'');
- if(recommendations){assert.equal(docker(['volume','ls','-q','--filter',`name=^${meta.mongoVolume}$`]).trim(),'');const ids=docker(['network','ls','-q']).trim().split(/\s+/).filter(Boolean);guard.assertSubnetFree(meta,JSON.parse(docker(['network','inspect',...ids])));}
+ if(mongoTopology){assert.equal(docker(['volume','ls','-q','--filter',`name=^${meta.mongoVolume}$`]).trim(),'');const ids=docker(['network','ls','-q']).trim().split(/\s+/).filter(Boolean);guard.assertSubnetFree(meta,JSON.parse(docker(['network','inspect',...ids])));}
  if(central){assert.equal(docker(['volume','ls','-q','--filter',`name=^${meta.logVolume}$`]).trim(),'');await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',reject);server.listen(meta.logPort,'127.0.0.1',()=>server.close(resolve));});}
  // Check the only host port before creating any resources.
  await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',reject);server.listen(meta.port,'127.0.0.1',()=>server.close(resolve));});
@@ -75,7 +77,7 @@ async function main(){
  for(const [name,s]of Object.entries(spec.services))images[name]=JSON.parse(docker(['image','inspect',s.image]))[0].Id;
  stage='compose validation';compose('config','--quiet');
  stage='mysql startup';compose('up','--detach','--no-build','mysql');await wait('mysql');attest(['mysql']);
- if(recommendations){stage='isolated Mongo startup';compose('up','--detach','--no-build','mongo');await wait('mongo');attest(['mongo']);}
+ if(mongoTopology){stage='isolated Mongo startup';compose('up','--detach','--no-build','mongo');await wait('mongo');attest(['mongo']);}
  stage='isolated schemas';
  for(const [name,schema]of Object.entries(meta.schemas)){
   const escaped=schema.replaceAll('_','\\_');
@@ -104,7 +106,7 @@ async function main(){
  }
  if(central){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
  stage='commercial HTTP';
- report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,notifications,reports,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,notifications,reports,cache,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
  if(central){stage='collector recovery';if(!inspect('collector').State.Running)compose('start','collector');await wait('collector');}
  if(observe){
   stage='tracing verification';
@@ -114,7 +116,7 @@ async function main(){
   if(audit){stage='audit verification';report.audit=require('./verify-audit.cjs').verify({progress:step=>{report.auditCheck=step;},logs:{...logs,provision:provisionLogs.join('\n')},secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password),...qrSecrets],commercial:report.commercial,meta,sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'));return sql(query);}});}
   if(central){stage='central archive verification';report.central=await require('./verify-central.cjs')({docker,container:inspect('collector').Id,logs,secrets:[...Object.values(credentials),adminPassword,...provisioned.map(u=>u.password),...qrSecrets],requests:report.commercial.requests});}
  }
- if(recommendations){const text=docker(['logs',inspect('mongo').Id]);for(const secret of Object.values(credentials))assert.ok(!text.includes(secret),'Credential found in Mongo logs');report.mongoLogsRedacted=true;}
+ if(mongoTopology){const text=docker(['logs',inspect('mongo').Id]);for(const secret of Object.values(credentials))assert.ok(!text.includes(secret),'Credential found in Mongo logs');report.mongoLogsRedacted=true;}
  stage='final checks';attest(Object.keys(spec.services));assert.deepEqual(snapshot(oldIds),previous);
  assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'30');
  Object.assign(report,{result:'PASS',services:Object.keys(spec.services).length,schemas:5,previousContainersUnchanged:true,images});

@@ -9,14 +9,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ParticipantServiceImpl implements ParticipantService {
 
+    private final grupo22.eventocatalogo_service.cache.PublicCatalogueCache catalogueCache;
     private final ParticipantRepository participantRepository;
 
-    public ParticipantServiceImpl(ParticipantRepository participantRepository) {
+    public ParticipantServiceImpl(ParticipantRepository participantRepository,grupo22.eventocatalogo_service.cache.PublicCatalogueCache catalogueCache) {
+        this.catalogueCache=catalogueCache;
         this.participantRepository = participantRepository;
     }
 
@@ -25,22 +26,19 @@ public class ParticipantServiceImpl implements ParticipantService {
     public ParticipantResponseDTO createParticipant(ParticipantRequestDTO request) {
         Participant participant = new Participant(request.getName(), request.getRole());
         Participant saved = participantRepository.save(participant);
+        catalogueCache.invalidateAfterCommit();
         return new ParticipantResponseDTO(saved.getParticipantId(), saved.getName(), saved.getRole());
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ParticipantResponseDTO> getAllParticipants() {
-        return participantRepository.findAll().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        return catalogueCache.all().stream().map(p->new ParticipantResponseDTO(p.participantId(),p.name(),p.role())).toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ParticipantResponseDTO getParticipantById(Long id) {
-        Participant participant = findEntityById(id);
-        return mapToDTO(participant);
+        var participant=catalogueCache.find(id);
+        return new ParticipantResponseDTO(participant.participantId(),participant.name(),participant.role());
     }
 
     @Override
@@ -50,6 +48,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         participant.setName(request.getName());
         participant.setRole(request.getRole());
         Participant updated = participantRepository.save(participant);
+        catalogueCache.invalidateAfterCommit();
         return mapToDTO(updated);
     }
 
@@ -58,6 +57,7 @@ public class ParticipantServiceImpl implements ParticipantService {
     public void deleteParticipant(Long id) {
         Participant participant = findEntityById(id);
         participantRepository.delete(participant);
+        catalogueCache.invalidateAfterCommit();
     }
 
     private Participant findEntityById(Long id) {

@@ -52,6 +52,7 @@ class EventServiceImplTest {
     private EventSectorPriceRepository eventSectorPriceRepository;
 
     @org.mockito.Mock grupo22.eventocatalogo_service.notifications.EventNoticeStore notices;
+    @org.mockito.Mock grupo22.eventocatalogo_service.cache.PublicCatalogueCache catalogueCache;
     @InjectMocks
     private EventServiceImpl eventService;
 
@@ -81,6 +82,7 @@ class EventServiceImplTest {
         when(eventRepository.save(any(Event.class))).thenAnswer(i->i.getArgument(0));
         eventService.suspendOrUpdateStatus(10L,"SUSPENDIDO","ADMIN");
         verify(notices,never()).capture(any(Event.class),anyString());
+        verify(catalogueCache,never()).invalidateAfterCommit();
     }
 
     @Nested
@@ -105,6 +107,7 @@ class EventServiceImplTest {
             assertNotNull(response);
             assertEquals(EventStatus.PUBLICADO, response.getStatus());
             verify(eventRepository).save(mockEvent);
+            verify(catalogueCache).invalidateAfterCommit();
         }
 
         @Test
@@ -162,6 +165,7 @@ class EventServiceImplTest {
             assertNotNull(response);
             assertEquals(EventStatus.CANCELADO, response.getStatus());
             verify(eventRepository).save(mockEvent);
+            verify(catalogueCache).invalidateAfterCommit();
         }
 
         @Test
@@ -211,6 +215,7 @@ class EventServiceImplTest {
 
             // Then
             assertEquals(EventStatus.AGOTADO, response.getStatus());
+            verify(catalogueCache).invalidateAfterCommit();
         }
 
         @Test
