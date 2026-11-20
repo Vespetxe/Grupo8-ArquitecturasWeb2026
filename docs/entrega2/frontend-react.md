@@ -38,6 +38,14 @@ No hay retries automáticos de escrituras. Los botones bloquean dobles envíos e
 
 SSE usa streaming `fetch` con bearer, no `EventSource` ni JWT en query string. Se cierra y aborta al navegar o salir. No se ejecuta HTML recibido del backend ni se registran credenciales. Los errores usan mensajes controlados y, cuando existe, correlation ID para diagnóstico.
 
+### Estados admitidos para recuperar el intento original
+
+La acción manual exige compra `PROCESANDO` y etapa distinta de `FINALIZADA`. Admite pagos `PENDIENTE`, `RESULTADO_DESCONOCIDO`, `APROBADO`, `RECHAZADO`, `REINTEGRO_DESCONOCIDO` y `REINTEGRADO_TOTAL`. Los últimos tres también pueden necesitar continuación: `RECHAZADO` en liberación de reserva, `REINTEGRO_DESCONOCIDO` en compensación y `REINTEGRADO_TOTAL` en liberación posterior. El estado del pago por sí solo no significa que terminó la compra; el backend conserva la autoridad sobre las etapas y su resultado.
+
+Se bloquean compras `PENDIENTE`, `COMPLETADA`, `FALLIDA`, `CANCELADA`, `DEVUELTA_PARCIAL`, `DEVUELTA_TOTAL` o de estado desconocido, incluso si el pago tiene uno de los estados admitidos. También se bloquea la etapa `FINALIZADA`, el pago `REINTEGRADO_PARCIAL`, estados de pago ausentes/desconocidos y todo intento ambiguo, sin clave o perteneciente a otra compra. La recuperación nunca genera una clave ni cambia el medio original; `null` solo conserva un registro histórico sin medio. No envía importes ni crea un intento nuevo. Una respuesta técnica no provoca otro POST automático; la continuación de compensación/liberación no se presenta como compra exitosa.
+
+Verificación focalizada de este ajuste: `node --test --test-name-pattern='recuperación' TicketYa/frontend/tests/unit.test.js`, 27 pruebas aprobadas (21 nuevas y seis existentes). Comprueban los seis estados admitidos, los rechazos anteriores, clave/medio originales, único POST explícito y ausencia de retry ante 503/respuesta perdida. Usan fetch simulado; no ejecutan cobros, emisiones ni Docker, y no constituyen una nueva campaña financiera integrada.
+
 ## Pruebas
 
 ```powershell

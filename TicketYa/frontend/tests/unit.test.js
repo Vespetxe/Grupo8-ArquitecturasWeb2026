@@ -28,6 +28,50 @@ test('recuperación con respuesta perdida no repite el POST', async () => {
   };
   await assert.rejects(recoverPayment(7), e => e.status === 0); assert.equal(writes, 1);
 });
+for (const estado of ['PENDIENTE', 'RESULTADO_DESCONOCIDO', 'APROBADO', 'RECHAZADO', 'REINTEGRO_DESCONOCIDO', 'REINTEGRADO_TOTAL']) test(`recuperación ${estado} conserva exactamente el intento y medio originales`, async () => {
+  const calls = []; configureSession('sentinel');
+  const medioPago = estado === 'REINTEGRADO_TOTAL' ? null : 'TARJETA_CREDITO';
+  const etapa = { PENDIENTE: 'PAGO', RESULTADO_DESCONOCIDO: 'PAGO', APROBADO: 'EMISION', RECHAZADO: 'LIBERACION', REINTEGRO_DESCONOCIDO: 'COMPENSACION', REINTEGRADO_TOTAL: 'LIBERACION' }[estado];
+  const attempt = { id: 9, compraId: 7, estado, claveIdempotencia: 'original-' + estado, medioPago };
+  globalThis.fetch = async (url, options) => {
+    calls.push([url, options]);
+    if (url.endsWith('/compras/7')) return Response.json({ estado: 'PROCESANDO', etapa });
+    if (url.endsWith('/pagos?compraId=7')) return Response.json([attempt]);
+    assert.equal(url, '/gateway/pagos'); assert.equal(options.method, 'POST');
+    return Response.json(attempt);
+  };
+  assert.equal((await recoverPayment(7)).id, attempt.id);
+  assert.deepEqual(calls.map(c => [c[0], c[1].method]), [['/gateway/compras/7', 'GET'], ['/gateway/pagos?compraId=7', 'GET'], ['/gateway/pagos', 'POST']]);
+  assert.deepEqual(JSON.parse(calls[2][1].body), { compraId: 7, claveIdempotencia: attempt.claveIdempotencia, medioPago });
+  assert.ok(calls.every(c => c[1].headers.Authorization === 'Bearer sentinel'));
+});
+for (const estado of ['RECHAZADO', 'REINTEGRO_DESCONOCIDO', 'REINTEGRADO_TOTAL']) test(`recuperación ${estado} no reintenta una respuesta técnica 503`, async () => {
+  let posts = 0;
+  globalThis.fetch = async (url, options) => {
+    if (options.method === 'POST') { posts++; return new Response(null, { status: 503 }); }
+    return Response.json(url.includes('/pagos?') ? [{ id: 9, compraId: 7, estado, claveIdempotencia: 'original', medioPago: 'TARJETA_DEBITO' }] : { estado: 'PROCESANDO' });
+  };
+  await assert.rejects(recoverPayment(7), e => e.status === 503); assert.equal(posts, 1);
+});
+for (const estado of ['PENDIENTE', 'COMPLETADA', 'FALLIDA', 'CANCELADA', 'DEVUELTA_PARCIAL', 'DEVUELTA_TOTAL', 'DESCONOCIDA']) test(`recuperación de compra ${estado} bloqueada antes de consultar o procesar pagos`, async () => {
+  const calls = [];
+  globalThis.fetch = async (url, options) => { calls.push([url, options.method]); return Response.json({ estado }); };
+  await assert.rejects(recoverPayment(7), e => e.status === 409);
+  assert.deepEqual(calls, [['/gateway/compras/7', 'GET']]);
+});
+test('recuperación de compra PROCESANDO con etapa FINALIZADA no despacha escrituras', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return Response.json({ estado: 'PROCESANDO', etapa: 'FINALIZADA' }); };
+  await assert.rejects(recoverPayment(7), e => e.status === 409); assert.equal(calls, 1);
+});
+for (const estado of ['REINTEGRADO_PARCIAL', 'DESCONOCIDO', null, undefined]) test(`recuperación de pago incompatible ${estado} no despacha escrituras`, async () => {
+  let writes = 0;
+  globalThis.fetch = async (url, options) => {
+    if (options.method !== 'GET') writes++;
+    return Response.json(url.includes('/pagos?') ? [{ id: 9, compraId: 7, estado, claveIdempotencia: 'original', medioPago: 'TARJETA_DEBITO' }] : { estado: 'PROCESANDO' });
+  };
+  await assert.rejects(recoverPayment(7), e => e.status === 409); assert.equal(writes, 0);
+});
 afterEach(() => { globalThis.fetch = original; configureSession(null); });
 test('JWT enviado por encabezado al proxy del Gateway, sin cookies ni token en URL', async () => {
   configureSession('sentinel'); let captured;

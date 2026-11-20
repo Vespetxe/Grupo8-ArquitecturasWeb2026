@@ -25,14 +25,14 @@ export const send = (path, method, body) => api(path, { method, body });
 // Explicit recovery only: use the server's original attempt, never a new browser key.
 export async function recoverPayment(purchase) {
   const current = await get('/compras/' + purchase);
-  if (current.estado !== 'PROCESANDO') throw new ApiError(409);
+  if (current.estado !== 'PROCESANDO' || current.etapa === 'FINALIZADA') throw new ApiError(409);
   const attempts = await get('/pagos?compraId=' + purchase);
   if (!Array.isArray(attempts) || attempts.length !== 1) throw new ApiError(409);
   const original = attempts[0];
   if (String(original.compraId) !== String(purchase) || !original.id ||
       typeof original.claveIdempotencia !== 'string' || !original.claveIdempotencia.trim() ||
       original.claveIdempotencia.length > 100 ||
-      !['PENDIENTE', 'RESULTADO_DESCONOCIDO', 'APROBADO'].includes(original.estado)) throw new ApiError(409);
+      !['PENDIENTE', 'RESULTADO_DESCONOCIDO', 'APROBADO', 'RECHAZADO', 'REINTEGRO_DESCONOCIDO', 'REINTEGRADO_TOTAL'].includes(original.estado)) throw new ApiError(409);
   return send('/pagos', 'POST', { compraId: Number(purchase), claveIdempotencia: original.claveIdempotencia, medioPago: original.medioPago ?? null });
 }
 export const hasRole = (user, role) => Boolean(user?.roles?.includes(role));
