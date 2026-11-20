@@ -1,8 +1,7 @@
 # Identidad — Bloque 2, etapa 1
 
 Microservicio independiente `TicketYa/identidad_service`, Java 21 y Spring Boot
-4.1.2. No cambia versiones ni contratos de los cinco proyectos anteriores. No
-incorpora aún seguridad distribuida ni rutas de identidad al Gateway.
+4.1.2. Conserva resultados históricos de la etapa inicial. La versión vigente incorpora seguridad distribuida y rutas /auth por Gateway; ver [autorización](autorizacion-propiedad.md) y [scopes vigentes](entrega-final.md#siete-enlaces-técnicos-vigentes). No cambia versiones Java ni Spring de los proyectos anteriores.
 
 ## Modelo y contratos
 
@@ -65,9 +64,9 @@ Política de clientes permitidos:
 
 | Emisor técnico | Destinatario | Scopes máximos |
 | --- | --- | --- |
-| eventos | ticketya-inventario | inventory.prepare inventory.lifecycle |
-| eventos | ticketya-entradas | tickets.event-block |
-| eventos | ticketya-compras | purchases.event-cancel |
+| eventos | ticketya-inventario | inventory.prepare inventory.lifecycle reports.inventory.read |
+| eventos | ticketya-entradas | tickets.event-block reports.tickets.read |
+| eventos | ticketya-compras | purchases.event-cancel purchases.history.read notifications.publish reports.sales.read |
 | compras | ticketya-eventos | events.read |
 | compras | ticketya-inventario | reservations.read reservations.confirm reservations.release reservations.compensate reservations.return |
 | compras | ticketya-entradas | tickets.read tickets.issue tickets.annul tickets.status |
@@ -75,7 +74,7 @@ Política de clientes permitidos:
 
 Un cliente por pareja emisor/destino (`entradas-to-compras`, por ejemplo), con un
 subconjunto no vacío de scopes de la tabla. No hay alta dinámica pública.
-Ningún servicio de negocio consume todavía estos tokens.
+Eventos, Compras y Entradas consumen estos tokens en los siete enlaces; los humanos no reciben estos scopes.
 
 `ClientRegistry` consulta MySQL en cada búsqueda; no contiene un registro de
 clientes en memoria que necesite restaurarse. Reconstruye `RegisteredClient` desde
@@ -187,9 +186,10 @@ la política local; la herramienta no elimina archivos ni rota credenciales.
 
 ## Migración persistente pendiente de autorización
 
-El MySQL actual conserva sus cuatro esquemas, sus inicializadores y su volumen.
-El servicio nuevo está bajo el perfil optativo `identidad`: no afecta el arranque
-habitual de los seis componentes. No se montó un nuevo init script, porque los
+El volumen histórico conserva sus cuatro esquemas, inicializadores y datos.
+La plantilla incluye Identidad bajo perfil optativo `identidad`; esto no convierte
+un arranque sin Identidad/keys/provisionamiento en una instalación E2 completa.
+No activar ni recrear los seis contenedores históricos con la configuración actual. No se montó un nuevo init script, porque los
 inicializadores de la imagen oficial no se ejecutan sobre un volumen existente.
 
 `docker/mysql/create-identity.sh` es una migración administrativa aditiva explícita,

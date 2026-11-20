@@ -18,6 +18,7 @@ public class EventNoticeDispatcher {
  public void dispatch(){
   List<EventNoticeStore.Pending> pending;try{pending=store.pending();}catch(RuntimeException failure){LOG.warn("Notification outbox temporarily unavailable");return;}
   for(var notice:pending)try{
+   store.attempted(notice.id());
    var recipients=new TreeSet<Long>();
    if("ARTISTA_FAVORITO_PUBLICADO".equals(notice.type())&&notice.city()!=null&&!notice.participants().isEmpty())
     for(var document:mongo.getCollection("preferences").find(Filters.and(Filters.eq("preferredCity",notice.city()),Filters.in("favoriteParticipantIds",notice.participants())))){

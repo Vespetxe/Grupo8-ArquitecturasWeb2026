@@ -18,6 +18,7 @@ test('JWT trust and common policy stay synchronized; local feature rules stay sc
   for(const [dir,pkg]of Object.entries(projects)){
    let text=fs.readFileSync(path.resolve(__dirname,'../../',dir,'src/main/java',pkg,'security',file),'utf8').replace(/^package[^\n]+\n/,'').replace(/\r\n/g,'\n');
    if(file==='RoutePolicy.java')for(const [name,begin,end,owners]of [
+    ['eventosOpenApi','   // Eventos OpenAPI extension','   // End Eventos OpenAPI extension.',['EventoCatalogo_Service']],
     ['queue','   // Queue extension','   if(post&&p.equals("/reservas"))',['api-gateway','inventarioReserva_service']],
     ['qr','   // QR extension','   // End QR extension.',['api-gateway','entradas_service']],
     ['recommendations','   // Recommendations extension','   // End recommendations extension.',['api-gateway','EventoCatalogo_Service']],
@@ -29,6 +30,7 @@ test('JWT trust and common policy stay synchronized; local feature rules stay sc
      assert.ok(at>=0);let until=text.indexOf(end,at);assert.ok(until>at);if(name!=='queue')until+=end.length+1;
      const extension=text.slice(at,until);if(extensions[name])assert.equal(extension,extensions[name]);else extensions[name]=extension;
      if(name==='history')assert.match(extension,/service\(a,"eventos",owner,"purchases.history.read"\)/);
+     if(name==='eventosOpenApi'){assert.match(extension,/human\(a,"ADMINISTRADOR"\)/);assert.match(extension,/p.equals\("\/api-docs"\)/);}
      text=text.slice(0,at)+text.slice(until);
    }
    if(expected)assert.equal(text,expected);else expected=text;

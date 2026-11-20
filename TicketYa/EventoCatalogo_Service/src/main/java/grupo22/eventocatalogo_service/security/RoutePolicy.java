@@ -20,6 +20,9 @@ public final class RoutePolicy {
   &&a.getAuthorities().stream().anyMatch(x->x.getAuthority().equals("SCOPE_"+scope));}
  public static boolean allow(String owner,String method,String p,Authentication a){
   boolean get="GET".equals(method),post="POST".equals(method),patch="PATCH".equals(method);
+   // Eventos OpenAPI extension: local Springdoc path, still administrator-only.
+   if("eventos".equals(owner)&&get&&(p.equals("/api-docs")||p.startsWith("/api-docs/")))return human(a,"ADMINISTRADOR");
+   // End Eventos OpenAPI extension.
   if(get&&(p.equals("/v3/api-docs")||p.startsWith("/v3/api-docs/")||p.startsWith("/swagger-ui/")))return human(a,"ADMINISTRADOR");
   if(get&&p.equals("/internal/security/readiness"))return switch(owner){
    case "eventos" -> service(a,"compras",owner,"events.read");

@@ -1,6 +1,6 @@
 # TicketYa — Entrega 1
 
-Esta es la documentación vigente de la implementación local. El enunciado es `TPE-ArqWeb-TicketYa-2026.pdf`; los contratos y diagramas describen el código actual, incluidas sus limitaciones. Los documentos históricos no sustituyen este índice.
+Este índice describe exclusivamente Entrega 1. La versión vigente está en el [README principal](../../README.md) y las [historias/cambios E2](../entrega2/historias-e2.md). Los ejemplos E1 sin JWT y los encabezados declarativos no autorizan operaciones en E2. Esta es la documentación histórica de la implementación local. El enunciado es `TPE-ArqWeb-TicketYa-2026.pdf`; los contratos y diagramas describen el código actual, incluidas sus limitaciones. Los documentos históricos no sustituyen este índice.
 
 | Documento | Contenido |
 |---|---|

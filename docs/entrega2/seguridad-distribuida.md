@@ -22,7 +22,7 @@ audiencia única, sub `service:<caller>-to-<destino>`, sin roles humanos y scope
 convertidos a SCOPE_*. El Gateway rechaza tokens técnicos; éstos se usan solamente
 dentro de la red. La autorización local exige tanto caller exacto como scope.
 
-`JwtTrust` y `RoutePolicy` se mantienen como fuentes iguales en cada proyecto,
+`JwtTrust` y `RoutePolicy` mantienen una base común sincronizada y extensiones locales acotadas por servicio,
 comprobadas por un test Node. Esto permite Maven/Docker independientes, sin
 artefactos compartidos previamente instalados. Cambiar una política requiere
 actualizar sus copias y pasar la guarda; una librería compartida publicada puede
@@ -39,8 +39,7 @@ Eventos→Compras usa exclusivamente su identidad técnica, sin credencial human
 ## Matriz efectiva de acceso
 
 Toda ruta/método no indicado queda cerrado (401 sin autenticación; 403 con JWT
-válido sin permiso). Esto incluye endpoints de prueba, OpenAPI y Swagger hasta
-definir una política específica; no se abrió permitAll general para tests.
+válido sin permiso). Los endpoints de prueba permanecen cerrados. La política vigente restringe OpenAPI/Swagger a ADMINISTRADOR humano; Eventos usa /api-docs, incluido /api-docs/swagger-config. No se agregan esas rutas como API pública al Gateway ni se abrió permitAll general para tests.
 
 | Servicio | Método y ruta | Permiso |
 | --- | --- | --- |

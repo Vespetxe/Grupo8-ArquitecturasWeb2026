@@ -1,3 +1,5 @@
+> Alcance histórico de la Implementación 48. La protección final también cubre escrituras críticas/coordinación y adquisición OAuth2 según [Bloque 4](bloque4-resiliencia.md); las exclusiones del piloto no describen el alcance final.
+
 # Implementación 48 — Piloto selectivo de resiliencia
 
 ## Alcance y compatibilidad

@@ -12,7 +12,7 @@ node TicketYa/integration-tests/e2/run-security.cjs --reports --notifications --
 
 Se genera una topología canónica nueva, con esquemas, volumen MySQL, volumen Mongo, red, claves, contraseñas y sujetos propios. No acepta JDBC ni proyecto persistente como argumentos. Las comprobaciones de topología y la comparación de estados anteriores son obligatorias. Las escrituras de negocio pasan por Gateway; SQL se limita a lecturas de los esquemas nuevos, salvo el bootstrap inicial autorizado. Se conserva cada recurso Docker creado, incluidos jobs nuevos de provisionamiento y sondeo.
 
-## Ejecutado ahora
+## Ejecutado el 15/11/2026 (evidencia histórica en revisiones posteriores)
 
 | Comprobación | Resultado |
 |---|---|

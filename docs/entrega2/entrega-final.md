@@ -22,7 +22,7 @@ Fuente: TPE-ArqWeb-TicketYa-2026.pdf, Funcionalidad 1–12, consideraciones no f
 | Caché | Participantes públicos en Caffeine, TTL 30 s y límites; invalidación post-commit y generación contra cargas tardías; nueve JUnit y smoke HTTP | Cumplido |
 | JWT y roles | RS256, iss/aud/exp/nbf/token_use; propiedad en servidor; siete enlaces técnicos con scopes limitados; seguridad HTTP y frontend | Cumplido |
 | Bitácora y trazas centralizadas | ECS/W3C y auditoría post-commit; fuente actual y evidencia anterior Fluent Bit, 274 eventos archivados, caída/recuperación/retención | Cumplido en topología optativa probada |
-| Despliegue único incluyendo colector y Mongo | Canonical combinado de nueve servicios, guardas y coexistencia mínima Mongo/colector verificadas; plantilla raíz de ocho conservada | Cumplido en configuración; campaña completa de nueve procesos no repetida |
+| Despliegue único incluyendo colector y Mongo | Canonical combinado de nueve servicios, guardas y campaña de correcciones con negocio/Mongo/colector; plantilla raíz de ocho conservada | Cumplido en la variante aislada probada; ver auditoria-documental.md |
 | Garantía contra doble venta entre instancias | Bloqueos PESSIMISTIC_WRITE y restricciones únicas en MySQL; doce transacciones concurrentes y pruebas de mecanismo | Cumplido el mecanismo; despliegue físico multirréplica y escala de producción no ensayados |
 | Prueba de carga y seguridad/integración | Campaña acotada, latencias y resultados reproducibles; evidencia adjunta en informe | Cumplido al alcance medido |
 | OpenAPI, diagramas, colección y ejecución | OpenAPI público E2, colección de referencia, diagramas aquí, README actual y guías específicas | Cumplido documental; ver límites de los contratos |
@@ -107,6 +107,12 @@ erDiagram
     bigint reserva_id
   }
   ticket_batches ||--o{ tickets : emision
+  ticket_batches {
+    bigint id PK
+    string order_id UK
+    datetime issued_at
+    boolean cancelled
+  }
   tickets {
     string ticket_id PK
     string qr_payload UK
@@ -127,6 +133,7 @@ erDiagram
     bigint event_id
     string type
     datetime delivered_at
+    datetime last_attempt_at
   }
   notifications {
     string id PK
@@ -156,8 +163,103 @@ Los eventos de outbox se insertan en la misma transacción que el cambio de nego
 
 ## Límites y decisiones operativas
 
-- El Compose raíz mantiene ocho servicios. El runner combinado genera un único manifiesto de nueve con Mongo y Fluent Bit; su configuración y coexistencia mínima se verificaron. No se repitió el flujo comercial completo con los nueve procesos. La topología persistente no se activó.
+- El Compose raíz mantiene ocho servicios. El runner combinado genera un único manifiesto de nueve con Mongo y Fluent Bit; la campaña de correcciones ejecutó negocio/notificaciones/carga y navegador con ambos activos. No repitió todos los flags históricos simultáneamente; el informe distingue la consulta de verificación corregida. La topología persistente no se activó.
 - La consigna exige funcionar entre instancias y explicar/probar el mecanismo, sin exigir un despliegue de dos JVM como criterio separado. Los bloqueos/uniqueness son de MySQL y no mutex locales. Las transacciones concurrentes verifican ese mecanismo; una segunda réplica física sigue siendo una limitación de cobertura documentable, no un bloqueante académico identificado.
 - La carga breve acredita una prueba de flujo y sus invariantes, no capacidad de producción. No se inventaron SLA ni umbrales de latencia.
 - Rotación de claves con solapamiento, TLS de producción, revocación inmediata de JWT emitidos, entrega exactly-once de logs y reconciliación automática del navegador no forman parte de lo probado.
 - La colección de referencia se ejecuta por solicitudes y con variables propias; no lanzar todas sus mutaciones en un runner indiscriminadamente. OpenAPI hereda esquemas base de E1 y actualiza seguridad/rutas E2; los DTO agregados de reportes incluyen métricas y nulabilidad; sus controladores siguen siendo autoridad.
+
+## Secuencia vigente de compra y recuperación E2
+
+Las secuencias E1 de [pago rechazado, vencimiento y cancelación](../entrega1/secuencias.md) conservan los pasos comerciales; se aplican las guardas y clasificaciones E2 siguientes. Las respuestas vuelven por Gateway. Ninguna flecha implica una transacción distribuida.
+
+~~~mermaid
+sequenceDiagram
+ actor C as Cliente
+ participant G as Gateway
+ participant I as Inventario
+ participant P as Compras
+ participant T as Entradas
+ C->>G: JWT CLIENTE / ingresar y consultar FIFO si activa
+ G->>I: JWT validado, turno propio
+ C->>G: POST reservas (seleccion real)
+ G->>I: Rol y propiedad antes de reservar
+ I->>I: Lock evento/stock; consumir turno y reservar en un commit
+ I-->>C: Reserva temporal e ID original
+ C->>G: POST compras con reserva
+ G->>P: JWT CLIENTE y propiedad
+ P->>I: OAuth2 GET reserva
+ P->>P: Commit compra PENDIENTE e importe historico
+ C->>G: POST pagos (clave y medio originales)
+ G->>P: Presupuesto; sin retry automatico
+ P->>P: Commit intento; pasarela simulada persistente
+ alt Pago aprobado y confirmado
+  P->>I: OAuth2 confirmar y consultar misma reserva
+  P->>T: OAuth2 consultar/emitir mismo lote de orden
+  T->>P: OAuth2 GET orden habilitada
+  T->>T: Commit lote y QR unicos
+  P->>P: Commit COMPLETADA y bandeja; push posterior
+ else Rechazo comercial confirmado
+  P->>I: Liberar reserva de forma idempotente
+  P->>P: Commit estado final fallido; no emision
+ else Respuesta perdida o fallo tecnico
+  P->>P: Conservar PROCESANDO y etapa recuperable
+  C->>G: Recuperar pago original explicitamente
+  G->>P: Misma compra, clave y medio; nunca otro importe
+  P->>P: Consultar resultado persistido y continuar etapa
+ end
+ Note over I,P: Vencimiento de reserva no confirmada libera bajo lock; no borra cobros ni confirma un rechazo remoto
+ Note over G,T: Cada receptor valida JWT/scopes; circuitos y bulkheads no inventan resultados ni compensaciones
+~~~
+
+## Decisiones de arquitectura y alternativas descartadas
+
+Gateway centraliza ingreso/enrutamiento, sin sustituir validación local de JWT/propiedad. Saga orquestada conserva etapas e idempotencia porque no existe transacción ACID entre esquemas. Circuit breakers/bulkheads programáticos protegen dependencias/familias concretas; no hay retries automáticos financieros ni fallback de precio/stock. Mongo conserva documentos flexibles de preferencias; MySQL conserva las invariantes comerciales. Outbox local + REST/SSE permite notificaciones recuperables sin broker. No se implementaron BFF independiente ni registro de Service Discovery: Gateway entrega API común a React y Docker DNS resuelve destinos estáticos. Son decisiones de alcance, no patrones obligatorios omitidos. No se introducen Redis/Kafka ni una nueva fuente de verdad.
+
+## Topología de observabilidad
+
+~~~mermaid
+flowchart LR
+ subgraph Aplicaciones[Seis aplicaciones Spring Boot]
+  GWLOG[Gateway stdout ECS]
+  IDLOG[Identidad stdout ECS]
+  EVLOG[Eventos stdout ECS]
+  INLOG[Inventario stdout ECS]
+  CPLOG[Compras stdout ECS]
+  ENLOG[Entradas stdout ECS]
+ end
+ GWLOG & IDLOG & EVLOG & INLOG & CPLOG & ENLOG --> DRIVER[Driver fluentd asincrono del daemon]
+ DRIVER --> CACHE[Cache dual Docker logs acotada]
+ DRIVER -->|Forward TCP loopback del daemon| FB[Fluent Bit en red logs aislada]
+ FB -->|HTTP loopback dentro del colector| AR[Archivo JSONL con lista de campos seguros]
+ AR --> VOL[(Volumen logs_data: retencion 24 h, JSONL 64 MiB)]
+~~~
+
+No hay dependencia obligatoria de arranque hacia el colector ni acceso suyo a MySQL/Mongo/claves. Las aplicaciones sobreviven a su caída; buffers finitos y reinicios pueden perder registros. El modo conjunto no afirma haber repetido una caída del colector durante cada campaña comercial.
+
+## Extensiones de propiedad sobre los ER de E1
+
+~~~mermaid
+erDiagram
+ event {
+  bigint event_id PK
+  bigint identity_owner_id
+  bigint cancellation_authorized_admin_id
+  string cancellation_authorization_jti
+  datetime cancellation_authorized_at
+ }
+ venue {
+  bigint venue_id PK
+  bigint identity_owner_id
+ }
+ reserva {
+  bigint id_reserva PK
+  bigint identity_owner_id
+ }
+ compras {
+  bigint id PK
+  bigint identity_owner_id
+ }
+~~~
+
+Los propietarios apuntan lógicamente a sub de Identidad, sin FK entre esquemas. Filas E1 sin propietario no se adjudican por coincidencia de IDs. El jti administrativo es una referencia de autorización, no el JWT. Las relaciones locales, importes históricos, estados y etapas de pago/reintegro siguen en los cuatro ER de E1 y sus entidades; QR, cola, preferencias y notificaciones se agregan en el ER E2 anterior.

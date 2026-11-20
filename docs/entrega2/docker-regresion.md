@@ -51,7 +51,9 @@ docker compose --project-name ticketya-e2-infra config --quiet
 
 No mostrar `docker compose config` completo: contiene credenciales resueltas. Los inicializadores de `docker/mysql` solo se ejecutan con directorio de datos nuevo. Cambiar `.env` no cambia usuarios existentes.
 
-## Recuperar contenedores persistentes ya existentes
+## Antecedente Bloque 1: recuperar contenedores persistentes ya existentes
+
+**No es una instrucción de despliegue E2 actual.** Los comandos y GET sin JWT siguientes documentan la recuperación histórica anterior a seguridad. No ejecutarlos sobre las imágenes/configuración E2 para instalar el sistema. La ruta vigente desde cero, con Identidad, Mongo y colector, está en el README. Una futura recuperación del volumen original requiere aprobación y plan de compatibilidad.
 
 Estos comandos conservan los contenedores e imagenes actuales y no aplican una configuracion nueva que requiera recreacion:
 

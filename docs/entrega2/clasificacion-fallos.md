@@ -1,3 +1,5 @@
+> Documento del incremento 46: la ausencia de circuitos/retries indicada describe ese cambio puntual. Ver el alcance final en [Bloque 4](bloque4-resiliencia.md). Se conserva la política de clasificación y los resultados históricos.
+
 # Implementación 46 — Clasificación segura de fallos
 
 ## Alcance

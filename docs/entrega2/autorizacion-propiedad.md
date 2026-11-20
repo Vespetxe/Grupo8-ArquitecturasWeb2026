@@ -1,3 +1,5 @@
+> Resultados de la etapa 36: históricos. La API vigente incorpora también FIFO, QR/asignaciones, preferencias, notificaciones y reportes, descritos en [matriz E2](entrega-final.md) y [OpenAPI](openapi-publico.json).
+
 # Autorización por roles y propiedad — Implementación 36
 
 La etapa 35 validó identidad y enlaces técnicos; esta etapa habilita los circuitos humanos con controles de propiedad. No despliega cambios en el entorno persistente.
@@ -38,7 +40,7 @@ Los recursos ajenos o sin propietario devuelven 404. Rol incorrecto o suplantaci
 | Entradas | Emisión, anulación y cambios internos | Continúan limitados a caller técnico y scopes mínimos de etapa 35 |
 | Todos | GET /v3/api-docs, /swagger-ui/* | ADMINISTRADOR en el servicio; no se agregan rutas de documentación al Gateway |
 
-PERSONAL_ACCESO no tiene permisos de consulta comercial ni QR. La validación QR continúa fuera del alcance. No se cambia ningún enlace técnico ni se reenvía un token humano como credencial de servicio.
+PERSONAL_ACCESO no tiene permisos de consulta comercial. La etapa 36 aún no incluía QR; la versión vigente permite validar únicamente con rol y asignación al evento, según [validación QR](validacion-qr.md). No se cambia ningún enlace técnico ni se reenvía un token humano como credencial de servicio.
 
 ## Consultas de órdenes y emisión
 

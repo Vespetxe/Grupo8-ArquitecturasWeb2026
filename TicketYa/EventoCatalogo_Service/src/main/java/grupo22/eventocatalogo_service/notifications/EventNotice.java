@@ -8,6 +8,7 @@ public class EventNotice {
  @Column(nullable=false,length=40) String type;
  @Column(nullable=false) Instant createdAt;
  Instant deliveredAt;
+ Instant lastAttemptAt;
  @Column(length=150) String city;
  @Column(columnDefinition="TEXT") String participants;
  protected EventNotice(){}

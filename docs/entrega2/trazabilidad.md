@@ -28,7 +28,7 @@ Los identificadores de observabilidad no autorizan, no identifican una operació
 
 Los tres `ServiceTokens` reciben el builder administrado por Boot y clonan su configuración para cada cliente de negocio y para `/oauth2/token`. Se conservan los siete enlaces, credenciales independientes, scopes, caché en memoria, renovación anticipada, clasificación `TechnicalAuthFailure` y ausencia de replay automático de POST. Un 401/403 invalida el token cacheado y falla la operación actual: la próxima invocación puede obtener otro token, sin repetir automáticamente la escritura fallida.
 
-Se conservan los timeouts de conexión de dos segundos y lectura de diez segundos; Entradas mantiene su request factory para la consulta de órdenes. Los clientes agregan correlación desde `RequestContextHolder`, cuyo ciclo de vida controla Spring. No existe un ThreadLocal propio ni un mapa global de correlaciones.
+Los timeouts iniciales fueron sustituidos por [presupuestos del Bloque 4](timeouts-presupuestos.md): conexión/TLS 1 s, GET 2 s, escritura 4 s, token 3 s y adquisición 500 ms por defecto. Entradas conserva su transporte instrumentado de consulta de órdenes. Los clientes agregan correlación desde `RequestContextHolder`, cuyo ciclo de vida controla Spring. No existe un ThreadLocal propio ni un mapa global de correlaciones.
 
 `ReservationExpirationTask` recibe el temporizador que antes anotaba a `ReservaService`. Invoca el mismo método transaccional, con el mismo intervalo, sin cambiar TTL ni lógica de liberación. Cada ejecución inicia un span raíz con `setNoParent()`, lo cierra en `finally` y restaura el scope anterior. Registra únicamente tipo de tarea, resultado controlado y traza. No crea un correlation ID HTTP ficticio.
 

@@ -1,3 +1,5 @@
+> Documento del incremento 47: resultados y lista de archivos son históricos. El alcance final de circuitos y OAuth2 está en [Bloque 4](bloque4-resiliencia.md); los presupuestos aquí definidos siguen vigentes.
+
 # Implementación 47 — Timeouts y presupuestos
 
 ## Política efectiva

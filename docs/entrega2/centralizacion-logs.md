@@ -1,4 +1,4 @@
-> Actualización de cierre: el modo combinado --centralized junto a los flags Mongo genera un Compose de nueve servicios. Usa loopback 38224–38233 y subredes explícitas; se verificó coexistencia mínima Mongo autenticado + colector + un registro técnico. No repite la campaña completa de nueve procesos. En este modo el colector permanece activo durante reinicios de dependencias; las pruebas de caída/recuperación descritas abajo corresponden al modo central histórico.
+> Actualización de cierre: el modo combinado --centralized junto a los flags Mongo genera un Compose de nueve servicios. Usa loopback 38224–38233 y subredes explícitas; se verificó coexistencia mínima Mongo autenticado + colector + un registro técnico. La campaña de correcciones finales amplía esa evidencia con nueve servicios, negocio y recuperación React; ver [auditoría documental](auditoria-documental.md). No se reejecuta cada fallo histórico del colector. En este modo el colector permanece activo durante reinicios de dependencias; las pruebas de caída/recuperación descritas abajo corresponden al modo central histórico.
 
 # Bloque 3 — Centralización aislada de logs
 

@@ -1,7 +1,33 @@
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { api, configureSession, hasRole, paymentKey, streamNotifications } from '../src/api.js';
+import { api, configureSession, hasRole, paymentKey, recoverPayment, streamNotifications } from '../src/api.js';
 const original = globalThis.fetch;
+test('recuperación explícita conserva el intento remoto aunque no exista clave en el navegador', async () => {
+  const calls = []; configureSession('sentinel');
+  globalThis.fetch = async (url, options) => {
+    calls.push([url, options]);
+    if (url.endsWith('/compras/7')) return Response.json({ estado: 'PROCESANDO' });
+    if (url.includes('/pagos?')) return Response.json([{ id: 9, compraId: 7, estado: 'RESULTADO_DESCONOCIDO', claveIdempotencia: 'original', medioPago: 'TARJETA_CREDITO' }]);
+    return Response.json({ id: 9, estado: 'APROBADO' });
+  };
+  assert.equal((await recoverPayment(7)).id, 9);
+  assert.equal(calls.length, 3);
+  assert.deepEqual(JSON.parse(calls[2][1].body), { compraId: 7, claveIdempotencia: 'original', medioPago: 'TARJETA_CREDITO' });
+  assert.equal(calls.filter(c => c[1].method === 'POST').length, 1);
+});
+for (const attempts of [[], [{ id: 1, compraId: 99, claveIdempotencia: 'other', estado: 'APROBADO' }], [{ id: 1, compraId: 7, estado: 'PENDIENTE' }], [{ id: 1 }, { id: 2 }]]) test('recuperación sin intento original inequívoco no despacha escrituras: ' + JSON.stringify(attempts), async () => {
+  let writes = 0;
+  globalThis.fetch = async (url, options) => { if (options.method !== 'GET') writes++; return Response.json(url.includes('/pagos?') ? attempts : { estado: 'PROCESANDO' }); };
+  await assert.rejects(recoverPayment(7), e => e.status === 409); assert.equal(writes, 0);
+});
+test('recuperación con respuesta perdida no repite el POST', async () => {
+  let writes = 0;
+  globalThis.fetch = async (url, options) => {
+    if (options.method === 'POST') { writes++; throw Error('lost'); }
+    return Response.json(url.includes('/pagos?') ? [{ id: 1, compraId: 7, estado: 'APROBADO', claveIdempotencia: 'original', medioPago: null }] : { estado: 'PROCESANDO' });
+  };
+  await assert.rejects(recoverPayment(7), e => e.status === 0); assert.equal(writes, 1);
+});
 afterEach(() => { globalThis.fetch = original; configureSession(null); });
 test('JWT enviado por encabezado al proxy del Gateway, sin cookies ni token en URL', async () => {
   configureSession('sentinel'); let captured;
