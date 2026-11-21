@@ -1101,7 +1101,7 @@
           "Administracion de devoluciones"
         ],
         "summary": "Recuperar cancelacion de evento confirmada por Eventos",
-        "description": "El cliente real comprueba CANCELADO en Eventos, recupera pagos en procesamiento con su clave original y reintegra ventas. 202 conserva compras pendientes si una dependencia o turno impide finalizar; repetir. Preferir PATCH /api/v1/events/{eventId}/cancel para iniciar el flujo completo. Accesible por el Gateway.",
+        "description": "Coordinacion tecnica desde Eventos con OAuth2 y scope purchases.event-cancel. No se publica por Gateway. No acepta JWT humano como autoridad tecnica.",
         "operationId": "compras_post_admin_eventos_id_cancelacion",
         "parameters": [
           {
@@ -1363,7 +1363,7 @@
             }
           }
         },
-        "x-visibility": "administrativa"
+        "x-visibility": "interna"
       }
     },
     "/admin/devoluciones/{id}/rechazar": {
@@ -3764,6 +3764,632 @@
         "x-visibility": "administrativa",
         "description": "Operacion implementada por compras. Accesible por el Gateway."
       }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "operationId": "compras_get_api_v1_me_notifications",
+        "summary": "Bandeja propia persistente",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Notificaciones"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "resourceType": {
+                        "type": "string"
+                      },
+                      "resourceId": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "read": {
+                        "type": "boolean"
+                      },
+                      "readAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "type": "ejemplo",
+                    "resourceType": "ejemplo",
+                    "resourceId": 1,
+                    "createdAt": "2030-12-01T21:00:00Z",
+                    "read": true,
+                    "readAt": "2030-12-01T21:00:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/api/v1/me/notifications/stream": {
+      "get": {
+        "operationId": "compras_get_api_v1_me_notifications_stream",
+        "summary": "Push SSE autenticado; reconexión y bandeja REST",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Notificaciones"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "ejemplo"
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/api/v1/me/notifications/unread-count": {
+      "get": {
+        "operationId": "compras_get_api_v1_me_notifications_unread_count",
+        "summary": "Contador propio",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Notificaciones"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "unread": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  }
+                },
+                "example": {
+                  "unread": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/api/v1/me/notifications/{id}/read": {
+      "put": {
+        "operationId": "compras_put_api_v1_me_notifications_id_read",
+        "summary": "Marcar propia como leída, idempotente",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Notificaciones"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "resourceType": {
+                      "type": "string"
+                    },
+                    "resourceId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "read": {
+                      "type": "boolean"
+                    },
+                    "readAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "00000000-0000-4000-8000-000000000001",
+                  "type": "ejemplo",
+                  "resourceType": "ejemplo",
+                  "resourceId": 1,
+                  "createdAt": "2030-12-01T21:00:00Z",
+                  "read": true,
+                  "readAt": "2030-12-01T21:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/internal/recommendations/customers/{owner}/history": {
+      "get": {
+        "summary": "Lectura o entrega técnica E2: purchases.history.read",
+        "description": "Identidad técnica Eventos y permiso mínimo; JWT humano rechazado. No consulta bases ajenas.",
+        "security": [
+          {
+            "technicalJwt": []
+          }
+        ],
+        "x-required-scope": "purchases.history.read",
+        "x-technical-caller": "eventos",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado por el servicio propietario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    }
+                  },
+                  "required": [
+                    "eventIds"
+                  ]
+                },
+                "example": {
+                  "eventIds": [
+                    1
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Token técnico ausente o inválido"
+          },
+          "403": {
+            "description": "Caller/scope no autorizado"
+          },
+          "503": {
+            "description": "Dependencia no disponible o datos pendientes de conciliación"
+          }
+        },
+        "x-visibility": "interna",
+        "operationId": "compras_get_internal_recommendations_customers_owner_history"
+      }
+    },
+    "/internal/reports/events/{eventId}/sales": {
+      "get": {
+        "summary": "Lectura o entrega técnica E2: reports.sales.read",
+        "description": "Identidad técnica Eventos y permiso mínimo; JWT humano rechazado. No consulta bases ajenas.",
+        "security": [
+          {
+            "technicalJwt": []
+          }
+        ],
+        "x-required-scope": "reports.sales.read",
+        "x-technical-caller": "eventos",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado por el servicio propietario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "financialComplete": {
+                      "type": "boolean"
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sectorId": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "soldTickets": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "returnedTickets": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "grossCollected": {
+                            "type": "number"
+                          },
+                          "refundedAmount": {
+                            "type": "number"
+                          },
+                          "netCollected": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "sectorId",
+                          "soldTickets",
+                          "returnedTickets",
+                          "grossCollected",
+                          "refundedAmount",
+                          "netCollected"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "eventId",
+                    "generatedAt",
+                    "financialComplete",
+                    "sectors"
+                  ]
+                },
+                "example": {
+                  "eventId": 1,
+                  "generatedAt": "2030-12-01T21:00:00Z",
+                  "financialComplete": true,
+                  "sectors": [
+                    {
+                      "sectorId": 1,
+                      "soldTickets": 1,
+                      "returnedTickets": 1,
+                      "grossCollected": 1,
+                      "refundedAmount": 1,
+                      "netCollected": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Token técnico ausente o inválido"
+          },
+          "403": {
+            "description": "Caller/scope no autorizado"
+          },
+          "503": {
+            "description": "Dependencia no disponible o datos pendientes de conciliación"
+          }
+        },
+        "x-visibility": "interna",
+        "operationId": "compras_get_internal_reports_events_eventId_sales"
+      }
+    },
+    "/internal/notifications/events": {
+      "post": {
+        "summary": "Lectura o entrega técnica E2: notifications.publish",
+        "description": "Identidad técnica Eventos y permiso mínimo; JWT humano rechazado. No consulta bases ajenas.",
+        "security": [
+          {
+            "technicalJwt": []
+          }
+        ],
+        "x-required-scope": "notifications.publish",
+        "x-technical-caller": "eventos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado por el servicio propietario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ]
+                },
+                "example": {
+                  "accepted": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Token técnico ausente o inválido"
+          },
+          "403": {
+            "description": "Caller/scope no autorizado"
+          },
+          "503": {
+            "description": "Dependencia no disponible o datos pendientes de conciliación"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deliveryId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 1
+                  },
+                  "eventId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 1
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "ARTISTA_FAVORITO_PUBLICADO",
+                      "EVENTO_CANCELADO",
+                      "EVENTO_CAMBIADO"
+                    ]
+                  },
+                  "occurredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "recipients": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64",
+                      "minimum": 1
+                    },
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "deliveryId",
+                  "eventId",
+                  "type",
+                  "occurredAt",
+                  "recipients"
+                ]
+              },
+              "example": {
+                "deliveryId": 1,
+                "eventId": 1,
+                "type": "ARTISTA_FAVORITO_PUBLICADO",
+                "occurredAt": "2030-12-01T21:00:00Z",
+                "recipients": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "x-visibility": "interna",
+        "operationId": "compras_post_internal_notifications_events"
+      }
     }
   },
   "components": {
@@ -4364,6 +4990,19 @@
           "status",
           "message"
         ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "technicalJwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "OAuth2 client_credentials. Caller eventos, audience ticketya-compras, token_use=service y scope específico. No se expone por Gateway."
       }
     }
   }

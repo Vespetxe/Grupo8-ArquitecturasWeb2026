@@ -91,9 +91,9 @@ class DocumentacionTest {
         if (!source.contains("@RestController")
             || source.contains("@Profile(\"pruebas-integrales\")")) continue;
         var base =
-            capturas(
-                "@RequestMapping\\(\\s*\"([^\"]*)\"",
-                source.substring(0, source.indexOf("public class ")));
+                capturas(
+                        "@RequestMapping\\(\\s*\"([^\"]*)\"",
+                        source.substring(0, source.indexOf("public class ")));
         var mapping =
             Pattern.compile("@(Get|Post|Put|Patch|Delete)Mapping\\b(?:\\s*\\(([^)]*)\\))?")
                 .matcher(source);

@@ -1,6 +1,11 @@
-# Inventario de endpoints de Entrega 1
+# Inventario por servicio: base Entrega 1 ampliada con Entrega 2
 
-Contrato publico: [gateway.json](gateway.json). Los contratos por servicio incluyen coordinacion interna.
+Proyección de los cuatro servicios en Gateway: [gateway.json](gateway.json).
+Los contratos por servicio incluyen coordinación interna y las operaciones E2
+actuales para conservar la comparación estricta con controladores. Para el
+contrato público completo, seguridad e Identidad usar
+[OpenAPI E2](../../entrega2/openapi-publico.json). Este inventario no cambia
+las rutas ni los permisos del sistema.
 
 | Servicio | Metodo | Ruta | Visibilidad | Respuestas |
 |---|---|---|---|---|
@@ -10,8 +15,12 @@ Contrato publico: [gateway.json](gateway.json). Los contratos por servicio inclu
 | eventos | PATCH | `/api/v1/events/{eventId}/cancel` | publica | 200, 400, 404, 422, 500, 503 |
 | eventos | POST | `/api/v1/events/{eventId}/prices` | publica | 201, 400, 404, 422, 500 |
 | eventos | PATCH | `/api/v1/events/{eventId}/publish` | publica | 200, 400, 404, 422, 500, 503 |
+| eventos | GET | `/api/v1/events/{eventId}/report` | publica | 200, 400, 401, 403, 404, 409, 503 |
 | eventos | PATCH | `/api/v1/events/{eventId}/status` | publica | 200, 400, 404, 422, 500, 503 |
 | eventos | PATCH | `/api/v1/events/{eventId}/suspend` | publica | 200, 400, 404, 422, 500, 503 |
+| eventos | GET | `/api/v1/me/preferences` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| eventos | PUT | `/api/v1/me/preferences` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| eventos | GET | `/api/v1/me/recommendations` | publica | 200, 400, 401, 403, 404, 409, 503 |
 | eventos | GET | `/api/v1/participants` | publica | 200, 400, 500 |
 | eventos | POST | `/api/v1/participants` | publica | 201, 400, 422, 500 |
 | eventos | GET | `/api/v1/participants/{id}` | publica | 200, 400, 404, 500 |
@@ -23,12 +32,17 @@ Contrato publico: [gateway.json](gateway.json). Los contratos por servicio inclu
 | eventos | GET | `/api/v1/venues/{venueId}` | publica | 200, 400, 404, 500 |
 | eventos | GET | `/api/v1/venues/{venueId}/sectors` | publica | 200, 400, 404, 500 |
 | eventos | POST | `/api/v1/venues/{venueId}/sectors` | publica | 201, 400, 404, 409, 422, 500 |
+| inventario | PUT | `/colas/eventos/{evento}` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| inventario | POST | `/colas/eventos/{evento}` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| inventario | GET | `/colas/eventos/{evento}/mi-turno` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| inventario | DELETE | `/colas/eventos/{evento}/mi-turno` | publica | 200, 400, 401, 403, 404, 409, 503 |
 | inventario | GET | `/disponibilidad/eventos/{idEvento}/sectores/{idSector}` | publica | 200, 404, 500 |
 | inventario | POST | `/eventos/{idEvento}/cancelar-inventario` | interna | 200, 409, 500 |
 | inventario | POST | `/eventos/{idEvento}/inventario` | interna | 201, 400, 409, 500 |
 | inventario | POST | `/internal/eventos/{id}/habilitar` | interna | 200, 409, 500 |
 | inventario | POST | `/internal/eventos/{id}/publicar` | interna | 200, 409, 500 |
 | inventario | POST | `/internal/eventos/{id}/suspender` | interna | 200, 409, 500 |
+| inventario | GET | `/internal/reports/events/{eventId}/inventory` | interna | 200, 400, 401, 403, 503 |
 | inventario | POST | `/internal/reservas/{id}/compensar` | interna | 200, 404, 409, 500 |
 | inventario | GET | `/internal/reservas/{id}/devoluciones` | interna | 200, 404, 500 |
 | inventario | POST | `/internal/reservas/{id}/devoluciones` | interna | 200, 400, 404, 409, 500 |
@@ -43,8 +57,12 @@ Contrato publico: [gateway.json](gateway.json). Los contratos por servicio inclu
 | compras | GET | `/admin/devoluciones/{id}/procesamiento` | administrativa | 200, 400, 404, 406, 409, 500, 503 |
 | compras | POST | `/admin/devoluciones/{id}/procesar` | administrativa | 200, 400, 404, 406, 409, 415, 500, 503 |
 | compras | POST | `/admin/devoluciones/{id}/rechazar` | administrativa | 200, 400, 404, 406, 409, 415, 500, 503 |
-| compras | POST | `/admin/eventos/{id}/cancelacion` | administrativa | 200, 202, 400, 404, 406, 409, 500, 503 |
+| compras | POST | `/admin/eventos/{id}/cancelacion` | interna | 200, 202, 400, 404, 406, 409, 500, 503 |
 | compras | GET | `/admin/reintegros/{id}` | administrativa | 200, 400, 404, 406, 409, 500, 503 |
+| compras | GET | `/api/v1/me/notifications` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| compras | GET | `/api/v1/me/notifications/stream` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| compras | GET | `/api/v1/me/notifications/unread-count` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| compras | PUT | `/api/v1/me/notifications/{id}/read` | publica | 200, 400, 401, 403, 404, 409, 503 |
 | compras | GET | `/compras` | publica | 200, 400, 404, 406, 409, 500 |
 | compras | POST | `/compras` | publica | 201, 400, 404, 406, 409, 415, 500 |
 | compras | GET | `/compras/{id}` | publica | 200, 400, 404, 406, 409, 500 |
@@ -54,11 +72,18 @@ Contrato publico: [gateway.json](gateway.json). Los contratos por servicio inclu
 | compras | GET | `/compras/{id}/estado` | publica | 200, 400, 404, 406, 409, 500 |
 | compras | POST | `/devoluciones` | publica | 201, 400, 404, 406, 409, 415, 500 |
 | compras | GET | `/devoluciones/{id}` | publica | 200, 400, 404, 406, 409, 500 |
+| compras | POST | `/internal/notifications/events` | interna | 200, 400, 401, 403, 503 |
 | compras | GET | `/internal/orders/{id}` | interna | 200, 400, 404, 406, 409, 500 |
+| compras | GET | `/internal/recommendations/customers/{owner}/history` | interna | 200, 400, 401, 403, 503 |
+| compras | GET | `/internal/reports/events/{eventId}/sales` | interna | 200, 400, 401, 403, 503 |
 | compras | GET | `/pagos` | publica | 200, 400, 404, 406, 409, 500 |
 | compras | POST | `/pagos` | publica | 200, 201, 400, 404, 406, 409, 415, 500 |
 | compras | GET | `/pagos/{id}` | publica | 200, 400, 404, 406, 409, 500 |
+| entradas | POST | `/accesos/eventos/{event}/validaciones` | publica | 200, 400, 401, 403, 404, 409, 503 |
+| entradas | PUT | `/admin/accesos/eventos/{event}/personal/{staff}` | administrativa | 200, 400, 401, 403, 404, 409, 503 |
+| entradas | DELETE | `/admin/accesos/eventos/{event}/personal/{staff}` | administrativa | 200, 400, 401, 403, 404, 409, 503 |
 | entradas | POST | `/internal/events/{id}/cancel-emission` | interna | 200, 500 |
+| entradas | GET | `/internal/reports/events/{eventId}/tickets` | interna | 200, 400, 401, 403, 503 |
 | entradas | POST | `/internal/tickets/issue` | interna | 200, 201, 400, 404, 409, 422, 500, 503 |
 | entradas | POST | `/internal/tickets/orders/{id}/annul` | interna | 200, 500 |
 | entradas | PATCH | `/internal/tickets/status` | interna | 200, 400, 500 |

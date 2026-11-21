@@ -167,11 +167,17 @@ class ContratosTest {
   static boolean publico(String servicio, String ruta, String metodo) {
     return switch (servicio) {
       case "eventos" -> ruta.startsWith("/api/v1/");
-      case "compras" -> !ruta.startsWith("/internal/");
-      case "entradas" -> metodo.equals("get") && ruta.equals("/tickets");
+      case "compras" -> ruta.equals("/api/v1/me/notifications") || ruta.startsWith("/api/v1/me/notifications/")
+          || ruta.equals("/compras") || ruta.startsWith("/compras/")
+          || ruta.equals("/pagos") || ruta.startsWith("/pagos/")
+          || ruta.equals("/devoluciones") || ruta.startsWith("/devoluciones/")
+          || ruta.equals("/admin/devoluciones") || ruta.startsWith("/admin/devoluciones/")
+          || ruta.matches("/admin/reintegros/\\{[^}]+}");
+      case "entradas" -> metodo.equals("get") && ruta.equals("/tickets")
+          || ruta.startsWith("/accesos/eventos/") || ruta.startsWith("/admin/accesos/eventos/");
       case "inventario" ->
           ruta.equals("/reservas") && Set.of("get", "post").contains(metodo)
-              || metodo.equals("get")
+              || ruta.startsWith("/colas/eventos/") || metodo.equals("get")
                   && (ruta.equals("/reservas/{id}") || ruta.startsWith("/disponibilidad/"));
       default -> throw new IllegalArgumentException(servicio);
     };
@@ -202,10 +208,11 @@ class ContratosTest {
         .put("version", "entrega-1")
         .put(
             "description",
-            "Rutas efectivamente publicadas por GatewayApplication. Sin JWT en Entrega 1. Los errores de negocio se conservan; un proveedor inaccesible produce 503. No publica /internal/** ni mutaciones directas de inventario.");
+            "Proyeccion de rutas de los cuatro servicios de negocio en GatewayApplication, ampliada con Entrega 2. Consultar docs/entrega2/openapi-publico.json para seguridad y contratos publicos E2 completos, incluida Identidad. Los errores de negocio se conservan; un proveedor inaccesible produce 503. No publica /internal/** ni mutaciones directas de inventario.");
     gateway.putArray("servers").addObject().put("url", "http://localhost:8080");
     var rutas = gateway.putObject("paths");
     var esquemas = gateway.putObject("components").putObject("schemas");
+    var seguridad = gateway.withObject("/components").putObject("securitySchemes");
     var filas = new StringBuilder();
     var noDisponible =
         JSON.readTree(
@@ -222,6 +229,8 @@ class ContratosTest {
               : Path.of(System.getProperty("ticketya.openapi", DOC.resolve("openapi").toString()))
                   .resolve(servicio + ".json");
       var documento = aplicarContrato((ObjectNode) leer(origen), revisado);
+      if (documento.at("/components/securitySchemes").has("bearerAuth"))
+        seguridad.set("bearerAuth", documento.at("/components/securitySchemes/bearerAuth"));
       for (var schema : documento.at("/components/schemas").properties())
         esquemas.set(servicio + "_" + schema.getKey(), prefijar(schema.getValue(), servicio));
       var paths = documento.required("paths");
@@ -231,7 +240,7 @@ class ContratosTest {
           String metodo = entry.getKey();
           boolean visible = publico(servicio, ruta, metodo);
           String visibilidad =
-              ruta.startsWith("/admin/") ? "administrativa" : visible ? "publica" : "interna";
+              visible ? (ruta.startsWith("/admin/") ? "administrativa" : "publica") : "interna";
           op.put("x-visibility", visibilidad);
           op.put(
               "operationId",
@@ -263,6 +272,13 @@ class ContratosTest {
               .append(" |\n");
           if (visible) {
             var publicacion = (ObjectNode) prefijar(op, servicio);
+            if (publicacion.path("parameters") instanceof ArrayNode parametros) {
+              for (int i = parametros.size() - 1; i >= 0; i--)
+                if (parametros.get(i).path("name").asText().equalsIgnoreCase("X-User-Role")
+                    || servicio.equals("eventos") && parametros.get(i).path("name").asText().equalsIgnoreCase("X-Admin-Id"))
+                  parametros.remove(i);
+            }
+            assertFalse(publicacion.toString().contains("X-User-Role"), "Autorizacion E1 obsoleta en contrato publico");
             ((ObjectNode) publicacion.required("responses")).set("503", noDisponible);
             rutas.withObjectProperty(ruta).set(metodo, publicacion);
           }
@@ -277,6 +293,15 @@ class ContratosTest {
             "(?m)(?:^\\| (?:eventos|inventario|compras|entradas) \\|[^\\n]*\\n)+",
             Matcher.quoteReplacement(filas.toString()));
     compararTexto("openapi/README.md", resultado);
+  }
+
+  @Test
+  void contratoPublicoSinAutorizacionLegadaNiRutasBloqueadas() throws Exception {
+    var publico = leer(DOC.resolve("openapi/gateway.json"));
+    assertFalse(publico.path("paths").has("/admin/eventos/{id}/cancelacion"));
+    assertFalse(publico.toString().contains("X-User-Role"));
+    assertFalse(publico("compras", "/admin/eventos/{id}/cancelacion", "post"));
+    assertTrue(publico("compras", "/admin/devoluciones/{id}/procesar", "post"));
   }
 
   @Test

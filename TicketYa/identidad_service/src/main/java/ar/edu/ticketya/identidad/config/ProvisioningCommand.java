@@ -19,7 +19,9 @@ public class ProvisioningCommand {
             throw new IllegalStateException("Provisioning requires CLI-only mode");
         String location=env.getRequiredProperty("IDENTITY_PROVISION_FILE");
         Properties p=new Properties();
-        try(var input=Files.newBufferedReader(Path.of(location))) {p.load(input);}
+        try(var input="-".equals(location)
+                ? new java.io.InputStreamReader(System.in, java.nio.charset.StandardCharsets.UTF_8)
+                : Files.newBufferedReader(Path.of(location))) {p.load(input);}
         // Never echo input, exceptions, passwords, tokens or configuration to console.
         try {
             switch(p.getProperty("operation","")) {

@@ -1519,6 +1519,537 @@
         },
         "x-visibility": "publica"
       }
+    },
+    "/colas/eventos/{evento}": {
+      "put": {
+        "operationId": "inventario_put_colas_eventos_evento",
+        "summary": "Activar alta demanda antes de reservas, configuración inmutable",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Cola FIFO"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "ADMINISTRADOR"
+        ],
+        "parameters": [
+          {
+            "name": "evento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tamanoTanda": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "turnoSegundos": {
+                    "type": "integer",
+                    "minimum": 30,
+                    "maximum": 600
+                  }
+                },
+                "required": [
+                  "tamanoTanda",
+                  "turnoSegundos"
+                ]
+              },
+              "example": {
+                "tamanoTanda": 1,
+                "turnoSegundos": 30
+              }
+            }
+          }
+        },
+        "x-visibility": "publica"
+      },
+      "post": {
+        "operationId": "inventario_post_colas_eventos_evento",
+        "summary": "Ingresar a FIFO propia sin duplicar turno vigente",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Cola FIFO"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [
+          {
+            "name": "evento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activa": {
+                      "type": "boolean"
+                    },
+                    "estado": {
+                      "type": "string"
+                    },
+                    "numero": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "posicion": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "venceEn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "UTC sin sufijo de zona"
+                    },
+                    "reservaId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "clienteId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "estadoEvento": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "activa": true,
+                  "estado": "ejemplo",
+                  "numero": 1,
+                  "posicion": 1,
+                  "venceEn": "ejemplo",
+                  "reservaId": 1,
+                  "clienteId": 1,
+                  "estadoEvento": "ejemplo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/colas/eventos/{evento}/mi-turno": {
+      "get": {
+        "operationId": "inventario_get_colas_eventos_evento_mi_turno",
+        "summary": "Consultar posición propia y avanzar turnos vencidos",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Cola FIFO"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [
+          {
+            "name": "evento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activa": {
+                      "type": "boolean"
+                    },
+                    "estado": {
+                      "type": "string"
+                    },
+                    "numero": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "posicion": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "venceEn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "UTC sin sufijo de zona"
+                    },
+                    "reservaId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "clienteId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "estadoEvento": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "activa": true,
+                  "estado": "ejemplo",
+                  "numero": 1,
+                  "posicion": 1,
+                  "venceEn": "ejemplo",
+                  "reservaId": 1,
+                  "clienteId": 1,
+                  "estadoEvento": "ejemplo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      },
+      "delete": {
+        "operationId": "inventario_delete_colas_eventos_evento_mi_turno",
+        "summary": "Abandonar turno propio",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Cola FIFO"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [
+          {
+            "name": "evento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "activa": {
+                      "type": "boolean"
+                    },
+                    "estado": {
+                      "type": "string"
+                    },
+                    "numero": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "posicion": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "venceEn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "UTC sin sufijo de zona"
+                    },
+                    "reservaId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "clienteId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "estadoEvento": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "activa": true,
+                  "estado": "ejemplo",
+                  "numero": 1,
+                  "posicion": 1,
+                  "venceEn": "ejemplo",
+                  "reservaId": 1,
+                  "clienteId": 1,
+                  "estadoEvento": "ejemplo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/internal/reports/events/{eventId}/inventory": {
+      "get": {
+        "summary": "Lectura o entrega técnica E2: reports.inventory.read",
+        "description": "Identidad técnica Eventos y permiso mínimo; JWT humano rechazado. No consulta bases ajenas.",
+        "security": [
+          {
+            "technicalJwt": []
+          }
+        ],
+        "x-required-scope": "reports.inventory.read",
+        "x-technical-caller": "eventos",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado por el servicio propietario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sectorId": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "capacity": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "available": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "state": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sectorId",
+                          "capacity",
+                          "available",
+                          "state"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "eventId",
+                    "generatedAt",
+                    "sectors"
+                  ]
+                },
+                "example": {
+                  "eventId": 1,
+                  "generatedAt": "2030-12-01T21:00:00Z",
+                  "sectors": [
+                    {
+                      "sectorId": 1,
+                      "capacity": 1,
+                      "available": 1,
+                      "state": "ejemplo"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Token técnico ausente o inválido"
+          },
+          "403": {
+            "description": "Caller/scope no autorizado"
+          },
+          "503": {
+            "description": "Dependencia no disponible o datos pendientes de conciliación"
+          }
+        },
+        "x-visibility": "interna",
+        "operationId": "inventario_get_internal_reports_events_eventId_inventory"
+      }
     }
   },
   "components": {
@@ -1788,6 +2319,19 @@
           }
         },
         "required": []
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "technicalJwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "OAuth2 client_credentials. Caller eventos, audience ticketya-inventario, token_use=service y scope específico. No se expone por Gateway."
       }
     }
   }

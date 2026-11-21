@@ -1,5 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
+function redactBrowserDiagnostic(error,secrets){let text=String(error.stdout||'')+'\n'+String(error.stderr||'');for(const secret of secrets.filter(Boolean))text=text.replaceAll(secret,'[REDACTED]');return text.replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,'[REDACTED_TOKEN]').replace(/(?:Authorization|Cookie|Set-Cookie)\s*:[^\r\n]*/gi,'[REDACTED_HEADER]').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[REDACTED_EMAIL]').slice(-20000);}
+function browserFailure(meta,error,secrets,phase){const file=path.join(meta.directory,'frontend-'+phase+'-failure.json');fs.writeFileSync(file,JSON.stringify({phase,status:error.status,signal:error.signal,code:error.code,diagnostic:redactBrowserDiagnostic(error,secrets)},null,2),{mode:0o600});return Error('Frontend '+phase+' failed; sanitized diagnostic: '+path.relative(path.resolve(__dirname,'../../..'),file));}
 module.exports=async function({meta,context,load,provisioned}){
  const {api,clients,admin,access,sql}=context;
  const purchase=load.purchases[0],client=clients.find(c=>c.id===purchase.clientId),staff=provisioned.find(p=>p.role==='PERSONAL_ACCESO');
@@ -9,7 +11,7 @@ module.exports=async function({meta,context,load,provisioned}){
  const before=[sql(`SELECT id,estado,importe,importe_reintegrado FROM ${meta.schemas.compras}.pagos ORDER BY id;`),sql(`SELECT id,estado,importe FROM ${meta.schemas.compras}.reintegros ORDER BY id;`),sql(`SELECT ticket_id,status FROM ${meta.schemas.entradas}.tickets ORDER BY ticket_id;`)];
  const input=path.join(meta.directory,'frontend-qr-private.json');fs.writeFileSync(input,JSON.stringify({project:meta.project,port:meta.port,staff:{email:staff.email,password:staff.password},event:load.event,qr:tickets[0].qr}),{mode:0o600,flag:'wx'});
  const frontend=path.resolve(__dirname,'../../frontend');
- try{execFileSync(process.execPath,[path.join(frontend,'node_modules/@playwright/test/cli.js'),'test','--config','playwright.delivery.config.js'],{cwd:frontend,env:{...process.env,TY_DELIVERY_INPUT:input,TY_DELIVERY_PORT:String(meta.port)},stdio:'pipe',timeout:90000,maxBuffer:4*1024*1024});}catch{throw new Error('Frontend accepted QR check failed; see ignored delivery artifacts; credentials redacted');}
+ try{execFileSync(process.execPath,[path.join(frontend,'node_modules/@playwright/test/cli.js'),'test','--config','playwright.delivery.config.js'],{cwd:frontend,env:{...process.env,TY_DELIVERY_INPUT:input,TY_DELIVERY_PORT:String(meta.port)},stdio:'pipe',timeout:90000,maxBuffer:4*1024*1024});}catch(error){throw browserFailure(meta,error,[staff.password,client.password,...tickets.map(t=>t.qr)],'qr');}
  const after=[sql(`SELECT id,estado,importe,importe_reintegrado FROM ${meta.schemas.compras}.pagos ORDER BY id;`),sql(`SELECT id,estado,importe FROM ${meta.schemas.compras}.reintegros ORDER BY id;`),sql(`SELECT ticket_id,status FROM ${meta.schemas.entradas}.tickets ORDER BY ticket_id;`)];assert.deepEqual(after,before);
  assert.equal(sql(`SELECT COUNT(*) FROM ${meta.schemas.entradas}.tickets WHERE ticket_id='${tickets[0].ticketId}' AND validated_at IS NOT NULL AND validated_by=${access.id};`),'1');
  // A separate event and original simulated uncertain attempt exercise the UI repair.
@@ -21,7 +23,7 @@ module.exports=async function({meta,context,load,provisioned}){
  assert.equal(original.estado,'RESULTADO_DESCONOCIDO');assert.equal((await api('GET','/compras/'+c.id,undefined,200,buyer)).estado,'PROCESANDO');
  const recoveryInput=path.join(meta.directory,'frontend-recovery-private.json');
  fs.writeFileSync(recoveryInput,JSON.stringify({project:meta.project,port:meta.port,client:{email:buyer.email,password:buyer.password},purchase:c.id}),{mode:0o600,flag:'wx'});
- try{execFileSync(process.execPath,[path.join(frontend,'node_modules/@playwright/test/cli.js'),'test','--config','playwright.delivery.config.js'],{cwd:frontend,env:{...process.env,TY_PAYMENT_RECOVERY_INPUT:recoveryInput,TY_DELIVERY_PORT:String(meta.port)},stdio:'pipe',timeout:90000,maxBuffer:4*1024*1024});}catch{throw new Error('Frontend original payment recovery failed; see ignored delivery artifacts; credentials redacted');}
+ try{execFileSync(process.execPath,[path.join(frontend,'node_modules/@playwright/test/cli.js'),'test','--config','playwright.delivery.config.js'],{cwd:frontend,env:{...process.env,TY_PAYMENT_RECOVERY_INPUT:recoveryInput,TY_DELIVERY_PORT:String(meta.port)},stdio:'pipe',timeout:90000,maxBuffer:4*1024*1024});}catch(error){throw browserFailure(meta,error,[buyer.password,staff.password,key,...tickets.map(t=>t.qr)],'recovery');}
  const payments=await api('GET','/pagos?compraId='+c.id,undefined,200,buyer);assert.equal(payments.length,1);assert.equal(payments[0].id,original.id);assert.equal(payments[0].claveIdempotencia,key);assert.equal(payments[0].estado,'APROBADO');assert.equal(Number(payments[0].importe),15000);
  assert.equal((await api('GET','/compras/'+c.id,undefined,200,buyer)).estado,'COMPLETADA');
  assert.equal((await api('GET','/tickets?orderId='+c.id,undefined,200,buyer)).length,1);
@@ -32,3 +34,4 @@ module.exports=async function({meta,context,load,provisioned}){
  const previousFinance=[sql(`SELECT id,estado,importe,importe_reintegrado FROM ${meta.schemas.compras}.pagos WHERE id<>${original.id} ORDER BY id;`),sql(`SELECT id,estado,importe FROM ${meta.schemas.compras}.reintegros ORDER BY id;`)];assert.deepEqual(previousFinance,before.slice(0,2));
  return {result:'PASS',realStaffLogin:true,administratorAssigned:true,event:load.event,ticketId:tickets[0].ticketId,accepted:1,repeatRejected:true,invalidRejected:true,financialSnapshotUnchanged:true,paymentRecovery:{purchase:c.id,payment:original.id,sameOriginalAttempt:true,approvedAmount:15000,payments:1,tickets:1,batches:1,previousFinancialRecordsUnchanged:true}};
 };
+module.exports.redactBrowserDiagnostic=redactBrowserDiagnostic;

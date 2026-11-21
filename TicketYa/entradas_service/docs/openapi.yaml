@@ -610,6 +610,400 @@
         "operationId": "entradas_post_internal_events_id_cancel_emission",
         "description": "Operacion implementada por entradas. Llamada directa entre servicios; excluida del Gateway normal."
       }
+    },
+    "/accesos/eventos/{event}/validaciones": {
+      "post": {
+        "operationId": "entradas_post_accesos_eventos_event_validaciones",
+        "summary": "Ingreso QR atómico, único y con asignación",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Control de acceso"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "PERSONAL_ACCESO"
+        ],
+        "parameters": [
+          {
+            "name": "event",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "ticketId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "eventId": {
+                      "type": "string"
+                    },
+                    "validatedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  }
+                },
+                "example": {
+                  "accepted": true,
+                  "code": "ejemplo",
+                  "ticketId": "ejemplo",
+                  "eventId": "ejemplo",
+                  "validatedAt": "2030-12-01T21:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "qr": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "qr"
+                ]
+              },
+              "example": {
+                "qr": "00000000-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/admin/accesos/eventos/{event}/personal/{staff}": {
+      "put": {
+        "operationId": "entradas_put_admin_accesos_eventos_event_personal_staff",
+        "summary": "Asignar personal al evento",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Control de acceso"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "ADMINISTRADOR"
+        ],
+        "parameters": [
+          {
+            "name": "event",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staff",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "string"
+                    },
+                    "staffId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "assigned": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "example": {
+                  "eventId": "ejemplo",
+                  "staffId": 1,
+                  "assigned": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "administrativa"
+      },
+      "delete": {
+        "operationId": "entradas_delete_admin_accesos_eventos_event_personal_staff",
+        "summary": "Revocar asignación",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Control de acceso"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "ADMINISTRADOR"
+        ],
+        "parameters": [
+          {
+            "name": "event",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staff",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "string"
+                    },
+                    "staffId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "assigned": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "example": {
+                  "eventId": "ejemplo",
+                  "staffId": 1,
+                  "assigned": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "administrativa"
+      }
+    },
+    "/internal/reports/events/{eventId}/tickets": {
+      "get": {
+        "summary": "Lectura o entrega técnica E2: reports.tickets.read",
+        "description": "Identidad técnica Eventos y permiso mínimo; JWT humano rechazado. No consulta bases ajenas.",
+        "security": [
+          {
+            "technicalJwt": []
+          }
+        ],
+        "x-required-scope": "reports.tickets.read",
+        "x-technical-caller": "eventos",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado por el servicio propietario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sectorId": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "issuedTickets": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "activeTickets": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "annulledTickets": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "admissions": {
+                            "type": "integer",
+                            "format": "int64"
+                          }
+                        },
+                        "required": [
+                          "sectorId",
+                          "issuedTickets",
+                          "activeTickets",
+                          "annulledTickets",
+                          "admissions"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "eventId",
+                    "generatedAt",
+                    "sectors"
+                  ]
+                },
+                "example": {
+                  "eventId": 1,
+                  "generatedAt": "2030-12-01T21:00:00Z",
+                  "sectors": [
+                    {
+                      "sectorId": 1,
+                      "issuedTickets": 1,
+                      "activeTickets": 1,
+                      "annulledTickets": 1,
+                      "admissions": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Token técnico ausente o inválido"
+          },
+          "403": {
+            "description": "Caller/scope no autorizado"
+          },
+          "503": {
+            "description": "Dependencia no disponible o datos pendientes de conciliación"
+          }
+        },
+        "x-visibility": "interna",
+        "operationId": "entradas_get_internal_reports_events_eventId_tickets"
+      }
     }
   },
   "components": {
@@ -766,6 +1160,19 @@
           }
         },
         "required": []
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "technicalJwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "OAuth2 client_credentials. Caller eventos, audience ticketya-entradas, token_use=service y scope específico. No se expone por Gateway."
       }
     }
   }

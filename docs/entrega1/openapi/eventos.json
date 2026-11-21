@@ -1379,19 +1379,21 @@
           {
             "name": "X-User-Role",
             "in": "header",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Compatibilidad interna E1; el filtro deriva este valor del JWT validado. No es una credencial del cliente."
           },
           {
             "name": "X-Admin-Id",
             "in": "header",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
+            },
+            "description": "Compatibilidad interna E1; el filtro deriva este valor del JWT validado. No es una credencial del cliente."
           }
         ],
         "responses": {
@@ -1537,7 +1539,12 @@
         },
         "x-visibility": "publica",
         "summary": "PATCH /api/v1/events/{eventId}/suspend",
-        "description": "Operacion implementada por eventos. Accesible por el Gateway."
+        "description": "Operacion administrativa. Requiere JWT valido con rol ADMINISTRADOR. Los encabezados legados son sustituidos por TrustedActorHeaders a partir del JWT, no autorizan solicitudes externas.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/v1/events/{eventId}/status": {
@@ -1568,19 +1575,21 @@
           {
             "name": "X-User-Role",
             "in": "header",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Compatibilidad interna E1; el filtro deriva este valor del JWT validado. No es una credencial del cliente."
           },
           {
             "name": "X-Admin-Id",
             "in": "header",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
+            },
+            "description": "Compatibilidad interna E1; el filtro deriva este valor del JWT validado. No es una credencial del cliente."
           }
         ],
         "responses": {
@@ -1726,7 +1735,12 @@
         },
         "x-visibility": "publica",
         "summary": "PATCH /api/v1/events/{eventId}/status",
-        "description": "Operacion implementada por eventos. Accesible por el Gateway."
+        "description": "Operacion administrativa. Requiere JWT valido con rol ADMINISTRADOR. Los encabezados legados son sustituidos por TrustedActorHeaders a partir del JWT, no autorizan solicitudes externas.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/v1/events/{eventId}/publish": {
@@ -1900,7 +1914,7 @@
           "Eventos"
         ],
         "summary": "Cancelar evento (Exclusivo Administradores)",
-        "description": "Transiciona el estado del evento a CANCELADO. Requiere identificarse con el encabezado X-User-Role: ADMIN. Accesible por el Gateway.",
+        "description": "Operacion administrativa. Requiere JWT valido con rol ADMINISTRADOR. Los encabezados legados son sustituidos por TrustedActorHeaders a partir del JWT, no autorizan solicitudes externas.",
         "operationId": "eventos_patch_api_v1_events_eventId_cancel",
         "parameters": [
           {
@@ -1917,7 +1931,7 @@
           {
             "name": "X-User-Role",
             "in": "header",
-            "description": "Rol del usuario autenticado (requerido ADMIN)",
+            "description": "Compatibilidad interna E1; el filtro deriva este valor del JWT validado. No es una credencial del cliente.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1927,11 +1941,12 @@
           {
             "name": "X-Admin-Id",
             "in": "header",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
+            },
+            "description": "Compatibilidad interna E1; el filtro deriva este valor del JWT validado. No es una credencial del cliente."
           }
         ],
         "responses": {
@@ -2075,7 +2090,12 @@
             }
           }
         },
-        "x-visibility": "publica"
+        "x-visibility": "publica",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/v1/venues/{venueId}": {
@@ -2608,6 +2628,646 @@
         },
         "x-visibility": "publica"
       }
+    },
+    "/api/v1/events/{eventId}/report": {
+      "get": {
+        "operationId": "eventos_get_api_v1_events_eventId_report",
+        "summary": "Reporte propio, acumulado por sector; no snapshot distribuido",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Reportes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "ORGANIZADOR"
+        ],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "eventName": {
+                      "type": "string"
+                    },
+                    "eventStatus": {
+                      "type": "string"
+                    },
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "amountUnit": {
+                      "type": "string"
+                    },
+                    "period": {
+                      "type": "string"
+                    },
+                    "financialComplete": {
+                      "type": "boolean"
+                    },
+                    "sourcesAligned": {
+                      "type": "boolean"
+                    },
+                    "sourceGeneratedAt": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "soldTickets": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "returnedTickets": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "netSoldTickets": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "grossCollected": {
+                          "type": "number"
+                        },
+                        "refundedAmount": {
+                          "type": "number"
+                        },
+                        "netCollected": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "capacity": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "available": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "occupancyPercent": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "issuedTickets": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "activeTickets": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "annulledTickets": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "admissions": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      }
+                    },
+                    "sectors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sectorId": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "inventoryState": {
+                            "type": "string"
+                          },
+                          "ticketsMatchSales": {
+                            "type": "boolean"
+                          },
+                          "metrics": {
+                            "type": "object",
+                            "properties": {
+                              "soldTickets": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "returnedTickets": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "netSoldTickets": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "grossCollected": {
+                                "type": "number"
+                              },
+                              "refundedAmount": {
+                                "type": "number"
+                              },
+                              "netCollected": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "capacity": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "available": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "occupancyPercent": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "issuedTickets": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "activeTickets": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "annulledTickets": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "admissions": {
+                                "type": "integer",
+                                "format": "int64"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "eventId": 1,
+                  "eventName": "ejemplo",
+                  "eventStatus": "ejemplo",
+                  "generatedAt": "2030-12-01T21:00:00Z",
+                  "amountUnit": "ejemplo",
+                  "period": "ejemplo",
+                  "financialComplete": true,
+                  "sourcesAligned": true,
+                  "sourceGeneratedAt": {},
+                  "totals": {
+                    "soldTickets": 1,
+                    "returnedTickets": 1,
+                    "netSoldTickets": 1,
+                    "grossCollected": 1,
+                    "refundedAmount": 1,
+                    "netCollected": 1,
+                    "capacity": 1,
+                    "available": 1,
+                    "occupancyPercent": 1,
+                    "issuedTickets": 1,
+                    "activeTickets": 1,
+                    "annulledTickets": 1,
+                    "admissions": 1
+                  },
+                  "sectors": [
+                    {
+                      "sectorId": 1,
+                      "name": "ejemplo",
+                      "type": "ejemplo",
+                      "inventoryState": "ejemplo",
+                      "ticketsMatchSales": true,
+                      "metrics": {
+                        "soldTickets": 1,
+                        "returnedTickets": 1,
+                        "netSoldTickets": 1,
+                        "grossCollected": 1,
+                        "refundedAmount": 1,
+                        "netCollected": 1,
+                        "capacity": 1,
+                        "available": 1,
+                        "occupancyPercent": 1,
+                        "issuedTickets": 1,
+                        "activeTickets": 1,
+                        "annulledTickets": 1,
+                        "admissions": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/api/v1/me/preferences": {
+      "get": {
+        "operationId": "eventos_get_api_v1_me_preferences",
+        "summary": "Preferencias del sub autenticado",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Preferencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "favoriteTypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "favoriteParticipantIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    },
+                    "preferredCity": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                },
+                "example": {
+                  "favoriteTypes": [
+                    "ejemplo"
+                  ],
+                  "favoriteParticipantIds": [
+                    1
+                  ],
+                  "preferredCity": "ejemplo",
+                  "updatedAt": "2030-12-01T21:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      },
+      "put": {
+        "operationId": "eventos_put_api_v1_me_preferences",
+        "summary": "Reemplazar preferencias propias",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Preferencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "favoriteTypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "favoriteParticipantIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    },
+                    "preferredCity": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                },
+                "example": {
+                  "favoriteTypes": [
+                    "ejemplo"
+                  ],
+                  "favoriteParticipantIds": [
+                    1
+                  ],
+                  "preferredCity": "ejemplo",
+                  "updatedAt": "2030-12-01T21:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "favoriteTypes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "favoriteParticipantIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  },
+                  "preferredCity": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "updatedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time",
+                    "readOnly": true
+                  }
+                },
+                "required": [
+                  "favoriteTypes",
+                  "favoriteParticipantIds"
+                ]
+              },
+              "example": {
+                "favoriteTypes": [
+                  "ejemplo"
+                ],
+                "favoriteParticipantIds": [
+                  1
+                ],
+                "preferredCity": "ejemplo",
+                "updatedAt": "2030-12-01T21:00:00Z"
+              }
+            }
+          }
+        },
+        "x-visibility": "publica"
+      }
+    },
+    "/api/v1/me/recommendations": {
+      "get": {
+        "operationId": "eventos_get_api_v1_me_recommendations",
+        "summary": "Máximo diez eventos futuros; degradación explícita sin historial",
+        "description": "Contrato E2. El servidor es autoridad de identidad/propiedad y estado. No realizar retries automáticos de escrituras.",
+        "tags": [
+          "Preferencias"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-roles": [
+          "CLIENTE"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado según el estado real del dominio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "historyAvailable": {
+                      "type": "boolean"
+                    },
+                    "mode": {
+                      "type": "string"
+                    },
+                    "warning": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "date": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "participants": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "format": "int64"
+                            }
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "historyAvailable": true,
+                  "mode": "ejemplo",
+                  "warning": "ejemplo",
+                  "events": [
+                    {
+                      "id": 1,
+                      "name": "ejemplo",
+                      "type": "ejemplo",
+                      "date": "2030-12-01T21:00:00Z",
+                      "participants": [
+                        1
+                      ],
+                      "city": "ejemplo"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "JWT inválido, ausente o vencido"
+          },
+          "403": {
+            "description": "Rol, propiedad o asignación insuficiente"
+          },
+          "404": {
+            "description": "Recurso no existente o ajeno"
+          },
+          "409": {
+            "description": "Conflicto, resultado pendiente, turno no habilitado o entrada no utilizable según operación"
+          },
+          "503": {
+            "description": "Falla técnica, sin éxito ni rechazo comercial inferidos"
+          }
+        },
+        "x-visibility": "publica"
+      }
     }
   },
   "components": {
@@ -2656,13 +3316,13 @@
           },
           "latitude": {
             "type": "number",
-            "maximum": 90.0,
-            "minimum": -90.0
+            "maximum": 90,
+            "minimum": -90
           },
           "longitude": {
             "type": "number",
-            "maximum": 180.0,
-            "minimum": -180.0
+            "maximum": 180,
+            "minimum": -180
           }
         },
         "required": [
@@ -2989,13 +3649,13 @@
           },
           "latitude": {
             "type": "number",
-            "maximum": 90.0,
-            "minimum": -90.0
+            "maximum": 90,
+            "minimum": -90
           },
           "longitude": {
             "type": "number",
-            "maximum": 180.0,
-            "minimum": -180.0
+            "maximum": 180,
+            "minimum": -180
           },
           "createdAt": {
             "type": "string",
@@ -3113,6 +3773,13 @@
           "rowLabel",
           "seatNumber"
         ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }
