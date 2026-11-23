@@ -7,7 +7,7 @@ async function prepare(){
  fs.mkdirSync(d.runtime,{mode:0o700});
  if(process.platform==='win32'){const account=cp.execFileSync('whoami',[],{encoding:'utf8'}).trim();cp.execFileSync('icacls.exe',[d.runtime,'/inheritance:r','/grant:r',account+':(OI)(CI)F'],{stdio:'pipe'});}
  fs.mkdirSync(path.join(d.runtime,'keys'),{mode:0o700});
- const config={meta:d.meta(crypto.randomBytes(8).toString('hex')),catalogHash:d.hash(),secrets:{},users:d.catalog.users.map(u=>({...u,password:crypto.randomBytes(32).toString('hex')}))};
+ const config={meta:d.meta(crypto.randomBytes(8).toString('hex')),mysqlInitializer:'sql',catalogHash:d.hash(),secrets:{},users:d.catalog.users.map(u=>({...u,password:crypto.randomBytes(32).toString('hex')}))};
  for(const n of d.passwordNames)config.secrets['TY_DEMO_'+n+'_PASSWORD']=crypto.randomBytes(32).toString('hex');
  for(const p of Object.keys(d.calls))config.secrets[d.secretName(p)]=crypto.randomBytes(32).toString('hex');
  const keys=crypto.generateKeyPairSync('rsa',{modulusLength:3072,privateKeyEncoding:{type:'pkcs8',format:'pem'},publicKeyEncoding:{type:'spki',format:'pem'}});
@@ -16,7 +16,11 @@ async function prepare(){
  // container's non-root UID 10001. Existing credentials/keys are never changed.
  if(process.platform!=='win32'){fs.chmodSync(path.join(d.runtime,'keys'),0o755);fs.chmodSync(path.join(d.runtime,'keys/private.pem'),0o444);fs.chmodSync(path.join(d.runtime,'keys/public.pem'),0o444);}
  fs.writeFileSync(path.join(d.runtime,'private.json'),JSON.stringify(config,null,2),{mode:0o600,flag:'wx'});
- fs.writeFileSync(path.join(d.runtime,'docker-compose.json'),JSON.stringify(d.spec(config.meta),null,2),{mode:0o600,flag:'wx'});
+ // The parent is 0700 (or current-user ACL on Windows). MySQL drops to its own
+ // UID before reading *.sql: only this read-only bind must be readable there.
+ const sql=path.join(d.runtime,'01-demo.sql');fs.writeFileSync(sql,d.mysqlSql(config),{mode:0o600,flag:'wx'});
+ if(process.platform!=='win32')fs.chmodSync(sql,0o444);
+ fs.writeFileSync(path.join(d.runtime,'docker-compose.json'),JSON.stringify(d.definition(config),null,2),{mode:0o600,flag:'wx'});
  fs.writeFileSync(path.join(d.runtime,'ACCESOS-DEMO.md'),'# Accesos ficticios exclusivos de esta demo\n\nNo compartir ni versionar este archivo.\n\n'+config.users.map(u=>`- ${u.role} (${u.key}): ${u.email}\n  Contraseña: ${u.password}`).join('\n')+'\n',{mode:0o600,flag:'wx'});
  d.readConfig();console.log('Prepared '+config.meta.project+'. No Docker or database operations performed. Credentials are in demo/runtime/ACCESOS-DEMO.md (private, ignored).');
 }

@@ -40,11 +40,13 @@ public class ReservaService {
 
     @org.springframework.beans.factory.annotation.Value("${reservas.ttl-seconds:600}")
     private long ttlSeconds=600;
+    @org.springframework.beans.factory.annotation.Value("${reservas.limite-entradas-por-cliente-evento:6}")
+    private int limiteEntradas=6;
 
     @Autowired private example.microservicio_inventario_reservas.queue.ColaService cola;
 
     // 1. POST /reservas (Crear reserva temporal - Anti Doble Venta)
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public ReservaResponse crearReservaTemporal(CrearReservaRequest request) {
         if (request == null || request.getCantidad() == null || request.getCantidad() <= 0
                 || request.getIdCliente() == null || request.getIdCliente() <= 0
@@ -52,7 +54,16 @@ public class ReservaService {
                 || request.getIdSector() == null || request.getIdSector() <= 0) {
             throw new IllegalArgumentException("Cliente, evento, sector y cantidad deben ser positivos");
         }
+        if (limiteEntradas<=0) throw new IllegalStateException("El limite de reservas debe ser positivo");
+        if (request.getCantidad()>limiteEntradas) throw new IllegalArgumentException("La reserva supera el limite de entradas por cliente y evento");
         var turno=cola.admitirReserva(request.getIdEvento(),request.getIdCliente());
+        inventarioSectorRepository.findFirstByIdEventoOrderByIdSectorAsc(request.getIdEvento())
+            .orElseThrow(() -> new example.microservicio_inventario_reservas.exceptions.RecursoNoEncontradoException("Inventario no encontrado"));
+        // Current reads after the admission lock, not an earlier InnoDB snapshot.
+        long ocupadas=reservaRepository.cupoOcupado(request.getIdCliente(),request.getIdEvento(),LocalDateTime.now(java.time.ZoneOffset.UTC));
+        long devueltas=reservaRepository.cupoDevuelto(request.getIdCliente(),request.getIdEvento());
+        if (Math.max(0L,ocupadas-devueltas)+request.getCantidad()>limiteEntradas)
+            throw new IllegalArgumentException("La reserva supera el limite de entradas por cliente y evento");
         // Bloqueo pesimista sobre la fila del inventario del sector
         InventarioSector inventario = inventarioSectorRepository
                 .findByIdEventoAndIdSectorWithLock(request.getIdEvento(), request.getIdSector())

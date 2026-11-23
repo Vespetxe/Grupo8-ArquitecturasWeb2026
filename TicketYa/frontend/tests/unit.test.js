@@ -1,7 +1,54 @@
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { api, configureSession, hasRole, paymentKey, recoverPayment, streamNotifications } from '../src/api.js';
+import { api, ApiError, configureSession, hasRole, paymentKey, recoverPayment, streamNotifications, money, userErrorMessage, errorReference } from '../src/api.js';
 const original = globalThis.fetch;
+const reference='77f61506-0b95-49f2-aea8-205fd5c17592';
+for(const [path,status,body,reason,expected] of [
+ ['/reservas',400,{mensaje:'La reserva supera el limite de entradas por cliente y evento',exitoso:false},'ENTRY_LIMIT',/límite de 6 entradas/],
+ ['/compras',400,{status:400,message:'La compra supera el limite de entradas permitido por cliente y evento'},'ENTRY_LIMIT',/límite de 6 entradas/],
+ ['/reservas',409,{mensaje:'Capacidad o aforo insuficiente',exitoso:false},'INSUFFICIENT_STOCK',/No quedan entradas suficientes/],
+ ['/reservas',409,{mensaje:'Uno o más asientos seleccionados ya no se encuentran disponibles'},'SEATS_UNAVAILABLE',/asientos ya no están disponibles/],
+ ['/pagos',409,{message:'La reserva se encuentra vencida'},'RESERVATION_EXPIRED',/La reserva venció/],
+ ['/compras',400,{message:'La reserva no es valida para el cliente y evento indicados'},'RESERVATION_UNAVAILABLE',/puede haber vencido/],
+ ['/pagos',400,{message:'La reserva no es valida, esta vencida o no corresponde a la compra'},'RESERVATION_UNAVAILABLE',/puede haber vencido/],
+ ['/reservas',409,{mensaje:'Debe ingresar a la cola'},'QUEUE_REQUIRED',/fila virtual/],
+ ['/reservas',409,{mensaje:'Turno no habilitado o vencido; consulte su estado'},'QUEUE_NOT_READY',/turno todavía no está habilitado o venció/]
+])test('error específico sin exponer cuerpo ni repetir POST: '+reason+' '+path,async()=>{
+ let calls=0;const request={cantidad:7,importe:'28000.50'};configureSession('sentinel');
+ globalThis.fetch=async(url,options)=>{calls++;assert.deepEqual(JSON.parse(options.body),request);return Response.json({...body,debug:'SQL-secret-sentinel'},{status,headers:{'X-Correlation-Id':reference}});};
+ await assert.rejects(api(path,{method:'POST',body:request}),error=>error.status===status&&error.reason===reason&&expected.test(userErrorMessage(error))&&!error.message.includes('SQL-secret-sentinel')&&errorReference(error)===reference);
+ assert.equal(calls,1);assert.equal(request.importe,'28000.50');
+});
+for(const [path,method,status,body]of [
+ ['/reservas','POST',400,{mensaje:'Solicitud invalida'}],
+ ['/reservas','POST',409,{mensaje:'Conflicto con un registro existente'}],
+ ['/reservas','POST',500,{mensaje:'La reserva supera el limite de entradas por cliente y evento'}],
+ ['/reservas','POST',400,{status:403,mensaje:'La reserva supera el limite de entradas por cliente y evento'}],
+ ['/reservas','POST',400,{exitoso:true,mensaje:'La reserva supera el limite de entradas por cliente y evento'}],
+ ['/pagos','POST',400,{mensaje:'La reserva supera el limite de entradas por cliente y evento'}],
+ ['/reservas','GET',400,{mensaje:'La reserva supera el limite de entradas por cliente y evento'}],
+ ['/reservas','POST',400,{mensaje:'La reserva supera el limite de entradas por cliente y evento SQL password=sentinel'}],
+ ['/reservas','POST',409,{message:'org.hibernate.Exception SELECT secret FROM database'}],
+ ['/reservas','POST',400,[{mensaje:'La reserva supera el limite de entradas por cliente y evento'}]]
+])test('no adivina causas ni refleja datos remotos: '+JSON.stringify([path,method,status,body]),async()=>{
+ globalThis.fetch=async()=>Response.json(body,{status});await assert.rejects(api(path,{method}),e=>e.reason===undefined&&!/sentinel|hibernate|SELECT|límite de 6/.test(e.message));
+});
+test('errores malformados, HTML, grandes o perdidos mantienen HTTP y no reintentan',async()=>{
+ for(const [text,type]of [['<script>secret</script>','text/html'],['invalid','application/json'],['x'.repeat(4097),'application/json']]){
+  let calls=0;globalThis.fetch=async()=>{calls++;return new Response(text,{status:409,headers:{'Content-Type':type}});};await assert.rejects(api('/reservas',{method:'POST'}),e=>e.status===409&&e.reason===undefined&&!e.message.includes('secret'));assert.equal(calls,1);
+ }
+ globalThis.fetch=async()=>({ok:false,status:400,headers:new Headers({'Content-Type':'application/json'}),async text(){throw Error('secret');}});await assert.rejects(api('/reservas',{method:'POST'}),e=>e.status===400&&!e.message.includes('secret'));
+});
+test('referencias solo UUID; errores inesperados no exponen excepciones',()=>{
+ assert.equal(errorReference(new ApiError(409,reference)),reference);for(const value of ['Bearer secret','<script>','a'.repeat(500),null])assert.equal(errorReference(new ApiError(400,value)),undefined);
+ assert.ok(!userErrorMessage(new Error('SQL password=secret')).includes('secret'));assert.equal(errorReference({correlation:'secret'}),undefined);
+});
+test('ARS centralizado: miles, centavos, cero, negativos y números decimales como string',()=>{
+ const visible=v=>money(v).replaceAll('\u00a0',' ');
+ assert.equal(visible(28000),'$ 28.000');assert.equal(visible(1234.56),'$ 1.234,56');assert.equal(visible(0),'$ 0');assert.equal(visible(-15000),'-$ 15.000');
+ const value='9007199254740993.25';assert.equal(visible(value),'$ 9.007.199.254.740.993,25');assert.equal(value,'9007199254740993.25');
+ for(const v of [null,undefined,NaN,Infinity,'',{},true])assert.equal(money(v),'No disponible');
+});
 test('recuperación explícita conserva el intento remoto aunque no exista clave en el navegador', async () => {
   const calls = []; configureSession('sentinel');
   globalThis.fetch = async (url, options) => {

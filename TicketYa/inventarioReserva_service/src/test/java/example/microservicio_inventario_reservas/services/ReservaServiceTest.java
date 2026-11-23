@@ -34,6 +34,10 @@ class ReservaServiceTest {
 
     @InjectMocks
     private ReservaService reservaService;
+    @org.junit.jupiter.api.BeforeEach void admissionLock() {
+        lenient().when(inventarioSectorRepository.findFirstByIdEventoOrderByIdSectorAsc(anyLong()))
+            .thenReturn(Optional.of(new InventarioSector()));
+    }
 
     @Test
     @DisplayName("Debe crear una reserva temporal exitosamente en sector no numerado")
@@ -77,12 +81,12 @@ class ReservaServiceTest {
     @DisplayName("Debe lanzar excepción si la capacidad disponible es insuficiente")
     void crearReservaTemporal_CapacidadInsuficiente_LanzaExcepcion() {
         // ARRANGE
-        CrearReservaRequest request = new CrearReservaRequest(10L, 1L, 2L, 10, null);
+        CrearReservaRequest request = new CrearReservaRequest(10L, 1L, 2L, 6, null);
 
         InventarioSector inventario = new InventarioSector();
         inventario.setIdEvento(1L);
         inventario.setIdSector(2L);
-        inventario.setDisponibles(5); // Solo quedan 5 y se piden 10
+        inventario.setDisponibles(5); // Dentro del limite individual, pero sin stock suficiente
         inventario.setEstado(EstadoInventario.HABILITADO);
 
         when(inventarioSectorRepository.findByIdEventoAndIdSectorWithLock(1L, 2L))

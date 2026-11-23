@@ -1,5 +1,45 @@
 # Frontend React — Bloque 12
 
+## Ajustes focalizados de presentación (22/11/2026)
+
+Los errores distinguen el cupo, stock insuficiente, asientos no disponibles,
+reserva vencida explícita y fila virtual por coincidencias exactas de los
+mensajes actuales, junto con ruta, método y código HTTP. Se reconocen `mensaje`
+de Inventario y `message` de Compras. No se reflejan respuestas arbitrarias,
+excepciones, HTML, trazas ni campos de depuración. Los errores desconocidos
+conservan mensajes controlados; no se interpreta cualquier 400/409 como cupo.
+La referencia admite solo UUID y aparece plegada en “Referencia para soporte”.
+
+El aviso del cupo corresponde a la regla actual de seis entradas solicitada
+para esta entrega. Si se cambia ese límite configurable del backend, también
+debe ajustarse el texto: la respuesta actual no incluye el número como dato
+estructurado. Asimismo, algunos rechazos agrupan reserva inválida, vencida o
+ajena a la operación: la UI informa esa ambigüedad, sin asegurar que venció.
+No se cambiaron contratos ni se agregaron consultas o reintentos de escritura.
+
+Los importes usan un único `Intl.NumberFormat('es-AR', {style:'currency',
+currency:'ARS',minimumFractionDigits:0,maximumFractionDigits:2})`: catálogo,
+sectores, compra/pago y métricas monetarias del reporte. Es una convención de
+presentación pedida para la demo; el dominio no persiste código ISO de moneda.
+No hay conversión, cambios de precios ni cálculos financieros nuevos. Se
+conserva la precisión de presentación anterior (hasta dos decimales), los
+decimales como string se pasan sin convertir a Number al formateador y los
+valores desconocidos siguen como “No disponible”, nunca cero. El reporte
+distingue su moneda de presentación de la unidad genérica del backend.
+
+Validación reciente: **62 unitarias**, **build aprobado** y **4 escenarios de
+navegador con HTTP simulado**. Estos últimos interceptan todas las solicitudes
+Gateway y usan proxy de respaldo a un puerto sin servicio, sin Docker ni datos
+reales. Cubren cupo/stock/referencia, limpieza de éxito ante error, reportes ARS
+y checkout con un único POST, clave y medio de pago, sin enviar importes.
+No sustituyen una regresión comercial con JWT y persistencia reales.
+
+Para repetir el navegador, desde `TicketYa/frontend`:
+`node node_modules/@playwright/test/cli.js test --config playwright.presentation.config.js`.
+Requiere puerto 5175 libre y Edge en Windows o Chromium de Playwright en Linux;
+puede elegirse `TY_BROWSER_CHANNEL`. Resultados en
+`TicketYa/integration-tests/target/frontend-presentation`, ignorados por Git.
+
 La consigna valora una interfaz que consuma la API por Gateway y demuestre búsqueda, selección de sector/asientos, compra y consulta de entradas. Se agregó `TicketYa/frontend`: React 19.3.1, Vite 8.3.8 y JavaScript, con CSS responsive propio. No se modificó el backend.
 
 ## Ejecutar

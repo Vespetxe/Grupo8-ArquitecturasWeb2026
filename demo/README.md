@@ -1,6 +1,6 @@
 # Datos ficticios para una demostración independiente
 
-Preparación para la entrega del 22/11/2026. **Todavía no se inició este entorno ni se cargaron estos datos.** Solo se prepararon y verificaron archivos nuevos; la validación integrada con Docker queda para una ejecución autorizada. Ningún archivo del backend, frontend, configuración o runner E2 se modifica.
+Datos ficticios para la entrega del 22/11/2026. Las verificaciones offline no equivalen a una ejecución real en macOS. Las correcciones de cupo, inicialización y memoria están documentadas en la [revisión focalizada](../docs/entrega2/correcciones-portabilidad-reservas.md), distinguiendo pruebas nuevas, evidencia previa y pendientes.
 
 ## Diseño y contratos comprobados
 
@@ -23,7 +23,7 @@ Los IDs numéricos pueden coincidir con los de otro entorno: no son una identida
 
 Ciudades: Tandil, Buenos Aires, Mar del Plata, La Plata, Córdoba y Rosario. Categorías: rock nacional, metal, electrónica, pop, música clásica, teatro, stand-up, gastronomía, tecnología y deporte. Son nombres y actuaciones inventados, no anuncios de artistas reales. Fechas: 05/12/2026–13/02/2027, horarios argentinos con offset `-03:00`. La carga rechaza fechas a menos de 72 horas, en lugar de mover fechas o alterar registros automáticamente.
 
-Capacidades: desde un palco privado de dos asientos hasta campos de 1800 personas. Cada evento tiene dos precios diferentes; valores unitarios de 9000–60000, elegidos como referencia en pesos argentinos. **El modelo no almacena código ISO y React muestra “u.m.”**: esta preparación no cambia esa interfaz ni promete moneda ARS persistida.
+Capacidades: desde un palco privado de dos asientos hasta campos de 1800 personas. Cada evento tiene dos precios diferentes; valores unitarios de 9000–60000, elegidos como referencia en pesos argentinos. **El frontend presenta los importes en pesos argentinos (ARS), sin conversión de valores. El modelo de datos no almacena un código ISO de moneda.**
 
 | Escenario | Operaciones previstas y resultado esperado |
 |---|---|
@@ -125,6 +125,26 @@ Gateway: **http://127.0.0.1:49080**. Frontend: **http://127.0.0.1:5190**. No se 
 El frontend necesita estado PUBLICADO, lugar, fecha, participantes, precios y stock; el script publica de verdad y usa las dos APIs de asientos según su responsabilidad. No filtra eventos E2 ni altera React: esos eventos pertenecen a otro Gateway y no están en estas bases.
 
 ## Preparación en otra computadora
+
+Las demos nuevas generan `runtime/01-demo.sql` con sus propios cinco esquemas
+y usuarios; MySQL lo **lee** como SQL, sin ejecutar un `.sh` del host. El padre
+`runtime/` es privado (0700 en Unix o ACL del usuario en Windows); solo el archivo
+del bind de lectura es 0444 en Unix para el UID de MySQL. No publicarlo ni copiarlo
+entre computadoras. También se ignoran variantes como `runtime-macfix/`.
+
+Los runtimes anteriores sin `mysqlInitializer: sql` conservan su Compose original:
+no se migran, regeneran ni sustituyen credenciales. Para probar el arreglo en un
+entorno nuevo, usar otro clon sin copiar runtime ni tocar contenedores anteriores.
+`mysql-init.sh` queda únicamente para compatibilidad de esos runtimes. No afirmar
+que una demo antigua parcialmente inicializada se recupera repitiendo `start`.
+
+Se mantienen los ocho servicios necesarios y el límite original de 768 MiB por
+contenedor. Las cuatro JVM de negocio arrancan de a una, esperando readiness.
+El preflight informa RAM total, uso observado y margen estimado; no detiene otros
+proyectos. Los CLI de provisionamiento son secuenciales; sus contenedores
+finalizados conservan evidencia pero no consumen RAM de una JVM activa.
+No ejecutar simultáneamente demo y campañas E2 en equipos con recursos limitados.
+Usar la limpieza selectiva de la guía, nunca `prune` o borrados globales.
 
 Desde la raíz Git (el directorio padre de `TicketYa/`):
 `node TicketYa/integration-tests/e2/environment.cjs --prepare --demo` prepara

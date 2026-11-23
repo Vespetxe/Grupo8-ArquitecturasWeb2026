@@ -100,7 +100,7 @@ public class EventController {
     }
 
     @PatchMapping("/{eventId}/cancel")
-    @Operation(summary = "Cancelar evento (Exclusivo Administradores)", description = "Transiciona el estado del evento a CANCELADO. Requiere identificarse con el encabezado X-User-Role: ADMIN.")
+    @Operation(summary = "Cancelar evento (Exclusivo Administradores)", description = "Transiciona el estado del evento a CANCELADO. Requiere un JWT valido con rol ADMINISTRADOR. Los encabezados internos de identidad son derivados por el mecanismo de seguridad a partir del JWT validado; no autentican ni autorizan al cliente por si mismos.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Evento cancelado exitosamente",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventResponseDTO.class))),
