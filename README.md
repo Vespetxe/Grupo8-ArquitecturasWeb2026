@@ -88,3 +88,6 @@ La [Entrega 1](docs/entrega1/README.md) y sus colecciones se conservan como ante
 El modo con colector requiere su imagen existente; en un clon nuevo construirla con `docker build --progress=plain --tag ticketya-e2-logs:dev docker/observability` siguiendo la guía de centralización.
 
 Para verificar solo coexistencia sin repetir operaciones comerciales: `node TicketYa/integration-tests/e2/verify-coexistence.cjs`. El modo conjunto usa puertos loopback 38224–38233 y subredes explícitas comprobadas; no modifica exclusiones de Windows. Para generar la campaña con colector y Mongo, agregar `--centralized` a los flags de la campaña integral. En ese modo el colector permanece activo durante los reinicios de dependencias; la caída del colector conserva su prueba histórica separada.
+## Reentrega con Spring Cloud OpenFeign
+
+La migración de las siete comunicaciones técnicas, la construcción con etiquetas aisladas, las pruebas Newman/Postman y la guía de defensa están en [OpenFeign](docs/entrega2/openfeign.md). La colección completa está en [Postman OpenFeign](docs/entrega2/postman-openfeign.json), con [plantilla de ambiente sin secretos](docs/entrega2/postman-openfeign.environment.json). No utilizar la demo histórica para ejecutar estas mutaciones.

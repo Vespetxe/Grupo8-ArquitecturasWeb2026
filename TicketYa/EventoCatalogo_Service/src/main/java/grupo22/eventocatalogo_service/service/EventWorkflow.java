@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.client.RestClient;
+import grupo22.eventocatalogo_service.feign.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import java.util.*;
@@ -22,24 +22,23 @@ public class EventWorkflow {
     private final EventRepository repository;
     private final SectorRepository sectors;
     private final TransactionTemplate tx;
-    private final RestClient inventory,compras,entradas;
+    private final EventosInventarioFeignClient inventory;private final EventosComprasFeignClient compras;private final EventosEntradasFeignClient entradas;
     private final PilotReadGuard initialization,lifecycle,emissionBlock,cancellation;
-    record SeatSnapshot(Long catalogoAsientoId,String fila,Integer numero) {}
-    record StockSnapshot(Long idSector,boolean esNumerado,int capacidadTotal,List<SeatSnapshot> asientos) {}
+    public record SeatSnapshot(Long catalogoAsientoId,String fila,Integer numero) {}
+    public record StockSnapshot(Long idSector,boolean esNumerado,int capacidadTotal,List<SeatSnapshot> asientos) {}
     @org.springframework.beans.factory.annotation.Autowired
-    public EventWorkflow(EventService events,EventRepository repository,SectorRepository sectors,PlatformTransactionManager manager,
-            @Value("${ticketya.inventario.base-url:http://localhost:8082}") String inventoryUrl,
-            @Value("${ticketya.compras.base-url:http://localhost:8084}") String comprasUrl,
-            @Value("${ticketya.entradas.base-url:http://localhost:8083}") String entradasUrl, grupo22.eventocatalogo_service.security.ServiceTokens tokens,org.springframework.core.env.Environment env) {
+    public EventWorkflow(EventService events,EventRepository repository,SectorRepository sectors,PlatformTransactionManager manager,@org.springframework.context.annotation.Lazy EventosInventarioFeignClient inventoryClient,@org.springframework.context.annotation.Lazy EventosComprasFeignClient comprasClient,@org.springframework.context.annotation.Lazy EventosEntradasFeignClient entradasClient,org.springframework.core.env.Environment env){
         this.events=events;this.repository=repository;this.sectors=sectors;tx=new TransactionTemplate(manager);
-        inventory=tokens.client("inventario",inventoryUrl);
-        compras=tokens.client("compras",comprasUrl);
-        entradas=tokens.client("entradas",entradasUrl);
+        inventory=inventoryClient;
+        compras=comprasClient;
+        entradas=entradasClient;
         initialization=new PilotReadGuard(env,PilotReadGuard.Family.INVENTORY_INIT);
         lifecycle=new PilotReadGuard(env,PilotReadGuard.Family.INVENTORY_LIFECYCLE);
         emissionBlock=new PilotReadGuard(env,PilotReadGuard.Family.EMISSION_BLOCK);
         cancellation=new PilotReadGuard(env,PilotReadGuard.Family.CANCELLATION);
     }
+    public EventWorkflow(EventService events,EventRepository repository,SectorRepository sectors,PlatformTransactionManager manager,String inventoryUrl,String comprasUrl,String entradasUrl,grupo22.eventocatalogo_service.security.ServiceTokens tokens,org.springframework.core.env.Environment env){this(events,repository,sectors,manager,tokens.feign(EventosInventarioFeignClient.class,"inventario",inventoryUrl),tokens.feign(EventosComprasFeignClient.class,"compras",comprasUrl),tokens.feign(EventosEntradasFeignClient.class,"entradas",entradasUrl),env);}
+
     public EventWorkflow(EventService events,EventRepository repository,SectorRepository sectors,PlatformTransactionManager manager,String inventoryUrl,String comprasUrl,String entradasUrl,grupo22.eventocatalogo_service.security.ServiceTokens tokens){this(events,repository,sectors,manager,inventoryUrl,comprasUrl,entradasUrl,tokens,new org.springframework.core.env.StandardEnvironment());}
     public EventResponseDTO publish(Long id) {
         var event=events.getEventById(id);
@@ -58,7 +57,7 @@ public class EventWorkflow {
         try {
             for(var sector:stock){
                 initialization.execute(()->{
-                var acknowledgement=inventory.post().uri("/eventos/{id}/inventario",id).body(sector).retrieve().body(tools.jackson.databind.JsonNode.class);
+                var acknowledgement=inventory.initialize(id,sector);
                 if(acknowledgement==null || !acknowledgement.path("exitoso").isBoolean() || !acknowledgement.path("exitoso").asBoolean())
                     throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Inicializacion de inventario sin confirmacion; reintente");
                 return acknowledgement;
@@ -81,7 +80,7 @@ public class EventWorkflow {
         return result;
     }
     private void habilitarPublicacion(Long id) {
-        try {lifecycle.execute(()->inventory.post().uri("/internal/eventos/{id}/publicar",id).retrieve().toBodilessEntity());}
+        try {lifecycle.execute(()->{inventory.publish(id);return null;});}
         catch(org.springframework.web.client.RestClientResponseException ex){
             if(ex.getStatusCode().value()==401||ex.getStatusCode().value()==403)throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Autenticacion tecnica pendiente; reintente sin cambiar la operacion");
             if(inventoryRejection(ex,false))throw new BusinessRuleException("Publicacion bloqueada por un estado de inventario incompatible");
@@ -105,7 +104,7 @@ public class EventWorkflow {
             if(!retry.get())AuditTx.local(Audit.capture(Audit.Action.EVENT_CANCELLATION_AUTHORIZED,Audit.Resource.EVENT,locked.getEventId(),Audit.operation(Audit.Resource.EVENT,locked.getEventId()),Audit.Outcome.PENDING,null).initiated(originalAdmin.get()));
         });
         try {
-        try {emissionBlock.execute(()->entradas.post().uri("/internal/events/{id}/cancel-emission",id).retrieve().toBodilessEntity());}
+        try {emissionBlock.execute(()->{entradas.block(id);return null;});}
         catch(org.springframework.web.client.RestClientException ex){throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"No se pudo bloquear la emision; reintente",ex);}
         if(event.getStatus()!=EventStatus.CANCELADO) {
             try {event=events.cancelEvent(id,role);}
@@ -114,9 +113,9 @@ public class EventWorkflow {
             }
         }
         try {
-            lifecycle.execute(()->inventory.post().uri("/eventos/{id}/cancelar-inventario",id).retrieve().toBodilessEntity());
+            lifecycle.execute(()->{inventory.cancel(id);return null;});
             var result=cancellation.execute(()->{
-            var response=compras.post().uri("/admin/eventos/{id}/cancelacion",id).retrieve().toEntity(tools.jackson.databind.JsonNode.class);
+            var response=compras.cancel(id);
             var snapshot=response.getBody();
             if(!Set.of(200,202).contains(response.getStatusCode().value()) || snapshot==null || !snapshot.path("eventoId").isIntegralNumber() || snapshot.path("eventoId").asLong()!=id || !snapshot.path("devoluciones").isArray() || !snapshot.path("comprasPendientes").isArray())
                 throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Cancelacion pendiente; reintente");
@@ -151,7 +150,7 @@ public class EventWorkflow {
     }
     public EventResponseDTO suspend(Long id,String role) {
         var event=events.suspendOrUpdateStatus(id,"SUSPENDIDO",role);
-        try {lifecycle.execute(()->inventory.post().uri("/internal/eventos/{id}/suspender",id).retrieve().toBodilessEntity());}
+        try {lifecycle.execute(()->{inventory.suspend(id);return null;});}
         catch(org.springframework.web.client.RestClientException ex) {throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Suspension pendiente; reintente",ex);}
         return event;
     }
@@ -159,13 +158,13 @@ public class EventWorkflow {
         if(!"ADMIN".equalsIgnoreCase(role))throw new BusinessRuleException("Se requiere identificar administrador");
         if("PUBLICADO".equals(status)){
             if(events.getEventById(id).getStatus()!=EventStatus.AGOTADO)throw new BusinessRuleException("Solo se reabre por esta operacion un evento agotado");
-            try{lifecycle.execute(()->inventory.post().uri("/internal/eventos/{id}/habilitar",id).retrieve().toBodilessEntity());}
+            try{lifecycle.execute(()->{inventory.enable(id);return null;});}
             catch(org.springframework.web.client.RestClientException ex){throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"No se pudo reabrir el inventario",ex);}
             return events.suspendOrUpdateStatus(id,status,role);
         }
         if(!Set.of("AGOTADO","FINALIZADO").contains(status))throw new BusinessRuleException("Operacion no permitida; usar publicar, suspender o cancelar");
         var event=events.suspendOrUpdateStatus(id,status,role);
-        try{lifecycle.execute(()->inventory.post().uri("/internal/eventos/{id}/suspender",id).retrieve().toBodilessEntity());}
+        try{lifecycle.execute(()->{inventory.suspend(id);return null;});}
         catch(org.springframework.web.client.RestClientException ex){throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Estado registrado con bloqueo pendiente; reintente",ex);}
         return event;
     }

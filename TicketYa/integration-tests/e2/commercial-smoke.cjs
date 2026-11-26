@@ -1,13 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),crypto=require('node:crypto'),http=require('node:http');
 const {urlFor}=require('./isolation.cjs');
-module.exports=async function commercial({meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,cache,prepareLoad,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
+module.exports=async function commercial({transport,finalValidation,meta,sql,attest,adminPassword,provisioned,queue,qr,notifications,reports,cache,prepareLoad,recommendations,rememberQr=()=>{},faults,progress=()=>{}}){
  const report={requests:[],scenarios:[]};let clients=[],organizers=[],admin,access,currentClient;
  function defaultActor(method,p){if(p.startsWith('/admin/')||p.endsWith('/cancel'))return admin;if(p.startsWith('/api/v1/')&&method!=='GET')return organizers[0];return currentClient;}
  async function api(method,p,body,expected=200,actor=defaultActor(method,p),extra={},checkTopology=true){
   if(checkTopology)attest();const url=urlFor(meta,p);const payload=body===undefined?undefined:JSON.stringify(body);
   const started=performance.now();
-  const response=await new Promise((resolve,reject)=>{
+  const response=transport?await transport({method,url,body,headers:{Accept:"application/json",...extra,...(actor?{Authorization:"Bearer "+actor.token}:{})},expected}):await new Promise((resolve,reject)=>{
    const headers={Accept:'application/json',...extra,...(actor?{Authorization:'Bearer '+actor.token}:{}),...(payload===undefined?{}:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(payload)})};
    const req=http.request(url,{method,headers,timeout:25000},res=>{let data='';res.setEncoding('utf8');res.on('data',p=>data+=p);res.on('end',()=>{try{resolve({status:res.statusCode,correlationId:res.headers["x-correlation-id"],body:data?JSON.parse(data):null});}catch{reject(new Error('Non-JSON HTTP response'));}});});
    req.on('error',reject);req.on('timeout',()=>req.destroy(new Error('HTTP timeout; no automatic write retry')));if(payload!==undefined)req.write(payload);req.end();
@@ -190,5 +190,6 @@ async function recovered(){
  if(queue)report.queue=await require('./queue-smoke.cjs')({meta,sql,attest,api,clients,organizers,admin,event});
  if(faults)report.faults=await require('./fault-campaign.cjs')({meta,sql,attest,api,clients,admin,scenarios:report.scenarios,controls:faults});
  if(prepareLoad)prepareLoad({meta,sql,attest,api,clients,organizers,admin,access,event,requests:report.requests});
+ if(finalValidation)await finalValidation({api,clients,organizers,admin,access,scenarios:report.scenarios,meta,sql});
  return {...report,result:'PASS',identities:{clients:clients.map(c=>c.id),organizers:organizers.map(c=>c.id),admin:admin.id,access:access.id}};
 };

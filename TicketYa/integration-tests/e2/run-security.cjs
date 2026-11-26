@@ -2,6 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 const environment=require('./environment.cjs');
+const newmanRequested=process.argv.includes('--newman');
 const central=process.argv.includes('--centralized');
 const loadRequested=process.argv.includes('--load');
 const frontend=process.argv.includes('--frontend');
@@ -19,7 +20,7 @@ const commercialOnly=process.argv.includes('--commercial-only');
 const faults=process.argv.includes('--faults');
 const queue=process.argv.includes('--queue');
 const qr=process.argv.includes('--qr'),qrSecrets=[];
-const args=process.argv.slice(2).filter(arg=>!['--commercial-only','--faults','--queue','--qr','--recommendations','--notifications','--reports','--cache','--load','--frontend'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
+const args=process.argv.slice(2).filter(arg=>!['--newman','--commercial-only','--faults','--queue','--qr','--recommendations','--notifications','--reports','--cache','--load','--frontend'].includes(arg));if(central)args.splice(args.indexOf('--centralized'),1);const audit=args.includes("--audit")||central;if(args.includes('--audit'))args.splice(args.indexOf("--audit"),1);const observe=args.includes("--observability")||audit;if(args.includes("--observability"))args.splice(args.indexOf("--observability"),1);assert.ok(args.length===0||(args.length===2&&args[0]==='--port'));
 assert.ok(!commercialOnly||!observe,'Commercial-only skips the already approved security/observability suites, never application security');
 let meta=guard.identity(crypto.randomBytes(8).toString('hex'),args.length?Number(args[1]):48082);
 const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('COMPOSE_')||k.startsWith('TY_REG_'))delete env[k];
@@ -30,7 +31,7 @@ Object.assign(env,credentials);
 let file=path.join(meta.directory,'compose.json');
 let engineFault=false;
 const report={project:meta.project,run:meta.id,result:'RUNNING',securityChecksSkipped:commercialOnly,requests:[]};
-function docker(args,input,extra={}){try{return execFileSync('docker',args,{env:{...env,...extra},input,encoding:'utf8',stdio:['pipe','pipe','pipe'],maxBuffer:32*1024*1024,timeout:30000});}catch(error){if(error.code==='ETIMEDOUT'||/Internal Server Error|500 Internal|cannot connect|is the docker daemon running/i.test(String(error.stderr)))engineFault=true;throw error;}}
+function docker(args,input,extra={},timeout=30000){try{return execFileSync('docker',args,{env:{...env,...extra},input,encoding:'utf8',stdio:['pipe','pipe','pipe'],maxBuffer:32*1024*1024,timeout});}catch(error){if((error.code==='ETIMEDOUT'&&!args.includes('/network.cjs'))||/Internal Server Error|500 Internal|cannot connect|is the docker daemon running/i.test(String(error.stderr)))engineFault=true;throw error;}}
 function composeInput(input,...args){guard.validate(meta,JSON.parse(fs.readFileSync(file)));return docker(['compose','--env-file',process.platform==='win32'?'NUL':'/dev/null','--project-name',meta.project,'--file',file,...args],input);}
 function compose(...args){return composeInput(undefined,...args);}
 function inspect(name){return JSON.parse(docker(['inspect',`${meta.project}-${name}-1`]))[0];}
@@ -102,6 +103,8 @@ async function main(){
  const scopes=guard.SCOPES;
  for(const [caller,targets]of Object.entries(guard.CALLS))for(const target of targets)provision({operation:'client',caller,audience:'ticketya-'+target,scopes:scopes[caller+':'+target],secret:credentials[`TY_REG_${caller.toUpperCase()}_${target.toUpperCase()}_SECRET`]});
  faultSecrets.push(adminPassword,...provisioned.map(u=>u.password));
+ // Private checkpoint in the already ACL-restricted/ignored run directory; never printed/exported.
+ if(newmanRequested)fs.writeFileSync(path.join(meta.directory,'newman-private-context.json'),JSON.stringify({meta,adminPassword,provisioned}),{mode:0o600,flag:'wx'});
  stage='business service startup';compose('up','--detach','--no-build','--no-deps','eventos','inventario','entradas','compras');
  for(const name of ['eventos','inventario','entradas','compras'])await wait(name);
  stage='gateway startup';compose('up','--detach','--no-build','--no-deps','gateway');await wait('gateway');
@@ -116,7 +119,8 @@ async function main(){
  }
  if(central&&!mongoTopology){stage='collector outage';compose('stop','collector');assert.equal(inspect('collector').State.Running,false);}
  stage='commercial HTTP';
- report.commercial=await require('./commercial-smoke.cjs')({meta,adminPassword,provisioned,queue,qr,notifications,reports,cache,prepareLoad:loadRequested?context=>{loadContext=context;}:undefined,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
+ const newmanTransport=newmanRequested?require('./newman-transport.cjs').create({directory:meta.directory,runId:meta.id}):null;
+ report.commercial=await require('./commercial-smoke.cjs')({transport:newmanTransport?.request,finalValidation:newmanTransport?context=>{report.newmanControllers=require("./newman-coverage.cjs")({...context,meta,credentials,docker});}:undefined,meta,adminPassword,provisioned,queue,qr,notifications,reports,cache,prepareLoad:loadRequested?context=>{loadContext=context;}:undefined,recommendations:recommendations?recommendationControls:undefined,rememberQr:tokens=>qrSecrets.push(...tokens),faults:faults?controls:undefined,progress:partial=>{report.commercial=partial;fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));},attest:()=>attest(Object.keys(spec.services).filter(n=>n!=='collector')),sql:query=>{assert.ok(/^SELECT\s/i.test(query.trim())&&!query.replace(/;\s*$/,'').includes(';'),'Commercial checks are read-only SQL');return sql(query);}});
  if(central){stage='collector recovery';if(!inspect('collector').State.Running)compose('start','collector');await wait('collector');}
  if(observe){
   stage='tracing verification';
@@ -129,8 +133,10 @@ async function main(){
  if(mongoTopology){const text=docker(['logs',inspect('mongo').Id]);for(const secret of Object.values(credentials))assert.ok(!text.includes(secret),'Credential found in Mongo logs');report.mongoLogsRedacted=true;}
  if(loadRequested){stage='bounded purchase load';const commercial=report.commercial;report.load=await require('./load-smoke.cjs')(loadContext);report.commercial=commercial;}
  if(frontend){stage='frontend accepted QR';const commercial=report.commercial;report.frontend=await require('./frontend-delivery.cjs')({meta,context:loadContext,load:report.load,provisioned});report.commercial=commercial;}
+ if(newmanRequested){stage='standalone Newman flow';report.newmanFlows=require('./newman-flows-run.cjs')({meta,docker,adminPassword,provisioned,sql,includeAdditional:true});}
  stage='final checks';attest(Object.keys(spec.services));assert.deepEqual(snapshot(oldIds),previous);
  assert.equal(sql(`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN (${Object.values(meta.schemas).map(s=>"'"+s+"'").join(',')});`),'30');
+ if(newmanTransport)report.newman=newmanTransport.finish();
  Object.assign(report,{result:'PASS',services:Object.keys(spec.services).length,schemas:5,previousContainersUnchanged:true,images});
  fs.writeFileSync(path.join(meta.directory,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }

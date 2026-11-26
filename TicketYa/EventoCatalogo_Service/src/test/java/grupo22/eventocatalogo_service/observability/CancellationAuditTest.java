@@ -35,7 +35,7 @@ class CancellationAuditTest {
         var repository=mock(EventRepository.class);when(repository.lockForCancellation(1L)).thenReturn(Optional.of(event));
         var tokens=mock(grupo22.eventocatalogo_service.security.ServiceTokens.class);
         String base="http://127.0.0.1:"+server.getAddress().getPort();
-        when(tokens.client(anyString(),anyString())).thenReturn(org.springframework.web.client.RestClient.create(base));
+        grupo22.eventocatalogo_service.feign.FeignFixtures.stub(tokens,new org.springframework.core.env.StandardEnvironment());
         var workflow=new EventWorkflow(events,repository,mock(SectorRepository.class),new DataSourceTransactionManager(database),base,base,base,tokens);
         var jwt=Jwt.withTokenValue("sentinel-42-token").header("alg","RS256").subject("42").claim("token_use","user").claim("jti","retry-authorization").build();
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt,List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"))));

@@ -83,7 +83,7 @@ public class ServiceTokens {
   var context=org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();if(context instanceof org.springframework.web.context.request.ServletRequestAttributes servlet){var state=(ar.edu.tudai.ticketya.servicio_entradas.observability.HttpLogState)servlet.getRequest().getAttribute(ar.edu.tudai.ticketya.servicio_entradas.observability.HttpLogState.ATTRIBUTE);if(state!=null)entry.addKeyValue("correlationId",state.correlationId());}
   entry.log("Technical token acquisition");
  }
- private void invalidate(String target,String used){var lock=tokenLocks.get(target);if(lock!=null&&lock.tryLock())try{OAuth2AuthorizedClient current=cache.loadAuthorizedClient(target,principal);if(current!=null&&current.getAccessToken().getTokenValue().equals(used))cache.removeAuthorizedClient(target,principal);}finally{lock.unlock();}}
+ public void invalidate(String target,String used){var lock=tokenLocks.get(target);if(lock!=null&&lock.tryLock())try{OAuth2AuthorizedClient current=cache.loadAuthorizedClient(target,principal);if(current!=null&&current.getAccessToken().getTokenValue().equals(used))cache.removeAuthorizedClient(target,principal);}finally{lock.unlock();}}
  @jakarta.annotation.PreDestroy public void closeTransport()throws java.io.IOException{transport.close();}
  public ClientHttpRequestInterceptor interceptor(String target){return (request,body,execution)->{
   String used=token(target);request.getHeaders().setBearerAuth(used);
@@ -92,8 +92,7 @@ public class ServiceTokens {
    invalidate(target,used);response.close();throw new TechnicalAuthFailure();
   }return response;
  };}
- public RestClient client(String target,String baseUrl){
-  var factory=transport.factory(false);
-  return builder.clone().baseUrl(baseUrl).requestFactory(factory).requestInterceptor(new ar.edu.tudai.ticketya.servicio_entradas.observability.CorrelationInterceptor()).requestInterceptor(interceptor(target)).requestInterceptor(transport.propagate()).build();
- }
+ public feign.Client transport(String target){return ar.edu.tudai.ticketya.servicio_entradas.feign.FeignSupport.transport(transport.factory(false),new ar.edu.tudai.ticketya.servicio_entradas.observability.CorrelationInterceptor(),interceptor(target),transport.propagate());}
+ public <T>T feign(Class<T> type,String target,String url){return ar.edu.tudai.ticketya.servicio_entradas.feign.FeignSupport.target(type,transport(target),url);}
+
 }

@@ -1,0 +1,120 @@
+{
+  "name": "TicketYa — plantilla sin secretos",
+  "values": [
+    {
+      "key": "gatewayUrl",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "identidadUrl",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "eventosUrl",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "inventarioUrl",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "comprasUrl",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "entradasUrl",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "organizadorEmail",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "organizadorPassword",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "administradorEmail",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "administradorPassword",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "personal_accesoEmail",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "personal_accesoPassword",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_eventos_inventario",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_eventos_entradas",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_eventos_compras",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_compras_eventos",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_compras_inventario",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_compras_entradas",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "secret_entradas_compras",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

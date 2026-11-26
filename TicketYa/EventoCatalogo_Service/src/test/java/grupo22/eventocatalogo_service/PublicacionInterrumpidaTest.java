@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 class PublicacionInterrumpidaTest {
     private grupo22.eventocatalogo_service.security.ServiceTokens testTokens(String url){
       var tokens=org.mockito.Mockito.mock(grupo22.eventocatalogo_service.security.ServiceTokens.class);
-      org.mockito.Mockito.when(tokens.client(org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyString())).thenReturn(org.springframework.web.client.RestClient.builder().baseUrl(url).requestFactory(new grupo22.eventocatalogo_service.timing.TimedTransport(new org.springframework.mock.env.MockEnvironment()).factory(false)).build());return tokens;
+      grupo22.eventocatalogo_service.feign.FeignFixtures.stub(tokens,new org.springframework.core.env.StandardEnvironment());return tokens;
     }
     @Test void noPublicaConUnSectorPendienteYReintentaElInventarioCompleto()throws Exception {
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);var calls=new AtomicInteger();

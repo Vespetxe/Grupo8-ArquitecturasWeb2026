@@ -2,21 +2,22 @@ package ar.edu.tudai.ticketya.servicio_entradas.integration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import ar.edu.tudai.ticketya.servicio_entradas.feign.*;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 @Component
 public class RestComprasOrderClient implements OrderClient {
-    private final RestClient restClient;
+ @org.springframework.beans.factory.annotation.Autowired public RestComprasOrderClient(@org.springframework.context.annotation.Lazy EntradasComprasFeignClient client,org.springframework.core.env.Environment env){this.restClient=client;this.guard=new ar.edu.tudai.ticketya.servicio_entradas.resilience.PilotReadGuard(env);}
+    private final EntradasComprasFeignClient restClient;
     private final ar.edu.tudai.ticketya.servicio_entradas.resilience.PilotReadGuard guard;
-    @org.springframework.beans.factory.annotation.Autowired
     public RestComprasOrderClient(RestClient.Builder builder, ar.edu.tudai.ticketya.servicio_entradas.security.ServiceTokens tokens,
             @Value("${ticketya.compras.base-url:http://localhost:8082}") String baseUrl,org.springframework.core.env.Environment env) {
-        this.restClient = tokens.client("compras",baseUrl);
+        this.restClient = tokens.feign(EntradasComprasFeignClient.class,"compras",baseUrl);
         this.guard = new ar.edu.tudai.ticketya.servicio_entradas.resilience.PilotReadGuard(env);
     }
     public RestComprasOrderClient(RestClient.Builder builder,ar.edu.tudai.ticketya.servicio_entradas.security.ServiceTokens tokens,String baseUrl){this(builder,tokens,baseUrl,new org.springframework.core.env.StandardEnvironment());}
     public RestComprasOrderClient(RestClient.Builder builder,String baseUrl){this(builder,baseUrl,new org.springframework.core.env.StandardEnvironment());}
-    public RestComprasOrderClient(RestClient.Builder builder,String baseUrl,org.springframework.core.env.Environment env){this.restClient=builder.baseUrl(baseUrl).build();this.guard=new ar.edu.tudai.ticketya.servicio_entradas.resilience.PilotReadGuard(env);}
+    public RestComprasOrderClient(RestClient.Builder builder,String baseUrl,org.springframework.core.env.Environment env){this.restClient=FeignSupport.target(EntradasComprasFeignClient.class,FeignSupport.transport(new ar.edu.tudai.ticketya.servicio_entradas.timing.TimedTransport(env).factory(false)),baseUrl);this.guard=new ar.edu.tudai.ticketya.servicio_entradas.resilience.PilotReadGuard(env);}
     @Override
     public OrderSnapshot getOrder(String orderId) {
         var order=getOrderForOwnership(orderId);
@@ -40,7 +41,7 @@ public class RestComprasOrderClient implements OrderClient {
         }
     }
     private OrderSnapshot readValidated(String orderId) {
-        var order=restClient.get().uri("/internal/orders/{orderId}",orderId).retrieve().body(OrderSnapshot.class);
+        var order=restClient.get(orderId);
         if (order == null || !orderId.equals(order.orderId()) || order.clientId() == null || order.clientId().isBlank()
                 || order.status()==null || !java.util.Set.of("PENDIENTE","PROCESANDO","COMPLETADA","CANCELADA","FALLIDA","DEVUELTA_PARCIAL","DEVUELTA_TOTAL","CONFIRMADA").contains(order.status())
                 || order.items() == null || order.items().isEmpty()

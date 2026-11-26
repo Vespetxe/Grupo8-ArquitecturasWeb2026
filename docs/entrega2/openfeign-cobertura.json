@@ -1,0 +1,2116 @@
+{
+  "summary": {
+    "project": "ticketya-e2-reg-b2a0b652b0337244",
+    "controllers": 87,
+    "publicOperations": 60,
+    "allHaveExecutedHttpCase": true,
+    "positiveBusinessOperations": 54,
+    "positiveProviderOperations": 83,
+    "negativeOnly": [],
+    "originalCommercialRequests": 455,
+    "standaloneNewmanRequests": 50,
+    "standaloneAssertions": 78,
+    "complementaryPassedRequests": 52,
+    "technicalTokenRequests": 7,
+    "technicalReadinessRequests": 4,
+    "administrativeOpenApiRequests": 2,
+    "originalProbeExpectationErrors": 2,
+    "focusedCorrectionsPassed": 2,
+    "streaming": "SSE autenticado verificado por helper finito; no atribuido a Newman",
+    "campaignStatus": "Validación consolidada PASS; reportes interrumpidos originales conservan FAIL"
+  },
+  "rows": [
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/participants/{id}",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Recurso inexistente",
+        "expectedStatus": 404,
+        "actualStatus": 404,
+        "result": "PASS"
+      },
+      "businessRequests": 5,
+      "positiveBusinessRequests": 4,
+      "positiveProviderResponses": 4,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "PUT",
+      "endpoint": "/api/v1/participants/{id}",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS",
+        "correction": "Expectativa corregida y dos comprobaciones focalizadas 401 aprobadas"
+      },
+      "businessRequests": 2,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json",
+        "continuation-report.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "DELETE",
+      "endpoint": "/api/v1/participants/{id}",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS",
+        "correction": "Expectativa corregida y dos comprobaciones focalizadas 401 aprobadas"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json",
+        "continuation-report.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/venues",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "POST",
+      "endpoint": "/api/v1/venues",
+      "access": "ORGANIZADOR|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 14,
+      "positiveBusinessRequests": 11,
+      "positiveProviderResponses": 11,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/venues/{venueId}/sectors",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "POST",
+      "endpoint": "/api/v1/venues/{venueId}/sectors",
+      "access": "ORGANIZADOR|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 19,
+      "positiveBusinessRequests": 11,
+      "positiveProviderResponses": 11,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/participants",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 6,
+      "positiveBusinessRequests": 6,
+      "positiveProviderResponses": 7,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "POST",
+      "endpoint": "/api/v1/participants",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 5,
+      "positiveBusinessRequests": 5,
+      "positiveProviderResponses": 5,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "POST",
+      "endpoint": "/api/v1/events",
+      "access": "ORGANIZADOR|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 15,
+      "positiveBusinessRequests": 14,
+      "positiveProviderResponses": 14,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "POST",
+      "endpoint": "/api/v1/events/{eventId}/prices",
+      "access": "ORGANIZADOR|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 22,
+      "positiveBusinessRequests": 14,
+      "positiveProviderResponses": 14,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "PATCH",
+      "endpoint": "/api/v1/events/{eventId}/suspend",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "PATCH",
+      "endpoint": "/api/v1/events/{eventId}/status",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 2,
+      "positiveBusinessRequests": 2,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "PATCH",
+      "endpoint": "/api/v1/events/{eventId}/publish",
+      "access": "ORGANIZADOR|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 31,
+      "positiveBusinessRequests": 23,
+      "positiveProviderResponses": 23,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "PATCH",
+      "endpoint": "/api/v1/events/{eventId}/cancel",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 3,
+      "positiveBusinessRequests": 3,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/venues/{venueId}",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/sectors/{sectorId}/seats",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/events/{eventId}",
+      "access": "CLIENTE|ORGANIZADOR|ADMINISTRADOR|PERSONAL_ACCESO",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 9,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 33,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/events/search",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 5,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/events/{eventId}/report",
+      "access": "ORGANIZADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 43,
+      "positiveBusinessRequests": 35,
+      "positiveProviderResponses": 35,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/me/preferences",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 7,
+      "positiveBusinessRequests": 3,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "PUT",
+      "endpoint": "/api/v1/me/preferences",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 7,
+      "positiveBusinessRequests": 6,
+      "positiveProviderResponses": 6,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/api/v1/me/recommendations",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 10,
+      "positiveBusinessRequests": 6,
+      "positiveProviderResponses": 6,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "eventos",
+      "method": "GET",
+      "endpoint": "/internal/security/readiness",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/reservas",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/reservas",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 28,
+      "positiveBusinessRequests": 12,
+      "positiveProviderResponses": 12,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/reservas/{id}/liberar",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/reservas/{id}/confirmar",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 7,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/ocupaciones/liberar",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/internal/reservas/{id}/devoluciones",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 4,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/internal/reservas/{id}/devoluciones",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/internal/reservas/{id}/compensar",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/internal/eventos/{id}/suspender",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/internal/eventos/{id}/publicar",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 23,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/internal/eventos/{id}/habilitar",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/eventos/{idEvento}/inventario",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 14,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/eventos/{idEvento}/cancelar-inventario",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/reservas/{id}",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 8,
+      "positiveBusinessRequests": 5,
+      "positiveProviderResponses": 74,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/disponibilidad/eventos/{idEvento}/sectores/{idSector}",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "Lectura pública",
+        "expectedStatus": 200,
+        "actualStatus": 200,
+        "result": "PASS"
+      },
+      "businessRequests": 36,
+      "positiveBusinessRequests": 36,
+      "positiveProviderResponses": 38,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "POST",
+      "endpoint": "/colas/eventos/{evento}",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 6,
+      "positiveBusinessRequests": 5,
+      "positiveProviderResponses": 5,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "PUT",
+      "endpoint": "/colas/eventos/{evento}",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 3,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/colas/eventos/{evento}/mi-turno",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 7,
+      "positiveBusinessRequests": 6,
+      "positiveProviderResponses": 6,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "DELETE",
+      "endpoint": "/colas/eventos/{evento}/mi-turno",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/internal/reports/events/{eventId}/inventory",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 35,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "inventario",
+      "method": "GET",
+      "endpoint": "/internal/security/readiness",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/pagos",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 2,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/pagos",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 36,
+      "positiveBusinessRequests": 29,
+      "positiveProviderResponses": 30,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/devoluciones",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 3,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/compras",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/compras",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 16,
+      "positiveBusinessRequests": 10,
+      "positiveProviderResponses": 10,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/compras/{id}/cancelar",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/admin/eventos/{id}/cancelacion",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/admin/devoluciones/{id}/rechazar",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/admin/devoluciones/{id}/procesar",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 13,
+      "positiveBusinessRequests": 12,
+      "positiveProviderResponses": 12,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/admin/devoluciones/{id}/aprobar",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 3,
+      "positiveBusinessRequests": 2,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/pagos/{id}",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 3,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/internal/orders/{id}",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 55,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/devoluciones/{id}",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 2,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/compras/{id}",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 17,
+      "positiveBusinessRequests": 14,
+      "positiveProviderResponses": 18,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/compras/{id}/estado",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/compras/{id}/entradas",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 7,
+      "positiveBusinessRequests": 4,
+      "positiveProviderResponses": 4,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/compras/{id}/detalle",
+      "access": "CLIENTE|ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 6,
+      "positiveBusinessRequests": 3,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/admin/reintegros/{id}",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/admin/devoluciones",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/admin/devoluciones/{id}/procesamiento",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/api/v1/me/notifications",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 19,
+      "positiveBusinessRequests": 15,
+      "positiveProviderResponses": 15,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/api/v1/me/notifications/stream",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 0,
+      "streamingVerified": true,
+      "scope": "SSE autenticado mediante helper de streaming",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/api/v1/me/notifications/unread-count",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 2,
+      "positiveBusinessRequests": 2,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "PUT",
+      "endpoint": "/api/v1/me/notifications/{id}/read",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 3,
+      "positiveBusinessRequests": 2,
+      "positiveProviderResponses": 2,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/internal/recommendations/customers/{owner}/history",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 5,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/internal/reports/events/{eventId}/sales",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 35,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "POST",
+      "endpoint": "/internal/notifications/events",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 7,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "compras",
+      "method": "GET",
+      "endpoint": "/internal/security/readiness",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "GET",
+      "endpoint": "/tickets",
+      "access": "CLIENTE",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 91,
+      "positiveBusinessRequests": 54,
+      "positiveProviderResponses": 89,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "POST",
+      "endpoint": "/internal/tickets/issue",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 7,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "PATCH",
+      "endpoint": "/internal/tickets/{ticketId}/status",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 4,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "PATCH",
+      "endpoint": "/internal/tickets/status",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "POST",
+      "endpoint": "/internal/tickets/orders/{id}/annul",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "POST",
+      "endpoint": "/internal/events/{id}/cancel-emission",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "POST",
+      "endpoint": "/accesos/eventos/{event}/validaciones",
+      "access": "PERSONAL_ACCESO",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 16,
+      "positiveBusinessRequests": 2,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "PUT",
+      "endpoint": "/admin/accesos/eventos/{event}/personal/{staff}",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 8,
+      "positiveBusinessRequests": 6,
+      "positiveProviderResponses": 6,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "DELETE",
+      "endpoint": "/admin/accesos/eventos/{event}/personal/{staff}",
+      "access": "ADMINISTRADOR",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 1,
+      "positiveBusinessRequests": 1,
+      "positiveProviderResponses": 1,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "GET",
+      "endpoint": "/internal/reports/events/{eventId}/tickets",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 35,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "entradas",
+      "method": "GET",
+      "endpoint": "/internal/security/readiness",
+      "access": "OAUTH2_TECNICO",
+      "probe": {
+        "case": "JWT humano rechazado en ruta técnica",
+        "expectedStatus": 403,
+        "actualStatus": 403,
+        "result": "PASS"
+      },
+      "businessRequests": 0,
+      "positiveBusinessRequests": 0,
+      "positiveProviderResponses": 3,
+      "streamingVerified": false,
+      "scope": "Respuesta positiva del proveedor + probe Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "identidad",
+      "method": "POST",
+      "endpoint": "/auth/register",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "DTO inválido",
+        "expectedStatus": 400,
+        "actualStatus": 400,
+        "result": "PASS"
+      },
+      "businessRequests": 4,
+      "positiveBusinessRequests": 4,
+      "positiveProviderResponses": 0,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "identidad",
+      "method": "POST",
+      "endpoint": "/auth/login",
+      "access": "ANONIMO",
+      "probe": {
+        "case": "DTO inválido",
+        "expectedStatus": 400,
+        "actualStatus": 400,
+        "result": "PASS"
+      },
+      "businessRequests": 30,
+      "positiveBusinessRequests": 30,
+      "positiveProviderResponses": 0,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    },
+    {
+      "service": "identidad",
+      "method": "GET",
+      "endpoint": "/auth/me",
+      "access": "CLIENTE|ORGANIZADOR|ADMINISTRADOR|PERSONAL_ACCESO",
+      "probe": {
+        "case": "JWT ausente",
+        "expectedStatus": 401,
+        "actualStatus": 401,
+        "result": "PASS"
+      },
+      "businessRequests": 17,
+      "positiveBusinessRequests": 17,
+      "positiveProviderResponses": 0,
+      "streamingVerified": false,
+      "scope": "Flujo funcional Newman",
+      "evidence": [
+        "target/security/b2a0b652b0337244/report.json",
+        "target/security/b2a0b652b0337244/newman-controller-probes-original.json",
+        "newman-complementary-general-fixture-failure.json",
+        "newman-complementary-queue-fixture-failure.json",
+        "newman-complementary-results.json"
+      ]
+    }
+  ]
+}

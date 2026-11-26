@@ -13,7 +13,7 @@ class RestAdapterContractTest {
  HttpServer server;String base;ServiceTokens tokens;EntradaIdentidadService identities;
  @BeforeEach void setup()throws Exception{
   server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);server.start();base="http://127.0.0.1:"+server.getAddress().getPort();
-  tokens=mock(ServiceTokens.class);when(tokens.client(anyString(),anyString())).thenReturn(RestClient.create(base));identities=mock(EntradaIdentidadService.class);
+  tokens=mock(ServiceTokens.class);ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.stub(tokens,new org.springframework.core.env.StandardEnvironment());identities=mock(EntradaIdentidadService.class);
  }
  @AfterEach void close(){server.stop(0);}
  void respond(String body){server.createContext("/",x->{x.getRequestBody().readAllBytes();byte[] b=body.getBytes();x.getResponseHeaders().set("Content-Type","application/json");x.sendResponseHeaders(200,b.length==0?-1:b.length);if(b.length>0)x.getResponseBody().write(b);x.close();});}

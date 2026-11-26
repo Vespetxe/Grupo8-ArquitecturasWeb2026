@@ -12,8 +12,9 @@ import java.util.*;
 @ConditionalOnProperty(name="ticketya.notifications.dispatch-enabled",havingValue="true",matchIfMissing=true)
 public class EventNoticeDispatcher {
  private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(EventNoticeDispatcher.class);
- private final EventNoticeStore store;private final MongoTemplate mongo;private final RestClient purchases;
- public EventNoticeDispatcher(EventNoticeStore store,MongoTemplate mongo,ServiceTokens tokens,@Value("${ticketya.compras.base-url:http://localhost:8084}")String url){this.store=store;this.mongo=mongo;this.purchases=tokens.client("compras",url);}
+ private final EventNoticeStore store;private final MongoTemplate mongo;private final grupo22.eventocatalogo_service.feign.EventosComprasFeignClient purchases;
+ public EventNoticeDispatcher(EventNoticeStore store,MongoTemplate mongo,ServiceTokens tokens,@Value("${ticketya.compras.base-url:http://localhost:8084}")String url){this.store=store;this.mongo=mongo;this.purchases=tokens.feign(grupo22.eventocatalogo_service.feign.EventosComprasFeignClient.class,"compras",url);}
+ @org.springframework.beans.factory.annotation.Autowired public EventNoticeDispatcher(EventNoticeStore store,MongoTemplate mongo,@org.springframework.context.annotation.Lazy grupo22.eventocatalogo_service.feign.EventosComprasFeignClient purchases){this.store=store;this.mongo=mongo;this.purchases=purchases;}
  public record Delivery(Long deliveryId,Long eventId,String type,java.time.Instant occurredAt,List<Long> recipients){}
  public void dispatch(){
   List<EventNoticeStore.Pending> pending;try{pending=store.pending();}catch(RuntimeException failure){LOG.warn("Notification outbox temporarily unavailable");return;}
@@ -27,7 +28,7 @@ public class EventNoticeDispatcher {
    var ids=List.copyOf(recipients);
    if(!"ARTISTA_FAVORITO_PUBLICADO".equals(notice.type())||!ids.isEmpty())for(int start=0;start<Math.max(1,ids.size());start+=500){
     var body=new Delivery(notice.id(),notice.eventId(),notice.type(),notice.createdAt(),ids.subList(start,Math.min(start+500,ids.size())));
-    var response=purchases.post().uri("/internal/notifications/events").body(body).retrieve().body(Ack.class);
+    var response=purchases.notify(body);
     if(response==null||!Boolean.TRUE.equals(response.accepted()))throw new org.springframework.web.client.RestClientException("Unconfirmed notification delivery");
    }
    store.delivered(notice.id());

@@ -4,8 +4,9 @@ const assert = require('node:assert/strict');
 const SERVICES = ['mysql', 'eventos', 'inventario', 'entradas', 'compras', 'gateway'];
 const PORTS = {eventos:8081, inventario:8082, entradas:8083, compras:8084, gateway:8080};
 const IMAGES = Object.fromEntries(Object.keys(PORTS).map(s => [s, `ticketya-e2-${s === 'gateway' ? 'gateway' : s}:dev`]));
-// The inventory image uses the Spanish singular tag already validated in Docker.
-IMAGES.inventario = 'ticketya-e2-inventario:dev';
+// Opt-in tags keep approved/demo images untouched during the Feign migration.
+const feignTag=process.env.TY_FEIGN_IMAGE_TAG;
+if(feignTag){assert.match(feignTag,/^feign-[a-f0-9]{8}$/);for(const service of ['eventos','compras','entradas','inventario','gateway'])IMAGES[service]='ticketya-e2-'+service+':'+feignTag;}
 
 function identity(id, port) {
   assert.match(id, /^[a-f0-9]{16}$/);

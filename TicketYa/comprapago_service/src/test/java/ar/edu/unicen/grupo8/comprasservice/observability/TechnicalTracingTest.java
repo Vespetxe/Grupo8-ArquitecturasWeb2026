@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TechnicalTracingTest {
  @org.springframework.beans.factory.annotation.Autowired org.springframework.web.client.RestClient.Builder builder;
  @org.springframework.beans.factory.annotation.Autowired io.micrometer.tracing.Tracer tracer;
+ @org.springframework.beans.factory.annotation.Autowired io.micrometer.observation.ObservationRegistry registry;
  @Test void businessReadTimeoutUsesTwoSecondsWithoutReplay()throws Exception{
   var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
   var executor=java.util.concurrent.Executors.newCachedThreadPool();server.setExecutor(executor);
@@ -26,9 +27,9 @@ class TechnicalTracingTest {
    var env=new MockEnvironment().withProperty("TY_SECURITY_TOKEN_URL","http://127.0.0.1:"+server.getAddress().getPort()+"/oauth2/token");
    for(String target:new String[]{"eventos","inventario","entradas"})env.withProperty("TY_SECURITY_"+target.toUpperCase()+"_SECRET",java.util.UUID.randomUUID().toString());
    var tokens=new ServiceTokens(env,Clock.systemUTC(),builder);
-   var client=tokens.client("inventario","http://127.0.0.1:"+server.getAddress().getPort());
+   var client=ar.edu.unicen.grupo8.comprasservice.feign.FeignSupport.observedTarget(ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.Probe.class,tokens.transport("inventario"),"http://127.0.0.1:"+server.getAddress().getPort(),registry);
    long started=System.nanoTime();
-   assertThrows(org.springframework.web.client.ResourceAccessException.class,()->client.get().uri("/slow").retrieve().toBodilessEntity());
+   assertThrows(org.springframework.web.client.ResourceAccessException.class,()->client.slow());
    long elapsed=java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started);
    assertTrue(elapsed>=1500&&elapsed<5000,"Read timeout outside configured two-second window");
    assertEquals(1,calls.get());assertNull(tracer.currentSpan());
@@ -54,8 +55,8 @@ class TechnicalTracingTest {
    var tokens=new ServiceTokens(env,clock,builder);
    String first=tokens.token("inventario");assertEquals(first,tokens.token("inventario"));assertEquals(1,issued.get());
    clockValue.set(clockValue.get().plusSeconds(7200));assertNotEquals(first,tokens.token("inventario"));assertEquals(2,issued.get());clockValue.set(clockValue.get().minusSeconds(7200));
-   var client=tokens.client("inventario","http://127.0.0.1:"+server.getAddress().getPort());
-   assertThrows(TechnicalAuthFailure.class,()->client.post().uri("/write").body("test").retrieve().toBodilessEntity());
+   var client=ar.edu.unicen.grupo8.comprasservice.feign.FeignSupport.observedTarget(ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.Probe.class,tokens.transport("inventario"),"http://127.0.0.1:"+server.getAddress().getPort(),registry);
+   assertThrows(TechnicalAuthFailure.class,()->client.write());
    assertEquals(1,business.get());
    tokens.token("inventario");assertEquals(3,issued.get());
    assertTrue(parents.stream().allMatch(p->p!=null&&p.matches("00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")),parents.toString());

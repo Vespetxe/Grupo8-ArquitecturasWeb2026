@@ -16,7 +16,7 @@ function spec(meta){
   }
  }
  s.services.gateway.environment.IDENTIDAD_BASE_URL='http://identidad:8085';
- s.services.identidad={image:'ticketya-e2-identidad:dev',pull_policy:'never',networks:['backend'],environment:{
+ s.services.identidad={image:'ticketya-e2-identidad:'+(process.env.TY_FEIGN_IMAGE_TAG||'dev'),pull_policy:'never',networks:['backend'],environment:{
   SERVER_PORT:'8085',SPRING_PROFILES_ACTIVE:'integracion',DB_URL:`jdbc:mysql://mysql:3306/${meta.identitySchema}?allowPublicKeyRetrieval=true&useSSL=false`,DB_USERNAME:'ty_identidad',DB_PASSWORD:'${TY_REG_IDENTIDAD_PASSWORD:?required}',
   SPRING_JPA_HIBERNATE_DDL_AUTO:'update',IDENTITY_JWT_ISSUER:'http://identidad:8085',IDENTITY_JWT_KEY_ID:`security-${meta.id}`,
   IDENTITY_JWT_AUDIENCES:'ticketya-identidad,ticketya-gateway,ticketya-eventos,ticketya-inventario,ticketya-entradas,ticketya-compras',

@@ -47,7 +47,7 @@ class TimedTransportTest {
   var env=new MockEnvironment().withProperty("TY_SECURITY_TOKEN_URL",url+"/oauth2/token").withProperty("ticketya.http.token-ms","50");
   for(String name:new String[]{"EVENTOS","INVENTARIO","ENTRADAS","COMPRAS"})env.setProperty("TY_SECURITY_"+name+"_SECRET","x".repeat(64));
   var tokens=new grupo22.eventocatalogo_service.security.ServiceTokens(env);
-  try{long start=System.nanoTime();assertThrows(grupo22.eventocatalogo_service.security.TechnicalAuthFailure.class,()->tokens.client("inventario",url).post().uri("/write").retrieve().toBodilessEntity());assertTrue((System.nanoTime()-start)/1_000_000<3000);assertEquals(1,tokenCalls.get());assertEquals(0,writes.get());}finally{tokens.closeTransport();}
+  try{long start=System.nanoTime();assertThrows(grupo22.eventocatalogo_service.security.TechnicalAuthFailure.class,()->tokens.feign(grupo22.eventocatalogo_service.feign.FeignFixtures.Probe.class,"inventario",url).write());assertTrue((System.nanoTime()-start)/1_000_000<3000);assertEquals(1,tokenCalls.get());assertEquals(0,writes.get());}finally{tokens.closeTransport();}
  }
  @Test void connectionHandshakeTimeoutIsEffective()throws Exception{
   try(var socket=new java.net.ServerSocket(0);var transport=new TimedTransport(new MockEnvironment().withProperty("ticketya.http.connect-ms","75"))){

@@ -18,8 +18,8 @@ class ServiceTokensTest {
    var tokens=new ServiceTokens(env,clock);
    String first=tokens.token("inventario");assertEquals(first,tokens.token("inventario"));assertEquals(1,issued.get());
    clockValue.set(clockValue.get().plusSeconds(7200));assertNotEquals(first,tokens.token("inventario"));assertEquals(2,issued.get());
-   var client=tokens.client("inventario","http://127.0.0.1:"+server.getAddress().getPort());
-   assertThrows(TechnicalAuthFailure.class,()->client.post().uri("/write").body("test").retrieve().toBodilessEntity());
+   var client=tokens.feign(ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.Probe.class,"inventario","http://127.0.0.1:"+server.getAddress().getPort());
+   assertThrows(TechnicalAuthFailure.class,()->client.write());
    assertEquals(1,business.get()); // no automatic POST replay
   }finally{server.stop(0);}
  }

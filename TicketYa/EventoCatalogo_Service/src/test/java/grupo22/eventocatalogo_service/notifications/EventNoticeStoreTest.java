@@ -25,17 +25,13 @@ class EventNoticeStoreTest {
   rows= new java.util.ArrayList<>(notices.saveAllAndFlush(rows));Long commercial=rows.get(20).id;
   var mongo=org.mockito.Mockito.mock(org.springframework.data.mongodb.core.MongoTemplate.class);
   org.mockito.Mockito.when(mongo.getCollection("preferences")).thenThrow(new com.mongodb.MongoException("Unavailable"));
-  var builder=org.springframework.web.client.RestClient.builder().baseUrl("http://isolated.invalid");
-  var http=org.springframework.test.web.client.MockRestServiceServer.bindTo(builder).build();
-  http.expect(org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo("http://isolated.invalid/internal/notifications/events"))
-    .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess("{\"accepted\":true}",org.springframework.http.MediaType.APPLICATION_JSON));
-  var tokens=org.mockito.Mockito.mock(grupo22.eventocatalogo_service.security.ServiceTokens.class);
-  org.mockito.Mockito.when(tokens.client("compras","http://isolated.invalid")).thenReturn(builder.build());
-  new EventNoticeDispatcher(store,mongo,tokens,"http://isolated.invalid").dispatch();
+  var remote=org.mockito.Mockito.mock(grupo22.eventocatalogo_service.feign.EventosComprasFeignClient.class);
+  org.mockito.Mockito.when(remote.notify(org.mockito.ArgumentMatchers.any())).thenReturn(new EventNoticeDispatcher.Ack(true));
+  new EventNoticeDispatcher(store,mongo,remote).dispatch();
   assertTrue(notices.findById(commercial).orElseThrow().deliveredAt==null);
   assertTrue(rows.subList(0,20).stream().allMatch(n->notices.findById(n.id).orElseThrow().lastAttemptAt!=null));
   // A new dispatcher uses persisted ordering, not a process-local cursor.
-  new EventNoticeDispatcher(store,mongo,tokens,"http://isolated.invalid").dispatch();http.verify();
+  new EventNoticeDispatcher(store,mongo,remote).dispatch();org.mockito.Mockito.verify(remote,org.mockito.Mockito.times(1)).notify(org.mockito.ArgumentMatchers.any());
   assertNotNull(notices.findById(commercial).orElseThrow().deliveredAt);
   var deliveredAt=notices.findById(commercial).orElseThrow().deliveredAt;
   store.attempted(commercial);assertEquals(deliveredAt,notices.findById(commercial).orElseThrow().deliveredAt);

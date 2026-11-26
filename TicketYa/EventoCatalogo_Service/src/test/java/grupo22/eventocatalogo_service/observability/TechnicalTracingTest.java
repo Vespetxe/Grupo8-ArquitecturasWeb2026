@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @org.springframework.test.context.ContextConfiguration(initializers=grupo22.eventocatalogo_service.SecurityTestKeys.class)
 @org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing
 class TechnicalTracingTest {
+ @org.springframework.beans.factory.annotation.Autowired io.micrometer.observation.ObservationRegistry registry;
  @org.springframework.beans.factory.annotation.Autowired org.springframework.web.client.RestClient.Builder builder;
  @org.springframework.beans.factory.annotation.Autowired io.micrometer.tracing.Tracer tracer;
  @Test void cachesRenewsAndNeverReplaysBusinessWritesOnAuthenticationFailure()throws Exception{
@@ -31,8 +32,8 @@ class TechnicalTracingTest {
    var tokens=new ServiceTokens(env,clock,builder);
    String first=tokens.token("inventario");assertEquals(first,tokens.token("inventario"));assertEquals(1,issued.get());
    clockValue.set(clockValue.get().plusSeconds(7200));assertNotEquals(first,tokens.token("inventario"));assertEquals(2,issued.get());clockValue.set(clockValue.get().minusSeconds(7200));
-   var client=tokens.client("inventario","http://127.0.0.1:"+server.getAddress().getPort());
-   assertThrows(TechnicalAuthFailure.class,()->client.post().uri("/write").body("test").retrieve().toBodilessEntity());
+   var client=grupo22.eventocatalogo_service.feign.FeignSupport.observedTarget(grupo22.eventocatalogo_service.feign.FeignFixtures.Probe.class,tokens.transport("inventario"),"http://127.0.0.1:"+server.getAddress().getPort(),registry);
+   assertThrows(TechnicalAuthFailure.class,()->client.write());
    assertEquals(1,business.get());
    tokens.token("inventario");assertEquals(3,issued.get());
    assertTrue(parents.stream().allMatch(p->p!=null&&p.matches("00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}")),parents.toString());

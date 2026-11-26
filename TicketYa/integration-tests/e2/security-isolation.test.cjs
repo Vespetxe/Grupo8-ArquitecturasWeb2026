@@ -47,7 +47,8 @@ test('technical OAuth manager implementation is identical except caller and dest
    .replace(/\.clientId\("(eventos|compras|entradas)-to-"\+target\)/,'.clientId("CALLER-to-"+target)')
    .replace(/requestedScopes\("(eventos|compras|entradas)",target\)/,'requestedScopes("CALLER",target)')
    .replaceAll(pkg.replaceAll('/','.')+'.observability.','OBSERVABILITY.')
-   .replaceAll(pkg.replaceAll('/','.')+'.timing.','TIMING.');
+   .replaceAll(pkg.replaceAll('/','.')+'.timing.','TIMING.')
+   .replaceAll(pkg.replaceAll('/','.')+'.feign.','FEIGN.');
   if(expected)assert.equal(text,expected);else expected=text;
  }
 });
