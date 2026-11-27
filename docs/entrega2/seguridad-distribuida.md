@@ -108,7 +108,7 @@ explícita puede obtener un token nuevo conservando la misma operación/idempote
 Los errores del token endpoint también son técnicos, con mensajes redactados.
 No se imprimen tokens, secretos ni respuestas OAuth2.
 
-`RestSupport.mutate` distingue explícitamente 401/403 de otros 4xx: nunca crea
+`RemoteCallSupport.mutate` distingue explícitamente 401/403 de otros 4xx: nunca crea
 OperacionExternaRechazadaException por autenticación técnica. PagoService mantiene
 sus estados/etapas y no inicia compensación por TechnicalAuthFailure. Una prueba
 verifica pago aprobado pendiente de confirmación, recuperación con la misma clave,
@@ -270,10 +270,10 @@ compilación; revisar esa API antes de futuras actualizaciones de Spring.
 - `TicketYa/api-gateway/src/test/java/ar/edu/ticketya/gateway/SecurityTestKeys.java`
 - `TicketYa/api-gateway/src/test/resources/META-INF/spring.factories`
 - `TicketYa/comprapago_service/pom.xml`
-- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestEntradaClient.java`
-- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestEventoClient.java`
-- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestReservaClient.java`
-- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestSupport.java`
+- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/FeignEntradaAdapter.java`
+- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/FeignEventoAdapter.java`
+- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/FeignReservaAdapter.java`
+- `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RemoteCallSupport.java`
 - `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/controller/DevolucionAdminController.java`
 - `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/security/DistributedSecurity.java`
 - `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/security/JwtTrust.java`
@@ -286,7 +286,7 @@ compilación; revisar esa API antes de futuras actualizaciones de Spring.
 - `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/DistributedSecurityHttpTest.java`
 - `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/EntornoPruebasSeguro.java`
 - `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/SecurityTestKeys.java`
-- `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/client/RestSupportSecurityTest.java`
+- `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/client/RemoteCallSupportSecurityTest.java`
 - `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/controller/ApiIntegracionTest.java`
 - `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/controller/SeleccionEntradaYActorTest.java`
 - `TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/security/ServiceTokensTest.java`
@@ -296,7 +296,7 @@ compilación; revisar esa API antes de futuras actualizaciones de Spring.
 - `TicketYa/comprapago_service/src/test/resources/application-test.properties`
 - `TicketYa/comprapago_service/src/test/resources/application.properties`
 - `TicketYa/entradas_service/pom.xml`
-- `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/config/RestClientConfiguration.java`
+- `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/config/OAuth2RestClientConfiguration.java`
 - `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/security/DistributedSecurity.java`
 - `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/security/JwtTrust.java`
 - `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/security/RoutePolicy.java`

@@ -12,6 +12,10 @@ Spring Boot 4.1.2 y los niveles Java 17/21 se conservan. Eventos, Compras y Entr
 
 Las siete interfaces contienen 24 operaciones HTTP. Los adaptadores existentes conservan validación de respuestas, propiedad, clasificación por contrato y recuperación. Sus constructores Spring reciben los clientes Feign. Los constructores programáticos se conservan para fixtures aislados y también ejecutan Feign; no constituyen un transporte RestClient alternativo.
 
+En Compras, los servicios dependen de `EventoClient`, `ReservaClient` y `EntradaClient`: sus implementaciones en el perfil `integracion` son `FeignEventoAdapter`, `FeignReservaAdapter` y `FeignEntradaAdapter`. Estas invocan `ComprasEventosFeignClient`, `ComprasInventarioFeignClient` y `ComprasEntradasFeignClient`. En Entradas, `OrderClient` se implementa mediante `FeignComprasOrderAdapter`, que invoca `EntradasComprasFeignClient`; sus pruebas inyectan Feign por el mismo constructor que Spring, sin builders RestClient descartados. En Eventos, EventWorkflow y el controller de reportes invocan Feign directamente; el historial conserva PurchaseHistoryClient como adaptador específico.
+
+El patrón es **servicio → interfaz de negocio → adaptador → proxy `@FeignClient` → HTTP**. El adaptador valida y convierte DTO, aplica resiliencia y traduce errores; no sustituye Feign ni agrega otra llamada de red. `RemoteCallSupport` clasifica fallos según el contrato de la operación y no es un cliente HTTP. `OAuth2RestClientConfiguration` en Entradas personaliza el RestClient legítimo utilizado para adquirir tokens técnicos; conserva el bean `technicalClient`. Las excepciones Spring `RestClientException`/`RestClientResponseException` mantienen la clasificación existente y su nombre no indica un transporte RestClient de negocio.
+
 `FeignSupport` implementa el contrato de transporte `feign.Client` sobre el request factory HC5 existente. No ejecuta RestClient. Conserva pools, límites de tiempo por solicitud, lectura de cuerpos, OAuth2 y correlación. El decoder y la capability preservan las categorías que consumen los servicios y circuitos. La respuesta vacía/inválida nunca confirma una operación.
 
 `Retryer.NEVER_RETRY`, retries HC5 desactivados, sin redirecciones ni fallback comercial. Los circuitos/bulkheads por familia siguen rodeando los adaptadores; no se agrega un circuito global duplicado. Se mantienen IDs originales, scopes, auditoría post-commit y recuperación explícita. Logging Feign de cuerpos/headers permanece desactivado; Micrometer observa las llamadas reales.
@@ -59,7 +63,7 @@ Reportes privados bajo `TicketYa/integration-tests/target/security/<corrida>/`: 
 ## Defensa breve
 
 1. Abrir las siete interfaces en el paquete `feign` de los tres consumidores; mostrar anotación, método y URL configurable.
-2. Mostrar su inyección en EventWorkflow, adaptadores de Compras y RestComprasOrderClient. Contrastar con la implementación anterior: desaparecieron las cadenas `RestClient.get/post/...` de negocio.
+2. Mostrar su inyección directa en EventWorkflow y su inyección a través de FeignEventoAdapter, FeignReservaAdapter, FeignEntradaAdapter y FeignComprasOrderAdapter. Explicar que son adaptadores con responsabilidades de validación/resiliencia, no clientes RestClient. Las cadenas `RestClient.get/post/...` de negocio ya no existen.
 3. Ejecutar en Postman publicación: Gateway → EventController → EventWorkflow → EventosInventarioFeignClient → InventarioController.
 4. Ejecutar reserva/compra/pago: Compras consulta Eventos e Inventario; confirma reserva y emite mediante ComprasEntradasFeignClient; Entradas consulta la orden mediante EntradasComprasFeignClient.
 5. Mostrar correlación/traza de las respuestas y logs de ambos servicios. Mostrar las pruebas de proxies Spring y las imágenes concretas del reporte, no solamente anotaciones.
@@ -114,3 +118,7 @@ Se construyeron seis etiquetas nuevas `feign-f4532c65`, sin sobrescribir imágen
 Los ocho componentes del entorno permanecen running, sin reinicios; MySQL/Mongo healthy. Los 88 contenedores anteriores a esta tarea no se iniciaron ni detuvieron; el volumen `ticketya-e2-infra_mysql_data` se conserva y no se consultó su base. Los recursos nuevos fallidos/de pruebas se conservaron. No hubo commit ni push.
 
 Limitaciones: el colector histórico no se redeplegó; se verificaron ECS, trazas y auditoría del entorno aislado. SSE usa el helper finito, no el lector de Newman. El modo automático futuro que concatena flujo y complementarios se comprobó por composición/sintaxis; sus escenarios se ejecutaron realmente en continuaciones separadas, sin repetir pagos para producir un único reporte verde. Ver la [matriz de cobertura](openfeign-cobertura.md) para distinguir casos positivos, proveedor y streaming.
+
+## Verificación del cambio de nomenclatura (27/11/2026)
+
+Se compilaron los tres consumidores y se ejecutaron 179 JUnit focalizadas: Compras 136, Entradas 38 y Eventos 5; cero fallos, errores u omisiones. Incluyen los contratos wire de las 24 operaciones Feign, resolución de los adaptadores por tipo/puerto y nuevo nombre de bean, ausencia de los beans históricos, clasificación de fallos, emisión, recuperación y trazabilidad OAuth2. Cinco pruebas Node de la colección/OpenFeign también aprobaron. Los XML quedaron en `TicketYa/integration-tests/target/openfeign-adapters-20261127/`, ignorados por Git. No se repitió la campaña comercial ni se reconstruyeron imágenes. Los contenedores Maven fueron nuevos, sin red y con H2 efímero; no se tocaron aplicaciones ni datos existentes.

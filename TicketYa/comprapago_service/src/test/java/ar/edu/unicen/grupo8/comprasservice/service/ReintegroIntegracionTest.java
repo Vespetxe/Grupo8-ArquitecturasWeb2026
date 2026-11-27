@@ -102,7 +102,7 @@ class ReintegroIntegracionTest {
     void annulmentFailurePreservesCompletedRefundWithoutReleasingOrRefundingTwice(int status){
         var c=crear(true);var values=entradas.consultarEntradas(c.getId());var d=aprobada(c,List.of(values.get(0).entradaId()));
         clearInvocations(entradas,reservas,pasarela);
-        doAnswer(i->{RestSupport.mutate(RestSupport.Operation.TICKET_STATUS,()->{throw new org.springframework.web.client.RestClientResponseException("sentinel-secret",status,"failure",new org.springframework.http.HttpHeaders(),new byte[0],java.nio.charset.StandardCharsets.UTF_8);});return null;}).when(entradas).anularEntradas(eq(c.getId()),anyList());
+        doAnswer(i->{RemoteCallSupport.mutate(RemoteCallSupport.Operation.TICKET_STATUS,()->{throw new org.springframework.web.client.RestClientResponseException("sentinel-secret",status,"failure",new org.springframework.http.HttpHeaders(),new byte[0],java.nio.charset.StandardCharsets.UTF_8);});return null;}).when(entradas).anularEntradas(eq(c.getId()),anyList());
         assertThrows(ar.edu.unicen.grupo8.comprasservice.exception.ComunicacionPasarelaException.class,()->procesar(d));
         var pending=flujo.obtener(d.id());assertEquals(EtapaDevolucion.ANULACION,pending.etapa());assertEquals(EstadoReintegro.COMPLETADO,pending.reintegro().estado());
         assertEquals(EstadoDevolucion.ERROR_PENDIENTE,pending.devolucion().estado());verify(reservas,never()).liberarLugares(any(),anyList());

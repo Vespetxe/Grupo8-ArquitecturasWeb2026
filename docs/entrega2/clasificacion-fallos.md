@@ -24,7 +24,7 @@ fallos ambiguos como pendientes y validar la respuesta antes de utilizarla.
 | Timeout, EOF, error de conexión o decodificación | `RESULT_UNKNOWN`; consultar estado antes de otra escritura |
 | Snapshot incompleto, contradictorio o con estado desconocido | `INVALID_RESPONSE`; no autoriza reintegro ni liberación |
 
-`RestSupport.Operation` limita el reconocimiento de `INVALID_ORDER` a la emisión;
+`RemoteCallSupport.Operation` limita el reconocimiento de `INVALID_ORDER` a la emisión;
 ese mismo código en otro endpoint no habilita compensación. Se descartan cuerpos,
 URLs y causas externas al construir `RemoteFailure`. El texto remoto nunca se
 utiliza como mensaje de logging. Los cuerpos de error examinados se limitan a

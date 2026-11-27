@@ -97,8 +97,8 @@ no reemplaza ni anticipa la auditoría comercial posterior al commit.
 - Compras y Entradas: `pom.xml`, `application.properties`, `logging.properties`,
   nuevo `resilience/PilotReadGuard.java`, `resilience/PilotReadGuardTest.java` y
   `resilience/PilotReadHttpTest.java`.
-- Compras: `client/RestEventoClient.java`.
-- Entradas: `integration/RestComprasOrderClient.java`.
+- Compras: `client/FeignEventoAdapter.java`.
+- Entradas: `integration/FeignComprasOrderAdapter.java`.
 - Archivo central: `docker/observability/archive.py` y `archive_test.py`.
 - Este documento.
 

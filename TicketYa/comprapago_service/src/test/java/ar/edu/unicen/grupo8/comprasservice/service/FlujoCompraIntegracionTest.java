@@ -107,7 +107,7 @@ class FlujoCompraIntegracionTest {
     @org.junit.jupiter.params.provider.ValueSource(ints={401,403,404,409,422,429,500,502,503,504})
     void remoteConfirmationFailureNeverRefundsOrReleasesAndRecoversOriginalPayment(int status){
         Compra c=crear();
-        doAnswer(i->{RestSupport.mutate(RestSupport.Operation.RESERVATION_CONFIRM,()->{throw remote(status);});return null;}).when(reservas).confirmarReserva(30L);
+        doAnswer(i->{RemoteCallSupport.mutate(RemoteCallSupport.Operation.RESERVATION_CONFIRM,()->{throw remote(status);});return null;}).when(reservas).confirmarReserva(30L);
         Pago p=pagos.procesarPago(c.getId(),"classification-confirm",MedioPago.TARJETA_DEBITO);
         assertEquals(EstadoPago.APROBADO,p.getEstado());assertEquals(EtapaCompra.CONFIRMACION,consultar(c).getEtapa());
         assertEquals(EstadoCompra.PROCESANDO,consultar(c).getEstado());assertEquals(0,reintegros.count());
@@ -122,7 +122,7 @@ class FlujoCompraIntegracionTest {
     @org.junit.jupiter.params.provider.ValueSource(ints={401,403,404,409,422,429,500,502,503,504})
     void remoteEmissionFailureNeverCompensatesAndRecoversOriginalBatch(int status){
         Compra c=crear();
-        doAnswer(i->{RestSupport.mutate(RestSupport.Operation.TICKETS_ISSUE,()->{throw remote(status);});return null;}).when(entradas).solicitarEntradas(any(),any(),any(),anyList());
+        doAnswer(i->{RemoteCallSupport.mutate(RemoteCallSupport.Operation.TICKETS_ISSUE,()->{throw remote(status);});return null;}).when(entradas).solicitarEntradas(any(),any(),any(),anyList());
         Pago p=pagos.procesarPago(c.getId(),"classification-issue",MedioPago.TARJETA_DEBITO);
         assertEquals(EstadoPago.APROBADO,p.getEstado());assertEquals(EtapaCompra.EMISION,consultar(c).getEtapa());
         assertEquals(0,reintegros.count());verify(pasarela,never()).reintegrarPago(any(),any());verify(entradas,never()).anularEntradas(any());

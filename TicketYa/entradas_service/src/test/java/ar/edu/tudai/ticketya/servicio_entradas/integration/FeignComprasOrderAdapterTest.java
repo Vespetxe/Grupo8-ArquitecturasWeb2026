@@ -3,22 +3,28 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.client.RestClient;
+import ar.edu.tudai.ticketya.servicio_entradas.feign.EntradasComprasFeignClient;
+import ar.edu.tudai.ticketya.servicio_entradas.feign.FeignSupport;
+import ar.edu.tudai.ticketya.servicio_entradas.timing.TimedTransport;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-class RestComprasOrderClientTest {
+class FeignComprasOrderAdapterTest {
     private HttpServer server;
-    private RestComprasOrderClient client;
+    private FeignComprasOrderAdapter client;
+    private TimedTransport transport;
     @BeforeEach void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         server.start();
-        client = new RestComprasOrderClient(RestClient.builder(),
-                "http://localhost:" + server.getAddress().getPort());
+        var env = new org.springframework.mock.env.MockEnvironment();
+        transport = new TimedTransport(env);
+        var feign = FeignSupport.target(EntradasComprasFeignClient.class,
+                FeignSupport.transport(transport.factory(false)), "http://localhost:" + server.getAddress().getPort());
+        client = new FeignComprasOrderAdapter(feign, env);
     }
-    @AfterEach void stopServer() { server.stop(0); }
+    @AfterEach void stopServer() throws IOException { server.stop(0); transport.close(); }
     @Test void readsConfirmedOrderAndItsItems() {
         respond(200, """
                 {"orderId":"order-1","clientId":"client-1","status":"CONFIRMADA",

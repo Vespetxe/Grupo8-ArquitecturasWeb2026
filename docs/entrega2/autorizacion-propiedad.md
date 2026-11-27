@@ -137,10 +137,10 @@ Las rutas siguientes son el estado completo sin staging; no implican que todos e
  M TicketYa/api-gateway/src/test/java/ar/edu/ticketya/gateway/GatewayUnavailableTest.java
  M TicketYa/comprapago_service/pom.xml
  M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/ReservaClientSimulado.java
- M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestEntradaClient.java
- M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestEventoClient.java
- M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestReservaClient.java
- M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RestSupport.java
+ M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/FeignEntradaAdapter.java
+ M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/FeignEventoAdapter.java
+ M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/FeignReservaAdapter.java
+ M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/client/RemoteCallSupport.java
  M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/controller/DevolucionAdminController.java
  M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/controller/OrdenInternaController.java
  M TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/dto/ReservaDTO.java
@@ -154,10 +154,10 @@ Las rutas siguientes son el estado completo sin staging; no implican que todos e
  M TicketYa/comprapago_service/src/test/resources/META-INF/spring.factories
  M TicketYa/comprapago_service/src/test/resources/application.properties
  M TicketYa/entradas_service/pom.xml
- M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/config/RestClientConfiguration.java
+ M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/config/OAuth2RestClientConfiguration.java
  M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/integration/OrderClient.java
  M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/integration/OrderSnapshot.java
- M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/integration/RestComprasOrderClient.java
+ M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/integration/FeignComprasOrderAdapter.java
  M TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/service/TicketQueryService.java
  M TicketYa/entradas_service/src/test/java/ar/edu/tudai/ticketya/servicio_entradas/TicketIssuanceIntegrationTest.java
  M TicketYa/entradas_service/src/test/resources/META-INF/spring.factories
@@ -205,7 +205,7 @@ Las rutas siguientes son el estado completo sin staging; no implican que todos e
 ?? TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/security/TrustedActorHeaders.java
 ?? TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/DistributedSecurityHttpTest.java
 ?? TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/SecurityTestKeys.java
-?? TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/client/RestSupportSecurityTest.java
+?? TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/client/RemoteCallSupportSecurityTest.java
 ?? TicketYa/comprapago_service/src/test/java/ar/edu/unicen/grupo8/comprasservice/security/ServiceTokensTest.java
 ?? TicketYa/comprapago_service/src/test/resources/application-test.properties
 ?? TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/security/CurrentActor.java

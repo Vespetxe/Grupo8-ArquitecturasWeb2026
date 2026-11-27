@@ -98,8 +98,8 @@ Estado Git acumulado 39–41: rama `entrega-2`, HEAD `c822345`, 39 archivos vers
 - `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/security/DistributedSecurity.java`.
 - `TicketYa/comprapago_service/src/main/java/ar/edu/unicen/grupo8/comprasservice/security/ServiceTokens.java`.
 - `TicketYa/entradas_service/pom.xml`.
-- `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/config/RestClientConfiguration.java`.
-- `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/integration/RestComprasOrderClient.java`.
+- `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/config/OAuth2RestClientConfiguration.java`.
+- `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/integration/FeignComprasOrderAdapter.java`.
 - `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/security/DistributedSecurity.java`.
 - `TicketYa/entradas_service/src/main/java/ar/edu/tudai/ticketya/servicio_entradas/security/ServiceTokens.java`.
 - `TicketYa/entradas_service/src/main/resources/application.properties`.

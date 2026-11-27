@@ -1,10 +1,11 @@
 package ar.edu.unicen.grupo8.comprasservice.client;
 import org.springframework.web.client.*;
 import ar.edu.unicen.grupo8.comprasservice.exception.OperacionExternaRechazadaException;
-public final class RestSupport {
+/** Classifies remote failures by operation contract; does not perform HTTP requests. */
+public final class RemoteCallSupport {
     public enum Operation { UNSPECIFIED, EVENT_READ, RESERVATION_READ, RESERVATION_CONFIRM, RESERVATION_RELEASE,
         RESERVATION_COMPENSATE, RESERVATION_RETURN, RETURN_READ, TICKETS_READ, TICKETS_ISSUE, TICKETS_ANNUL, TICKET_STATUS }
-    private RestSupport(){}
+    private RemoteCallSupport(){}
     public static void mutate(Runnable action){mutate(Operation.UNSPECIFIED,action);}
     public static void mutate(Operation operation,Runnable action){read(operation,()->{action.run();return null;});}
     public static <T> T read(Operation operation,java.util.function.Supplier<T> action){

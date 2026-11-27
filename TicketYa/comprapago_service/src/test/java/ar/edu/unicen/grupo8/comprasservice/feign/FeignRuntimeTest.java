@@ -5,10 +5,16 @@ package ar.edu.unicen.grupo8.comprasservice.feign;
 class FeignRuntimeTest {
  @org.springframework.beans.factory.annotation.Autowired org.springframework.context.ApplicationContext context;
  @org.junit.jupiter.api.Test void realAdaptersUseTheSpringFeignBeans(){
-  for(var entry:java.util.Map.of(ar.edu.unicen.grupo8.comprasservice.client.RestEventoClient.class,ComprasEventosFeignClient.class,ar.edu.unicen.grupo8.comprasservice.client.RestReservaClient.class,ComprasInventarioFeignClient.class,ar.edu.unicen.grupo8.comprasservice.client.RestEntradaClient.class,ComprasEntradasFeignClient.class).entrySet()){
+  for(var entry:java.util.Map.of(ar.edu.unicen.grupo8.comprasservice.client.FeignEventoAdapter.class,ComprasEventosFeignClient.class,ar.edu.unicen.grupo8.comprasservice.client.FeignReservaAdapter.class,ComprasInventarioFeignClient.class,ar.edu.unicen.grupo8.comprasservice.client.FeignEntradaAdapter.class,ComprasEntradasFeignClient.class).entrySet()){
    var adapter=context.getBean(entry.getKey());org.junit.jupiter.api.Assertions.assertNotNull(adapter);
+   String name=java.beans.Introspector.decapitalize(entry.getKey().getSimpleName());
+   org.junit.jupiter.api.Assertions.assertSame(adapter,context.getBean(name));
+   for(Class<?> businessPort:entry.getKey().getInterfaces())org.junit.jupiter.api.Assertions.assertSame(adapter,context.getBean(businessPort));
    org.junit.jupiter.api.Assertions.assertEquals(1,java.util.Arrays.stream(entry.getKey().getDeclaredConstructors()).filter(c->c.isAnnotationPresent(org.springframework.beans.factory.annotation.Autowired.class)).count());
   }
+ }
+ @org.junit.jupiter.api.Test void historicalAdapterBeanNamesAreAbsent(){
+  for(String name:java.util.List.of("restEventoClient","restReservaClient","restEntradaClient"))org.junit.jupiter.api.Assertions.assertFalse(context.containsBean(name));
  }
  @org.junit.jupiter.api.Test void productionInterfacesAreSpringManagedFeignProxies(){
   for(Class<?> type:java.util.List.of(ComprasEventosFeignClient.class,ComprasInventarioFeignClient.class,ComprasEntradasFeignClient.class)){

@@ -19,11 +19,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 class CriticalHttpTest {
     static final String UUID="4447e5be-d8f1-4d99-804a-38275093ae60";
-    HttpServer server;ExecutorService workers;TimedTransport transport;RestReservaClient reservas;RestEntradaClient entradas;
+    HttpServer server;ExecutorService workers;TimedTransport transport;FeignReservaAdapter reservas;FeignEntradaAdapter entradas;
     final AtomicReference<String> mode=new AtomicReference<>("NONE");final AtomicInteger confirmations=new AtomicInteger(),issues=new AtomicInteger(),batches=new AtomicInteger();final AtomicBoolean confirmed=new AtomicBoolean(),issued=new AtomicBoolean();final CountDownLatch entered=new CountDownLatch(1),release=new CountDownLatch(1);final Queue<String> orders=new ConcurrentLinkedQueue<>();
     @BeforeEach void start()throws Exception{
         workers=Executors.newCachedThreadPool();server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);server.setExecutor(workers);server.createContext("/",this::handle);server.start();String url="http://127.0.0.1:"+server.getAddress().getPort();
-        var env=new MockEnvironment().withProperty("ticketya.resilience.read.window","2").withProperty("ticketya.resilience.read.minimum","2").withProperty("ticketya.resilience.read.concurrent","1");transport=new TimedTransport(env);var tokens=mock(ServiceTokens.class);ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.stub(tokens,env);var identity=mock(EntradaIdentidadService.class);when(identity.registrar(UUID)).thenReturn(501L);reservas=new RestReservaClient(url,identity,tokens,env);entradas=new RestEntradaClient(url,identity,tokens,env);
+        var env=new MockEnvironment().withProperty("ticketya.resilience.read.window","2").withProperty("ticketya.resilience.read.minimum","2").withProperty("ticketya.resilience.read.concurrent","1");transport=new TimedTransport(env);var tokens=mock(ServiceTokens.class);ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.stub(tokens,env);var identity=mock(EntradaIdentidadService.class);when(identity.registrar(UUID)).thenReturn(501L);reservas=new FeignReservaAdapter(url,identity,tokens,env);entradas=new FeignEntradaAdapter(url,identity,tokens,env);
     }
     @AfterEach void stop()throws Exception{release.countDown();server.stop(0);workers.shutdownNow();transport.close();}
     void response(HttpExchange x,int code,String body)throws java.io.IOException{byte[] bytes=body.getBytes();x.getResponseHeaders().set("Content-Type","application/json");x.sendResponseHeaders(code,code==204?-1:bytes.length);if(code!=204)x.getResponseBody().write(bytes);x.close();}
@@ -54,7 +54,7 @@ class CriticalHttpTest {
     void committedWriteTimeoutIsUnknownAndReadsRecoverWithoutAnotherWrite(PilotReadGuard.Family family)throws Exception{
         var env=new MockEnvironment().withProperty("ticketya.http.command-ms","60");
         try(var slow=new TimedTransport(env)){
-            var url="http://127.0.0.1:"+server.getAddress().getPort();var tokens=mock(ServiceTokens.class);ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.stub(tokens,env);var identity=mock(EntradaIdentidadService.class);when(identity.registrar(UUID)).thenReturn(501L);reservas=new RestReservaClient(url,identity,tokens,env);entradas=new RestEntradaClient(url,identity,tokens,env);
+            var url="http://127.0.0.1:"+server.getAddress().getPort();var tokens=mock(ServiceTokens.class);ar.edu.unicen.grupo8.comprasservice.feign.FeignFixtures.stub(tokens,env);var identity=mock(EntradaIdentidadService.class);when(identity.registrar(UUID)).thenReturn(501L);reservas=new FeignReservaAdapter(url,identity,tokens,env);entradas=new FeignEntradaAdapter(url,identity,tokens,env);
             mode.set(kind(family)+"_TIMEOUT");long start=System.nanoTime();assertEquals(RemoteFailure.Category.RESULT_UNKNOWN,assertThrows(RemoteFailure.class,()->command(family)).category());long elapsed=(System.nanoTime()-start)/1_000_000;assertTrue(elapsed>=30&&elapsed<2000);assertEquals(1,writes(family));confirmResult(family);assertEquals(1,writes(family));
         }
     }
